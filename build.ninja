@@ -1,0 +1,21 @@
+cc = gcc
+cflags = -g --std=gnu99 -Iinclude -I. -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
+
+rule cc
+  command = $cc $cflags -c $in -o $out
+  description = CC $in
+
+rule ld
+  command = $cc $ldflags $in -o $out
+  description = LD $in
+
+# libs
+build build/olib/http.o: cc lib/http.c
+build build/olib/parson.o: cc lib/parson.c
+
+# wird
+build build/owird/main.o: cc src/wird/main.c
+build build/wird: ld $
+  build/olib/http.o $
+  build/olib/parson.o $
+  build/owird/main.o
