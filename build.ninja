@@ -1,21 +1,28 @@
 cc = gcc
-cflags = -g --std=gnu99 -Iinclude -I. -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
+cflags = -g --std=gnu99 -Iinclude -I. $
+  -Wall -Wextra -Wno-missing-field-initializers -Wno-unused-parameter
 
 rule cc
   command = $cc $cflags -c $in -o $out
   description = CC $in
 
 rule ld
-  command = $cc $ldflags $in -o $out
+  command = $cc $ldflags $in -o $out -ldl -lpthread
   description = LD $in
 
 # libs
 build build/olib/http.o: cc lib/http.c
 build build/olib/parson.o: cc lib/parson.c
+build build/olib/sqlite3.o: cc lib/sqlite3.c
 
 # wird
 build build/owird/main.o: cc src/wird/main.c
+build build/owird/vm.o: cc src/wird/vm.c
+build build/owird/back_qemu.o: cc src/wird/back_qemu.c
 build build/wird: ld $
   build/olib/http.o $
   build/olib/parson.o $
-  build/owird/main.o
+  build/olib/sqlite3.o $
+  build/owird/main.o $
+  build/owird/vm.o $
+  build/owird/back_qemu.o
