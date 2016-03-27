@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 #include <unistd.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -77,7 +78,14 @@ int server_bind(char* addrs, int port) {
 	return 0;
 }
 
+void stop() {
+	db_close();
+	exit(0);
+}
+
 int main(int argc, char** argv) {
+	signal(SIGINT, stop);
+
 	const char* usage =
 		"Usage: wird [OPTIONS]\n"
 		"The HTTP virtualization node control server\n\n"
@@ -145,7 +153,7 @@ int main(int argc, char** argv) {
 
 	int err = db_connect(dbs);
 	if(err != ERRNOPE) {
-		fprintf(stderr, "Can not connect to the database %s: %s\n", dbs, errstr(err));
+		fprintf(stderr, "Can not initialize %s: %s\n", dbs, errstr(err));
 		return 1;
 	}
 

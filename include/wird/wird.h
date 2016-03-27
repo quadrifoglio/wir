@@ -9,8 +9,8 @@
 #define ERRNOHYP 0x02
 
 typedef enum {
-	BACKEND_QEMU,
-	BACKEND_VZ
+	BACKEND_QEMU = 1,
+	BACKEND_VZ = 2
 } backend_t;
 
 const char* errstr(int err);
