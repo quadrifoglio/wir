@@ -13,6 +13,7 @@
 
 #include "lib/http.h"
 #include "wird/db.h"
+#include "wird/server.h"
 
 const char* errstr(int err) {
 	switch(err) {
@@ -28,7 +29,49 @@ const char* errstr(int err) {
 }
 
 void on_request(http_request_t* req, http_response_t* res) {
+	http_path_t path = http_path_parse(req->uri);
+	server_result_t result = {0};
 
+	if(path.count >= 2) {
+		char* ressource = path.parts[0];
+		char* id = path.parts[1];
+		char* action = 0;
+
+		if(path.count == 3) {
+			action = path.parts[2];
+		}
+		else {
+			id = 0;
+			action = path.parts[1];
+		}
+
+		if(strcmp(ressource, "vm") == 0) {
+			result = server_vm_action(id, action);
+		}
+	}
+
+	if(result.status != 0) {
+		res->status = result.status;
+
+		if(result.message != 0) {
+			res->body.data = (void*)result.message;
+			res->body.len = strlen(result.message);
+		}
+	}
+	else {
+		char* msg = strdup("{\"success\": false, \"message\": \"Action not found\"}");
+
+		res->status = 404;
+		res->body.data = (void*)msg;
+		res->body.len = strlen(msg);
+	}
+
+	char* server = malloc(strlen("wird ") + strlen(WIRD_VERSION) + 1);
+	sprintf(server, "wird %s", WIRD_VERSION);
+
+	http_header_add(&res->headers, strdup("Content-Type"), strdup("application/json"));
+	http_header_add(&res->headers, strdup("Server"), server);
+	http_path_dispose(&path);
 }
 
 int server_bind(char* addrs, int port) {
