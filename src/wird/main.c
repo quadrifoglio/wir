@@ -121,10 +121,12 @@ int server_bind(char* addrs, int port) {
 		http_client_loop(csfd, on_request, 0);
 		shutdown(csfd, SHUT_RDWR);
 		close(csfd);
+		break;
 	}
 
 	shutdown(sockfd, 2);
 	close(sockfd);
+	db_close();
 
 	return 0;
 }

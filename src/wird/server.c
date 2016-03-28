@@ -2,11 +2,12 @@
 
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "lib/parson.h"
 #include "wird/vm.h"
 
 server_result_t server_vm_create(const char* data) {
-	server_result_t r = {500, strdup("{\"success\": false}")};
+	server_result_t r = {500, 0};
 
 	JSON_Value* rootv = json_parse_string(data);
 	if(!rootv) {
@@ -54,11 +55,14 @@ server_result_t server_vm_create(const char* data) {
 	r.status = 201;
 	r.message = json_serialize_to_string(res);
 
+	json_value_free(res);
+	json_value_free(rootv);
+
 	return r;
 }
 
 server_result_t server_vm_list(void) {
-	server_result_t r = {500, strdup("{\"success\": false}")};
+	server_result_t r = {500, 0};
 
 	vm_t* vms = 0;
 	int count = 0;
@@ -91,18 +95,19 @@ server_result_t server_vm_list(void) {
 	r.message = json_serialize_to_string(rootv);
 
 	json_value_free(rootv);
+	free(vms);
+
 	return r;
 }
 
 server_result_t server_vm_get(const char* id) {
-	server_result_t r = {500, strdup("{\"success\": false}")};
+	server_result_t r = {500, 0};
 	return r;
 }
 
 server_result_t server_vm_action(const char* method, const char* id, const char* action, const char* data) {
 	server_result_t r;
 	r.status = 404;
-	r.message = strdup("{\"success\": false, \"message\": \"Action not found\"}");
 
 	if(strcmp(method, "GET") == 0) {
 		if(id == 0 && strcmp(action, "list") == 0) {
@@ -116,6 +121,13 @@ server_result_t server_vm_action(const char* method, const char* id, const char*
 		if(id == 0 && strcmp(action, "create") == 0 && data != 0) {
 			r = server_vm_create(data);
 		}
+	}
+
+	if(r.status == 404) {
+		r.message = strdup("{\"success\": false, \"message\": \"Action not found\"}");
+	}
+	else if(r.status == 500) {
+		r.message = strdup("{\"success\": false, \"message\": \"Server error\"}");
 	}
 
 	return r;
