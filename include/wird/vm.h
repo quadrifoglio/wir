@@ -1,6 +1,7 @@
 #pragma once
 
 #include "wird/wird.h"
+#include "lib/parson.h"
 
 typedef enum {
 	BACKEND_UNKNOWN = 0,
@@ -40,10 +41,15 @@ typedef struct {
 	vm_params_t params;
 } vm_t;
 
-int         vm_create(vm_params_t* p, vm_t* vm);
-int         vm_list(vm_t** vms, int* count);
-int         vm_delete(vm_t* vm);
+int           vm_create(vm_params_t* p, vm_t* vm);
+int           vm_json(vm_t* vm, JSON_Value** v);
+int           vm_list(vm_t** vms, int* count);
+int           vm_delete(vm_t* vm);
 
-const char* vm_backend_str(vm_backend_t b);
-const char* vm_dev_str(vm_dev_type_t d);
-const char* vm_state_str(vm_state_t s);
+const char*   vm_backend_str(vm_backend_t b);
+const char*   vm_dev_str(vm_dev_type_t d);
+const char*   vm_state_str(vm_state_t s);
+
+vm_backend_t  vm_backend_id(const char* name);
+vm_dev_type_t vm_dev_id(const char* name);
+vm_state_t    vm_state_id(const char* name);

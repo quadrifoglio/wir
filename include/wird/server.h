@@ -7,4 +7,4 @@ typedef struct {
 	char* message;
 } server_result_t;
 
-server_result_t server_vm_action(const char* id, const char* action);
+server_result_t server_vm_action(const char* method, const char* id, const char* action, const char* data);

@@ -329,7 +329,6 @@ void http_client_loop(int sockfd, http_request_cb onRequest, http_error_cb onErr
 			while(true) {
 				char* line = http_get_line(sockfd);
 				if(strcmp(line, "0\r\n") == 0) {
-					puts("end");
 					return;
 				}
 
@@ -352,6 +351,19 @@ void http_client_loop(int sockfd, http_request_cb onRequest, http_error_cb onErr
 				void* buf = malloc(s);
 				recv(sockfd, buf, s, 0);
 				free(buf);
+			}
+		}
+
+		hv = http_header_get(&request.headers, "Content-Length");
+		if(hv) {
+			int sz = atoi(hv);
+			request.body.len = sz;
+			request.body.data = malloc(sz);
+
+			recv(sockfd, request.body.data, sz, 0);
+			if(errno == ECONNRESET) {
+				http_request_dispose(&request);
+				return;
 			}
 		}
 

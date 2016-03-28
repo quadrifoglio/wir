@@ -32,6 +32,12 @@ void on_request(http_request_t* req, http_response_t* res) {
 	http_path_t path = http_path_parse(req->uri);
 	server_result_t result = {0};
 
+	char* data = 0;
+	if(req->body.len > 0) {
+		data = calloc(1, req->body.len + 1);
+		memcpy(data, req->body.data, req->body.len);
+	}
+
 	if(path.count >= 2) {
 		char* ressource = path.parts[0];
 		char* id = path.parts[1];
@@ -46,7 +52,7 @@ void on_request(http_request_t* req, http_response_t* res) {
 		}
 
 		if(strcmp(ressource, "vm") == 0) {
-			result = server_vm_action(id, action);
+			result = server_vm_action(req->method, id, action, data);
 		}
 	}
 
@@ -71,7 +77,9 @@ void on_request(http_request_t* req, http_response_t* res) {
 
 	http_header_add(&res->headers, strdup("Content-Type"), strdup("application/json"));
 	http_header_add(&res->headers, strdup("Server"), server);
+
 	http_path_dispose(&path);
+	free(data);
 }
 
 int server_bind(char* addrs, int port) {
