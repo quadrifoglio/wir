@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include "lib/parson.h"
 #include "wird/vm.h"
+#include "wird/db.h"
+#include "wird/qemu.h"
 
 server_result_t server_vm_create(const char* data) {
 	server_result_t r = {500, 0};
@@ -100,6 +102,26 @@ server_result_t server_vm_list(void) {
 	return r;
 }
 
+server_result_t server_vm_start(const char* id) {
+	server_result_t r = {500, 0};
+	vm_t vm = {0};
+
+	int err = db_vm_get_by_id(atoi(id), &vm);
+	if(err == ERRNOTFOUND) {
+		r.status = 404;
+		return r;
+	}
+	else if(err != ERRNOPE) {
+		r.status = 500;
+		return r;
+	}
+
+	r.status = 200;
+	qemu_start(&vm);
+
+	return r;
+}
+
 server_result_t server_vm_get(const char* id) {
 	server_result_t r = {500, 0};
 	return r;
@@ -113,6 +135,9 @@ server_result_t server_vm_action(const char* method, const char* id, const char*
 		if(id == 0 && strcmp(action, "list") == 0) {
 			r = server_vm_list();
 		}
+		if(id != 0 && strcmp(action, "start") == 0) {
+			r = server_vm_start(id);
+		}
 		if(id != 0 && action == 0) {
 			r = server_vm_get(id);
 		}
@@ -123,8 +148,11 @@ server_result_t server_vm_action(const char* method, const char* id, const char*
 		}
 	}
 
-	if(r.status == 404) {
-		r.message = strdup("{\"success\": false, \"message\": \"Action not found\"}");
+	if(r.status >= 200 && r.status <= 299 && r.message == 0) {
+		r.message = strdup("{\"success\": true}");
+	}
+	else if(r.status == 404) {
+		r.message = strdup("{\"success\": false, \"message\": \"Not found\"}");
 	}
 	else if(r.status == 500) {
 		r.message = strdup("{\"success\": false, \"message\": \"Server error\"}");

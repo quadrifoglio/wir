@@ -154,6 +154,59 @@ cleanup:
 	return err;
 }
 
+int db_vm_get_by_id(int id, vm_t* vm) {
+	int err = ERRNOPE;
+
+	const char* sql = "SELECT * FROM vm WHERE vmid = ? LIMIT 1";
+	sqlite3_stmt* stmt;
+
+	err = sqlite3_prepare_v2(global_db, sql, -1, &stmt, 0);
+	CHECK_DB_ERROR(err);
+
+	err = sqlite3_bind_int(stmt, 1, id);
+	CHECK_DB_ERROR(err);
+
+	vm->id = 0;
+
+	while((err = sqlite3_step(stmt)) == SQLITE_ROW) {
+		for(int col = 0; col < sqlite3_column_count(stmt); ++col) {
+			const char* name = sqlite3_column_name(stmt, col);
+
+			if(strcmp(name, "vmid") == 0) {
+				vm->id = sqlite3_column_int(stmt, col);
+			}
+			else if(strcmp(name, "vmstate") == 0) {
+				vm->state = (vm_state_t)sqlite3_column_int(stmt, col);
+			}
+			else if(strcmp(name, "vmbackend") == 0) {
+				vm->params.backend = (vm_backend_t)sqlite3_column_int(stmt, col);
+			}
+			else if(strcmp(name, "vmncpu") == 0) {
+				vm->params.ncpu = sqlite3_column_int(stmt, col);
+			}
+			else if(strcmp(name, "vmmemory") == 0) {
+				vm->params.memory = sqlite3_column_int(stmt, col);
+			}
+		}
+	}
+
+	if(err != SQLITE_DONE) {
+		err = ERRDB;
+		goto cleanup;
+	}
+	else {
+		err = ERRNOPE;
+	}
+
+	if(vm->id == 0) {
+		err = ERRNOTFOUND;
+	}
+
+cleanup:
+	sqlite3_finalize(stmt);
+	return err;
+}
+
 int db_vm_delete(int id) {
 	int err = ERRNOPE;
 	sqlite3_stmt* stmt;

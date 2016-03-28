@@ -17,6 +17,7 @@ typedef enum {
 
 typedef struct {
 	vm_dev_type_t type;
+	const char* file;
 } vm_dev_t;
 
 typedef struct {
@@ -39,6 +40,8 @@ typedef struct {
 	int id;
 	vm_state_t state;
 	vm_params_t params;
+
+	void* backend_data;
 } vm_t;
 
 int           vm_create(vm_params_t* p, vm_t* vm);

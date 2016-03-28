@@ -1,6 +1,7 @@
 #include "wird/vm.h"
 
 #include <string.h>
+#include <stdlib.h>
 #include "wird/db.h"
 
 int vm_create(vm_params_t* p, vm_t* vm) {
@@ -14,6 +15,7 @@ int vm_create(vm_params_t* p, vm_t* vm) {
 		vm->id = id;
 		vm->state = STATE_DOWN;
 		vm->params = *p;
+		vm->backend_data = 0;
 	}
 
 	return ERRNOPE;
@@ -37,6 +39,8 @@ int vm_list(vm_t** vms, int* count) {
 }
 
 int vm_delete(vm_t* vm) {
+	free(vm->backend_data);
+
 	return db_vm_delete(vm->id);
 }
 

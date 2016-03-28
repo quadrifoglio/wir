@@ -14,13 +14,18 @@
 #include "lib/http.h"
 #include "wird/db.h"
 #include "wird/server.h"
+#include "wird/qemu.h"
 
 const char* errstr(int err) {
 	switch(err) {
 		case ERRNOHYP:
-			return "No hypervisor";
+			return "no hypervisor";
 		case ERRDB:
 			return sqlite3_errmsg(global_db);
+		case ERRNOTFOUND:
+			return "not found";
+		case ERRDOWN:
+			return "vm is down";
 		default:
 			break;
 	}
@@ -121,7 +126,6 @@ int server_bind(char* addrs, int port) {
 		http_client_loop(csfd, on_request, 0);
 		shutdown(csfd, SHUT_RDWR);
 		close(csfd);
-		break;
 	}
 
 	shutdown(sockfd, 2);
