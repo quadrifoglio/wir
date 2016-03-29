@@ -40,8 +40,6 @@ typedef struct {
 	int id;
 	vm_state_t state;
 	vm_params_t params;
-
-	void* backend_data;
 } vm_t;
 
 int           vm_create(vm_params_t* p, vm_t* vm);

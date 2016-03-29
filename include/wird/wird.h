@@ -3,6 +3,7 @@
 #include "global.h"
 
 #define WIRD_VERSION "0.0.1"
+#define WIRD_LOG     true
 
 #define ERRNOPE    0x00
 #define ERRDB      0x01
@@ -12,3 +13,4 @@
 #define ERRNOTFOUND 0x05
 
 const char* errstr(int err);
+void        wird_log(const char* fmt, ...);

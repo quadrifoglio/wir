@@ -8,6 +8,8 @@
 #include <errno.h>
 #include <signal.h>
 
+#include "wird/db.h"
+
 const char* executable = "/usr/bin/qemu-system-x86_64";
 
 int exec(int argc, char** argv, pid_t* tpid) {
@@ -49,6 +51,7 @@ void arg_add(int* argc, char*** argv, int n, ...) {
 }
 
 int qemu_start(vm_t* vm) {
+	int err = ERRNOPE;
 	int argc = 0;
 	char** argv = 0;
 
@@ -75,29 +78,53 @@ int qemu_start(vm_t* vm) {
 	}
 
 	pid_t pid;
-	int err = exec(argc, argv, &pid);
+	err = exec(argc, argv, &pid);
 	if(err != ERRNOPE) {
-		free(cpus);
-		free(mems);
-		return err;
+		wird_log("Can not exec vm process: %s\n", errstr(err));
+		goto cleanup;
 	}
 
-	vm->backend_data = malloc(sizeof(pid_t));
-	*((pid_t*)vm->backend_data) = pid;
+	char pids[8];
+	sprintf(pids, "%d", pid);
 
+	err = db_vm_param_set(vm, "pid", pids);
+	if(err != ERRNOPE) {
+		wird_log("Can not set vm %d param 'pid' (on start): %s\n", vm->id, errstr(err));
+
+		qemu_stop(vm, true);
+		goto cleanup;
+	}
+
+	vm->state = STATE_UP;
+
+cleanup:
 	free(cpus);
 	free(mems);
-
-	return ERRNOPE;
+	return err;
 }
 
 int qemu_stop(vm_t* vm, bool violent) {
-	if(!vm->backend_data) {
+	char* pids = 0;
+	int err = db_vm_param_get(vm, "pid", &pids);
+	if(err != ERRNOPE) {
+		wird_log("Can not get vm %d param 'pid': %s\n", vm->id, errstr(err));
+		return err;
+	}
+
+	pid_t pid = (pid_t)atoi(pids);
+	if(pid <= 0) {
+		wird_log("Trying to shut down vm %d (pid <= 0)\n", vm->id);
 		return ERRDOWN;
 	}
 
-	pid_t pid = *((pid_t*)vm->backend_data);
 	kill(pid, violent ? SIGKILL : SIGTERM);
+	vm->state = STATE_DOWN;
 
+	err = db_vm_param_set(vm, "pid", "0");
+	if(err != ERRNOPE) {
+		wird_log("Can not set vm %d param 'pid' (on stop): %s\n", vm->id, errstr(err));
+	}
+
+	free(pids);
 	return ERRNOPE;
 }

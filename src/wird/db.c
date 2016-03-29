@@ -1,5 +1,6 @@
 #include "wird/db.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -13,16 +14,22 @@ int db_connect(char* file) {
 
 	const char* sql =
 		"CREATE TABLE IF NOT EXISTS vm ("
-			"vmid INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
-			"vmstate INTEGER NOT NULL,"
+			"vmid      INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
+			"vmstate   INTEGER NOT NULL,"
 			"vmbackend INTEGER NOT NULL,"
-			"vmncpu INTEGER NOT NULL,"
-			"vmmemory INTEGER NOT NULL"
+			"vmncpu    INTEGER NOT NULL,"
+			"vmmemory  INTEGER NOT NULL"
+		");"
+		"CREATE TABLE IF NOT EXISTS vm_param ("
+			"pvm       INTEGER NOT NULL REFERENCES vm(vmid),"
+			"pkey      CHAR(10) NOT NULL,"
+			"pval      CHAR(10) NOT NULL,"
+			"PRIMARY KEY(pvm, pkey)"
 		");"
 		"CREATE TABLE IF NOT EXISTS dev ("
-			"devid INTEGER PRIMARY KEY NOT NULL,"
-			"devtype INTEGER NOT NULL,"
-			"devvm INTEGER NOT NULL REFERENCES vm(vmid)"
+			"devid     INTEGER PRIMARY KEY NOT NULL,"
+			"devtype   INTEGER NOT NULL,"
+			"devvm     INTEGER NOT NULL REFERENCES vm(vmid)"
 		");";
 
 	err = sqlite3_exec(global_db, sql, 0, 0, 0);
@@ -154,16 +161,18 @@ cleanup:
 	return err;
 }
 
-int db_vm_get_by_id(int id, vm_t* vm) {
+int db_vm_get_by_column_int(vm_t* vm, const char* colname, int value) {
 	int err = ERRNOPE;
 
-	const char* sql = "SELECT * FROM vm WHERE vmid = ? LIMIT 1";
+	char* sql = 0;
+	asprintf(&sql, "SELECT * FROM vm WHERE %s = ? LIMIT 1", colname);
+
 	sqlite3_stmt* stmt;
 
 	err = sqlite3_prepare_v2(global_db, sql, -1, &stmt, 0);
 	CHECK_DB_ERROR(err);
 
-	err = sqlite3_bind_int(stmt, 1, id);
+	err = sqlite3_bind_int(stmt, 1, value);
 	CHECK_DB_ERROR(err);
 
 	vm->id = 0;
@@ -204,6 +213,35 @@ int db_vm_get_by_id(int id, vm_t* vm) {
 
 cleanup:
 	sqlite3_finalize(stmt);
+	free(sql);
+	return err;
+}
+
+int db_vm_set_state(vm_t* vm, vm_state_t state) {
+	int err = ERRNOPE;
+
+	const char* sql = "UPDATE vm SET vmstate = ? WHERE vmid = ?";
+	sqlite3_stmt* stmt;
+
+	err = sqlite3_prepare_v2(global_db, sql, -1, &stmt, 0);
+	CHECK_DB_ERROR(err);
+
+	err = sqlite3_bind_int(stmt, 1, (int)state);
+	CHECK_DB_ERROR(err);
+
+	err = sqlite3_bind_int(stmt, 2, vm->id);
+	CHECK_DB_ERROR(err);
+
+	err = sqlite3_step(stmt);
+	if(err != SQLITE_DONE) {
+		err = ERRDB;
+		goto cleanup;
+	}
+	else {
+		err = ERRNOPE;
+	}
+
+cleanup:
 	return err;
 }
 
@@ -226,6 +264,70 @@ int db_vm_delete(int id) {
 	else {
 		err = ERRNOPE;
 	}
+
+cleanup:
+	sqlite3_finalize(stmt);
+	return err;
+}
+
+int db_vm_param_set(vm_t* vm, const char* key, const char* value) {
+	int err = ERRNOPE;
+
+	const char* sql = "INSERT OR REPLACE INTO vm_param VALUES (?, ?, ?)";
+	sqlite3_stmt* stmt;
+
+	err = sqlite3_prepare_v2(global_db, sql, -1, &stmt, 0);
+	CHECK_DB_ERROR(err);
+
+	err = sqlite3_bind_int(stmt, 1, vm->id);
+	CHECK_DB_ERROR(err);
+
+	err = sqlite3_bind_text(stmt, 2, key, strlen(key), SQLITE_STATIC);
+	CHECK_DB_ERROR(err);
+
+	err = sqlite3_bind_text(stmt, 3, value, strlen(value), SQLITE_STATIC);
+	CHECK_DB_ERROR(err);
+
+	err = sqlite3_step(stmt);
+	if(err != SQLITE_DONE) {
+		err = ERRDB;
+		goto cleanup;
+	}
+	else {
+		err = ERRNOPE;
+	}
+
+cleanup:
+	return err;
+}
+
+int db_vm_param_get(vm_t* vm, const char* key, char** value) {
+	int err = ERRNOPE;
+
+	const char* sql = "SELECT pval FROM vm_param WHERE pvm = ? AND pkey = ? LIMIT 1";
+	sqlite3_stmt* stmt;
+
+	err = sqlite3_prepare_v2(global_db, sql, -1, &stmt, 0);
+	CHECK_DB_ERROR(err);
+
+	err = sqlite3_bind_int(stmt, 1, vm->id);
+	CHECK_DB_ERROR(err);
+
+	err = sqlite3_bind_text(stmt, 2, key, strlen(key), SQLITE_STATIC);
+	CHECK_DB_ERROR(err);
+
+	err = sqlite3_step(stmt);
+	if(err == SQLITE_ROW) {
+		const unsigned char* v = sqlite3_column_text(stmt, 0);
+		if(v) {
+			*value = strdup((char*)v);
+			err = ERRNOPE;
+
+			goto cleanup;
+		}
+	}
+
+	err = ERRNOTFOUND;
 
 cleanup:
 	sqlite3_finalize(stmt);
