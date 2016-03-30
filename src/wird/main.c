@@ -20,14 +20,20 @@
 
 const char* errstr(int err) {
 	switch(err) {
-		case ERRNOHYP:
-			return "no hypervisor";
 		case ERRDB:
 			return sqlite3_errmsg(global_db);
-		case ERRNOTFOUND:
-			return "not found";
+		case ERRNOHYP:
+			return "no hypervisor";
+		case ERREXEC:
+			return "exec system call failed";
+		case ERRKILL:
+			return "kill system call failed";
 		case ERRDOWN:
 			return "vm is down";
+		case ERRNOTFOUND:
+			return "not found";
+		case ERRINVALID:
+			return "invalid parameters";
 		default:
 			break;
 	}

@@ -22,6 +22,16 @@ char* json_message(bool success, const char* s) {
 	return 0;
 }
 
+server_result_t server_image_create(const char* data) {
+	server_result_t res;
+	return res;
+}
+
+server_result_t server_image_list(void) {
+	server_result_t res;
+	return res;
+}
+
 server_result_t server_vm_create(const char* data) {
 	server_result_t r = {500, 0};
 

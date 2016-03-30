@@ -21,11 +21,12 @@ int exec(int argc, char** argv, pid_t* tpid) {
 	pid_t pid = fork();
 	if(pid == 0) { // Child process
 		if(execv(executable, args) < 0) {
-			perror("exec: ");
+			wird_log("Call to execv failed: %s\n", errstr(errno));
 			exit(1);
 		}
 	}
 	else if(pid < 0) {
+		wird_log("Call to fork failed: %s\n", errstr(errno));
 		return ERREXEC;
 	}
 
@@ -51,14 +52,20 @@ void arg_add(int* argc, char*** argv, int n, ...) {
 }
 
 int qemu_start(vm_t* vm) {
-	int err = ERRNOPE;
 	int argc = 0;
 	char** argv = 0;
 
-	char* cpus;
-	char* mems;
-	asprintf(&cpus, "%d", vm->params.ncpu);
-	asprintf(&mems, "%d", vm->params.memory);
+	if(vm->params.ncpu > 99) {
+		return ERRINVALID;
+	}
+	if(vm->params.memory > 999999) {
+		return ERRINVALID;
+	}
+
+	char cpus[3];
+	char mems[7];
+	sprintf(cpus, "%d", vm->params.ncpu);
+	sprintf(mems, "%d", vm->params.memory);
 
 	arg_add(&argc, &argv, 6, "qemu-system-x86_64", "-enable-kvm", "-smp", cpus, "-m", mems);
 
@@ -78,10 +85,10 @@ int qemu_start(vm_t* vm) {
 	}
 
 	pid_t pid;
-	err = exec(argc, argv, &pid);
+	int err = exec(argc, argv, &pid);
 	if(err != ERRNOPE) {
 		wird_log("Can not exec vm process: %s\n", errstr(err));
-		goto cleanup;
+		return err;
 	}
 
 	char pids[8];
@@ -90,17 +97,13 @@ int qemu_start(vm_t* vm) {
 	err = db_vm_param_set(vm, "pid", pids);
 	if(err != ERRNOPE) {
 		wird_log("Can not set vm %d param 'pid' (on start): %s\n", vm->id, errstr(err));
-
 		qemu_stop(vm, true);
-		goto cleanup;
+
+		return err;
 	}
 
 	vm->state = STATE_UP;
-
-cleanup:
-	free(cpus);
-	free(mems);
-	return err;
+	return ERRNOPE;
 }
 
 int qemu_stop(vm_t* vm, bool violent) {
@@ -114,17 +117,29 @@ int qemu_stop(vm_t* vm, bool violent) {
 	pid_t pid = (pid_t)atoi(pids);
 	if(pid <= 0) {
 		wird_log("Trying to shut down vm %d (pid <= 0)\n", vm->id);
+
+		free(pids);
 		return ERRDOWN;
 	}
 
-	kill(pid, violent ? SIGKILL : SIGTERM);
+	free(pids);
+
+	if(kill(pid, violent ? SIGKILL : SIGTERM) == -1) {
+		wird_log("Failed to kill vm %d, pid %d\n", vm->id, pid);
+		vm->state = STATE_UNKNOWN;
+
+		return ERRKILL;
+	}
+
 	vm->state = STATE_DOWN;
 
 	err = db_vm_param_set(vm, "pid", "0");
 	if(err != ERRNOPE) {
 		wird_log("Can not set vm %d param 'pid' (on stop): %s\n", vm->id, errstr(err));
+		vm->state = STATE_UNKNOWN;
+
+		return err;
 	}
 
-	free(pids);
 	return ERRNOPE;
 }
