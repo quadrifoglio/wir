@@ -8,6 +8,7 @@
 #include "wird/vm.h"
 #include "wird/db.h"
 #include "wird/qemu.h"
+#include "wird/utils.h"
 
 char* json_message(bool success, const char* s) {
 	if(success) {

@@ -9,6 +9,7 @@
 #include <signal.h>
 
 #include "wird/db.h"
+#include "wird/utils.h"
 
 const char* executable = "/usr/bin/qemu-system-x86_64";
 

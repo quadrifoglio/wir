@@ -13,6 +13,3 @@
 #define ERRDOWN     0x05
 #define ERRNOTFOUND 0x06
 #define ERRINVALID  0x07
-
-const char* errstr(int err);
-void        wird_log(const char* fmt, ...);
