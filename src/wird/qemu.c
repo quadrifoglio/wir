@@ -12,6 +12,14 @@
 
 const char* executable = "/usr/bin/qemu-system-x86_64";
 
+int qemu_image_create(vm_image_t* img, const char* path) {
+	img->type = BACKEND_QEMU;
+	img->path = path;
+
+	// TODO: Actually create the image
+	return ERRNOPE;
+}
+
 int exec(int argc, char** argv, pid_t* tpid) {
 	char** args = malloc((argc + 1) * sizeof(char**));
 	memcpy(args, argv, argc * sizeof(char*));

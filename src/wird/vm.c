@@ -4,6 +4,25 @@
 #include <stdlib.h>
 #include "wird/db.h"
 
+int vm_image_list(vm_image_t** imgs, int* count) {
+	return db_image_list(imgs, count);
+}
+
+int vm_image_json(vm_image_t* img, JSON_Value** v) {
+	*v = json_value_init_object();
+	JSON_Object* obj = json_value_get_object(*v);
+
+	json_object_set_number(obj, "id", img->id);
+	json_object_set_string(obj, "type", vm_backend_str(img->type));
+	json_object_set_string(obj, "path", img->path);
+
+	return ERRNOPE;
+}
+
+void vm_image_free(vm_image_t* img) {
+	free((void*)img->path);
+}
+
 int vm_create(vm_params_t* p, vm_t* vm) {
 	int id = 0;
 	int err = db_vm_insert(p, &id);
@@ -15,10 +34,13 @@ int vm_create(vm_params_t* p, vm_t* vm) {
 		vm->id = id;
 		vm->state = STATE_DOWN;
 		vm->params = *p;
-		vm->backend_data = 0;
 	}
 
 	return ERRNOPE;
+}
+
+int vm_list(vm_t** vms, int* count) {
+	return db_vm_list(vms, count);
 }
 
 int vm_json(vm_t* vm, JSON_Value** v) {
@@ -34,13 +56,7 @@ int vm_json(vm_t* vm, JSON_Value** v) {
 	return ERRNOPE;
 }
 
-int vm_list(vm_t** vms, int* count) {
-	return db_vm_list(vms, count);
-}
-
 int vm_delete(vm_t* vm) {
-	free(vm->backend_data);
-
 	return db_vm_delete(vm->id);
 }
 

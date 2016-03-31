@@ -95,6 +95,9 @@ void on_request(http_request_t* req, http_response_t* res) {
 			action = path.parts[1];
 		}
 
+		if(strcmp(ressource, "image") == 0) {
+			result = server_image_action(req->method, id, action, data);
+		}
 		if(strcmp(ressource, "vm") == 0) {
 			result = server_vm_action(req->method, id, action, data);
 		}
@@ -116,6 +119,16 @@ void on_request(http_request_t* req, http_response_t* res) {
 		res->body.len = strlen(msg);
 	}
 
+	if(result.status >= 200 && result.status <= 299 && result.message == 0) {
+		result.message = strdup("{\"success\": true}");
+	}
+	else if(result.status == 404 && result.message == 0) {
+		result.message = strdup("{\"success\": false, \"message\": \"Not found\"}");
+	}
+	else if(result.status == 500 && result.message == 0) {
+		result.message = strdup("{\"success\": false, \"message\": \"Server error\"}");
+	}
+
 	char* server = malloc(strlen("wird ") + strlen(WIRD_VERSION) + 1);
 	sprintf(server, "wird %s", WIRD_VERSION);
 
@@ -129,7 +142,6 @@ void on_request(http_request_t* req, http_response_t* res) {
 int server_bind(char* addrs, int port) {
 	int sockfd = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if(sockfd == -1) {
-		perror("socket");
 		return errno;
 	}
 
@@ -138,19 +150,16 @@ int server_bind(char* addrs, int port) {
 	sa.sin_port = htons(port);
 
 	if(inet_aton(addrs, &sa.sin_addr) == 0) {
-		fputs("aton: Invalid address", stderr);
 		return errno;
 	}
 
 	setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int));
 
 	if(bind(sockfd, (struct sockaddr *)&sa, sizeof(sa)) != 0) {
-		perror("bind");
 		return errno;
 	}
 
 	if(listen(sockfd, 1) != 0) {
-		perror("listen");
 		return errno;
 	}
 
@@ -158,7 +167,6 @@ int server_bind(char* addrs, int port) {
 	while(true) {
 		int csfd = accept(sockfd, 0, 0);
 		if(csfd == -1) {
-			perror("accept");
 			continue;
 		}
 
@@ -250,13 +258,13 @@ int main(int argc, char** argv) {
 
 	int err = db_connect(dbs);
 	if(err != ERRNOPE) {
-		fprintf(stderr, "Can not initialize %s: %s\n", dbs, errstr(err));
+		wird_log("Can not initialize %s: %s\n", dbs, errstr(err));
 		return 1;
 	}
 
 	err = server_bind(addrs, port);
 	if(err != ERRNOPE) {
-		fprintf(stderr, "Can not start server: %s\n", errstr(err));
+		wird_log("Can not start server: %s\n", errstr(err));
 		return 1;
 	}
 }

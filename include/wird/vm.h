@@ -9,6 +9,12 @@ typedef enum {
 	BACKEND_VZ      = 2
 } vm_backend_t;
 
+typedef struct {
+	int id;
+	vm_backend_t type;
+	const char* path;
+} vm_image_t;
+
 typedef enum {
 	DEV_UNKNOWN = 0,
 	DEV_HDD     = 1,
@@ -42,9 +48,13 @@ typedef struct {
 	vm_params_t params;
 } vm_t;
 
+int           vm_image_list(vm_image_t** imgs, int* count);
+int           vm_image_json(vm_image_t* img, JSON_Value** v);
+void          vm_image_free(vm_image_t* img);
+
 int           vm_create(vm_params_t* p, vm_t* vm);
-int           vm_json(vm_t* vm, JSON_Value** v);
 int           vm_list(vm_t** vms, int* count);
+int           vm_json(vm_t* vm, JSON_Value** v);
 int           vm_delete(vm_t* vm);
 
 const char*   vm_backend_str(vm_backend_t b);

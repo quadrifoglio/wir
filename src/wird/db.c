@@ -13,6 +13,11 @@ int db_connect(char* file) {
 	CHECK_DB_ERROR(err);
 
 	const char* sql =
+		"CREATE TABLE IF NOT EXISTS image ("
+			"imgid     INTEGER PRIMARY KEY NOT NULL,"
+			"imgtype   INTEGER NOT NULL,"
+			"imgpath   CHAR(128) NOT NULL"
+		");"
 		"CREATE TABLE IF NOT EXISTS vm ("
 			"vmid      INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
 			"vmstate   INTEGER NOT NULL,"
@@ -38,6 +43,141 @@ int db_connect(char* file) {
 	}
 
 cleanup:
+	return err;
+}
+
+int db_image_insert(vm_image_t* img, int* id) {
+	int err = ERRNOPE;
+
+	sqlite3_stmt* stmt = 0;
+	const char* sql = "INSERT INTO image (imgtype, imgpath) VALUES (?, ?)";
+
+	err = sqlite3_prepare_v2(global_db, sql, -1, &stmt, 0);
+	CHECK_DB_ERROR(err);
+
+	err = sqlite3_bind_int(stmt, 1, (int)img->type);
+	CHECK_DB_ERROR(err);
+
+	err = sqlite3_bind_text(stmt, 2, img->path, strlen(img->path), SQLITE_STATIC);
+	CHECK_DB_ERROR(err);
+
+	err = sqlite3_step(stmt);
+	if(err != SQLITE_DONE) {
+		err = ERRDB;
+		goto cleanup;
+	}
+
+	*id = (int)sqlite3_last_insert_rowid(global_db);
+	if(*id) {
+		err = ERRNOPE;
+	}
+
+cleanup:
+	sqlite3_finalize(stmt);
+	return err;
+}
+
+int db_image_cb(void* d, int argc, char** argv, char** colname) {
+	struct s {
+		vm_image_t** imgs;
+		int* count;
+	};
+
+	if(argc != 3) {
+		return 1;
+	}
+
+	struct s* ss = (struct s*)d;
+	++(*ss->count);
+	*ss->imgs = realloc(*ss->imgs, *ss->count * sizeof(vm_image_t));
+
+	vm_image_t* img = *ss->imgs + (*ss->count - 1);
+	memset(img, 0, sizeof(vm_image_t));
+
+	for(int i = 0; i < argc; ++i) {
+		if(strcmp(colname[i], "imgid") == 0) {
+			img->id = atoi(argv[i]);
+		}
+		else if(strcmp(colname[i], "imgtype") == 0) {
+			img->type = (vm_backend_t)atoi(argv[i]);
+		}
+		else if(strcmp(colname[i], "imgpath") == 0) {
+			img->path = (const char*)strdup(argv[i]);
+		}
+	}
+
+	return 0;
+}
+
+int db_image_list(vm_image_t** imgs, int* count) {
+	int err = ERRNOPE;
+
+	struct s {
+		vm_image_t** imgs;
+		int* count;
+	};
+
+	struct s* d = malloc(sizeof(struct s));
+	d->imgs = imgs;
+	d->count = count;
+
+	const char* sql = "SELECT * FROM image";
+	err = sqlite3_exec(global_db, sql, db_image_cb, (void*)d, 0);
+
+	free(d);
+	CHECK_DB_ERROR(err);
+
+cleanup:
+	return err;
+}
+
+int db_image_get_by_column_int(vm_image_t* img, const char* colname, int value) {
+	int err = ERRNOPE;
+
+	char* sql = 0;
+	asprintf(&sql, "SELECT * FROM image WHERE %s = ? LIMIT 1", colname);
+
+	sqlite3_stmt* stmt;
+
+	err = sqlite3_prepare_v2(global_db, sql, -1, &stmt, 0);
+	CHECK_DB_ERROR(err);
+
+	err = sqlite3_bind_int(stmt, 1, value);
+	CHECK_DB_ERROR(err);
+
+	img->id = 0;
+
+	while((err = sqlite3_step(stmt)) == SQLITE_ROW) {
+		for(int col = 0; col < sqlite3_column_count(stmt); ++col) {
+			const char* name = sqlite3_column_name(stmt, col);
+
+			if(strcmp(name, "imgid") == 0) {
+				img->id = sqlite3_column_int(stmt, col);
+			}
+			else if(strcmp(name, "imgtype") == 0) {
+				img->type = (vm_backend_t)sqlite3_column_int(stmt, col);
+			}
+			else if(strcmp(name, "imgpath") == 0) {
+				img->path = (const char*)sqlite3_column_text(stmt, col);
+			}
+		}
+	}
+
+	if(err != SQLITE_DONE) {
+		err = ERRDB;
+		goto cleanup;
+	}
+	else {
+		err = ERRNOPE;
+	}
+
+	if(img->id == 0) {
+		err = ERRNOTFOUND;
+	}
+
+cleanup:
+	sqlite3_finalize(stmt);
+	free(sql);
 	return err;
 }
 
