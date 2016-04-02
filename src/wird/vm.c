@@ -23,6 +23,11 @@ void vm_image_free(vm_image_t* img) {
 	free((void*)img->path);
 }
 
+void vm_params_device_add(vm_params_t* p, vm_dev_type_t type, const char* file) {
+	p->devices = realloc(p->devices, (++p->device_count) * sizeof(vm_dev_t));
+	p->devices[p->device_count - 1] = (vm_dev_t){type, file};
+}
+
 int vm_create(vm_params_t* p, vm_t* vm) {
 	int id = 0;
 	int err = db_vm_insert(p, &id);
@@ -34,6 +39,15 @@ int vm_create(vm_params_t* p, vm_t* vm) {
 		vm->id = id;
 		vm->state = STATE_DOWN;
 		vm->params = *p;
+	}
+
+	return ERRNOPE;
+}
+
+int vm_load(int id, vm_t* vm) {
+	int err = db_vm_get_by_column_int(vm, "vmid", id);
+	if(err) {
+		return err;
 	}
 
 	return ERRNOPE;
@@ -53,11 +67,36 @@ int vm_json(vm_t* vm, JSON_Value** v) {
 	json_object_set_number(obj, "ncpu", vm->params.ncpu);
 	json_object_set_number(obj, "memory", vm->params.memory);
 
+	if(vm->params.device_count > 0) {
+		JSON_Value* arrv = json_value_init_array();
+		JSON_Array* arr = json_value_get_array(arrv);
+
+		for(int i = 0; i < vm->params.device_count; ++i) {
+			JSON_Value* ov = json_value_init_object();
+			JSON_Object* o = json_value_get_object(ov);
+
+			json_object_set_string(o, "type", vm_dev_str(vm->params.devices[i].type));
+			json_object_set_string(o, "file", vm->params.devices[i].file);
+
+			json_array_append_value(arr, ov);
+		}
+
+		json_object_set_value(obj, "devices", arrv);
+	}
+
 	return ERRNOPE;
 }
 
 int vm_delete(vm_t* vm) {
 	return db_vm_delete(vm->id);
+}
+
+void vm_params_free(vm_params_t* p) {
+	for(int i = 0; i < p->device_count; ++i) {
+		free((void*)p->devices[i].file);
+	}
+
+	free(p->devices);
 }
 
 const char* vm_backend_str(vm_backend_t b) {

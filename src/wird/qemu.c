@@ -11,17 +11,24 @@
 #include "wird/db.h"
 #include "wird/utils.h"
 
-const char* executable = "/usr/bin/qemu-system-x86_64";
+const char* qemu_emulator = "/usr/bin/qemu-system-x86_64";
+const char* qemu_img = "/usr/bin/qemu-img";
 
-int qemu_image_create(vm_image_t* img, const char* path) {
-	img->type = BACKEND_QEMU;
-	img->path = path;
+void arg_add(int* argc, char*** argv, int n, ...) {
+	int index = *argc;
+	*argv = realloc(*argv, (*argc += n) * sizeof(char*));
 
-	// TODO: Actually create the image
-	return ERRNOPE;
+	va_list v;
+	va_start(v, n);
+
+	for(int i = 0; i < n; ++i) {
+		*(*argv + index++) = va_arg(v, char*);
+	}
+
+	va_end(v);
 }
 
-int exec(int argc, char** argv, pid_t* tpid) {
+int exec(const char* executable, int argc, char** argv, pid_t* tpid) {
 	char** args = malloc((argc + 1) * sizeof(char**));
 	memcpy(args, argv, argc * sizeof(char*));
 	args[argc] = 0;
@@ -39,25 +46,33 @@ int exec(int argc, char** argv, pid_t* tpid) {
 		return ERREXEC;
 	}
 
-	*tpid = pid;
+	if(tpid) {
+		*tpid = pid;
+	}
+
 	free(args);
 	free(argv);
 
 	return ERRNOPE;
 }
 
-void arg_add(int* argc, char*** argv, int n, ...) {
-	int index = *argc;
-	*argv = realloc(*argv, (*argc += n) * sizeof(char*));
+int qemu_image_create(vm_image_t* img, const char* path) {
+	img->type = BACKEND_QEMU;
+	img->path = path;
 
-	va_list v;
-	va_start(v, n);
+	int argc = 0;
+	char** argv = 0;
 
-	for(int i = 0; i < n; ++i) {
-		*(*argv + index++) = va_arg(v, char*);
+	arg_add(&argc, &argv, 5, "qemu-img", "create", "-f", "qcow2", path);
+
+	pid_t pid;
+	int err = exec(qemu_emulator, argc, argv, &pid);
+	if(err != ERRNOPE) {
+		wird_log("Can not exec vm process: %s\n", errstr(err));
+		return err;
 	}
 
-	va_end(v);
+	return ERRNOPE;
 }
 
 int qemu_start(vm_t* vm) {
@@ -78,10 +93,6 @@ int qemu_start(vm_t* vm) {
 
 	arg_add(&argc, &argv, 6, "qemu-system-x86_64", "-enable-kvm", "-smp", cpus, "-m", mems);
 
-	vm_dev_t d = {DEV_CDROM, "/home/quadrifoglio/vm/debian.iso"};
-	vm->params.devices = &d;
-	vm->params.device_count = 1;
-
 	for(int i = 0; i < vm->params.device_count; ++i) {
 		vm_dev_t dev = vm->params.devices[i];
 
@@ -94,7 +105,7 @@ int qemu_start(vm_t* vm) {
 	}
 
 	pid_t pid;
-	int err = exec(argc, argv, &pid);
+	int err = exec(qemu_emulator, argc, argv, &pid);
 	if(err != ERRNOPE) {
 		wird_log("Can not exec vm process: %s\n", errstr(err));
 		return err;

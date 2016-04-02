@@ -161,6 +161,7 @@ server_result_t server_vm_create(const char* data) {
 	const char* bs = json_object_get_string(obj, "backend");
 	int ncpu = (int)json_object_get_number(obj, "ncpu");
 	int mem = (int)json_object_get_number(obj, "memory");
+	JSON_Value* devicesv = json_object_get_value(obj, "devices");
 
 	if(!bs || ncpu == 0 || mem == 0) {
 		json_value_free(rootv);
@@ -174,8 +175,52 @@ server_result_t server_vm_create(const char* data) {
 	p.ncpu = ncpu;
 	p.memory = mem;
 
+	if(devicesv && json_value_get_type(devicesv) == JSONArray) {
+		JSON_Array* arr = json_value_get_array(devicesv);
+
+		for(int i = 0; i < (int)json_array_get_count(arr); ++i) {
+			JSON_Value* v = json_array_get_value(arr, i);
+			if(json_value_get_type(v) == JSONObject) {
+				JSON_Object* o = json_value_get_object(v);
+				const char* type = json_object_get_string(o, "type");
+				const char* file = json_object_get_string(o, "file");
+				vm_dev_type_t ttype;
+
+				if(!type || !file) {
+					r.status = 400;
+					r.message = json_message(false, "Invalid device description");
+
+					free(devicesv);
+					free(v);
+					free(rootv);
+					return r;
+				}
+
+				if(strcmp(type, "hdd") == 0) {
+					ttype = DEV_HDD;
+				}
+				else if(strcmp(type, "cdrom") == 0) {
+					ttype = DEV_CDROM;
+				}
+				else {
+					r.status = 400;
+					r.message = json_message(false, "Invalid device type");
+
+					free(devicesv);
+					free(v);
+					free(rootv);
+					return r;
+				}
+
+				vm_params_device_add(&p, ttype, file);
+			}
+		}
+	}
+
 	vm_t vm;
 	int err = vm_create(&p, &vm);
+	vm_params_free(&p);
+
 	if(err != ERRNOPE) {
 		json_value_free(rootv);
 
@@ -230,6 +275,11 @@ server_result_t server_vm_list(void) {
 	r.message = json_serialize_to_string(rootv);
 
 	json_value_free(rootv);
+
+	for(int i = 0; i < count; ++i) {
+		vm_params_free(&vms[i].params);
+	}
+
 	free(vms);
 
 	return r;
@@ -239,7 +289,7 @@ server_result_t server_vm_start(const char* id) {
 	server_result_t r = {500, 0};
 	vm_t vm = {0};
 
-	int err = db_vm_get_by_column_int(&vm, "vmid", atoi(id));
+	int err = vm_load(atoi(id), &vm);
 	if(err == ERRNOTFOUND) {
 		r.status = 404;
 		r.message = json_message(false, "vm not found");
@@ -255,6 +305,8 @@ server_result_t server_vm_start(const char* id) {
 	if(err != ERRNOPE) {
 		r.status = 500;
 		r.message = json_message(false, errstr(err));
+
+		vm_params_free(&vm.params);
 		return r;
 	}
 
@@ -262,8 +314,12 @@ server_result_t server_vm_start(const char* id) {
 	if(err != ERRNOPE) {
 		r.status = 500;
 		r.message = json_message(false, errstr(err));
+
+		vm_params_free(&vm.params);
 		return r;
 	}
+
+	vm_params_free(&vm.params);
 
 	r.status = 200;
 	return r;
@@ -307,7 +363,7 @@ server_result_t server_vm_get(const char* id) {
 	server_result_t r = {500, 0};
 	vm_t vm = {0};
 
-	int err = db_vm_get_by_column_int(&vm, "vmid", atoi(id));
+	int err = vm_load(atoi(id), &vm);
 	if(err == ERRNOTFOUND) {
 		r.status = 404;
 		r.message = json_message(false, "vm not found");

@@ -33,13 +33,14 @@ int db_connect(char* file) {
 		");"
 		"CREATE TABLE IF NOT EXISTS dev ("
 			"devid     INTEGER PRIMARY KEY NOT NULL,"
+			"devvm     INTEGER NOT NULL REFERENCES vm(vmid),"
 			"devtype   INTEGER NOT NULL,"
-			"devvm     INTEGER NOT NULL REFERENCES vm(vmid)"
+			"devfile   CHAR(255) NOT NULL"
 		");";
 
 	err = sqlite3_exec(global_db, sql, 0, 0, 0);
 	if(err != SQLITE_OK) {
-		db_close();
+		return err;
 	}
 
 cleanup:
@@ -181,6 +182,59 @@ cleanup:
 	return err;
 }
 
+int db_dev_cb(void* d, int argc, char** argv, char** colname) {
+	struct s {
+		vm_dev_t** devs;
+		int* count;
+	};
+
+	if(argc != 5) {
+		return 1;
+	}
+
+	struct s* ss = (struct s*)d;
+	++(*ss->count);
+	*ss->devs = realloc(*ss->devs, *ss->count * sizeof(vm_dev_t));
+
+	vm_dev_t* dev = *ss->devs + (*ss->count - 1);
+	memset(dev, 0, sizeof(vm_dev_t));
+
+	for(int i = 0; i < argc; ++i) {
+		if(strcmp(colname[i], "devtype") == 0) {
+			dev->type = (vm_dev_type_t)atoi(argv[i]);
+		}
+		else if(strcmp(colname[i], "devfile") == 0) {
+			dev->file = (const char*)argv[i];
+		}
+	}
+
+	return 0;
+}
+
+int db_dev_list_by_vmid(int vmid, vm_dev_t** devs, int* count) {
+	int err = ERRNOPE;
+
+	struct s {
+		vm_dev_t** devs;
+		int* count;
+	};
+
+	struct s* d = malloc(sizeof(struct s));
+	d->devs = devs;
+	d->count = count;
+
+	char* sql;
+	asprintf(&sql, "SELECT * FROM dev WHERE devvm = %d", vmid);
+
+	err = sqlite3_exec(global_db, sql, db_dev_cb, (void*)d, 0);
+
+	free(d);
+	CHECK_DB_ERROR(err);
+
+cleanup:
+	return err;
+}
+
 int db_vm_insert(vm_params_t* p, int* id) {
 	int err = ERRNOPE;
 
@@ -213,18 +267,23 @@ int db_vm_insert(vm_params_t* p, int* id) {
 
 	*id = (int)sqlite3_last_insert_rowid(global_db);
 
-	sql = "INSERT INTO dev (devtype, devvm) VALUES (?, ?)";
+	sql = "INSERT INTO dev (devtype, devvm, devfile) VALUES (?, ?, ?)";
 	for(int i = 0; i < p->device_count; ++i) {
-		err = sqlite3_prepare_v2(global_db, sql, -1, &stmt, 0);
+		sqlite3_stmt* stmt1;
+
+		err = sqlite3_prepare_v2(global_db, sql, -1, &stmt1, 0);
 		CHECK_DB_ERROR(err);
 
-		err = sqlite3_bind_int(stmt, 1, (int)p->devices[i].type);
+		err = sqlite3_bind_int(stmt1, 1, (int)p->devices[i].type);
 		CHECK_DB_ERROR(err);
 
-		err = sqlite3_bind_int(stmt, 2, *id);
+		err = sqlite3_bind_int(stmt1, 2, *id);
 		CHECK_DB_ERROR(err);
 
-		err = sqlite3_step(stmt);
+		err = sqlite3_bind_text(stmt1, 3, p->devices[i].file, strlen(p->devices[i].file), SQLITE_STATIC);
+		CHECK_DB_ERROR(err);
+
+		err = sqlite3_step(stmt1);
 		if(err != SQLITE_DONE) {
 			err = ERRDB;
 			goto cleanup;
@@ -233,7 +292,7 @@ int db_vm_insert(vm_params_t* p, int* id) {
 			err = ERRNOPE;
 		}
 
-		sqlite3_finalize(stmt);
+		sqlite3_finalize(stmt1);
 	}
 
 cleanup:
@@ -307,7 +366,8 @@ int db_vm_get_by_column_int(vm_t* vm, const char* colname, int value) {
 	char* sql = 0;
 	asprintf(&sql, "SELECT * FROM vm WHERE %s = ? LIMIT 1", colname);
 
-	sqlite3_stmt* stmt;
+	sqlite3_stmt* stmt = 0;
+	sqlite3_stmt* stmt1 = 0;
 
 	err = sqlite3_prepare_v2(global_db, sql, -1, &stmt, 0);
 	CHECK_DB_ERROR(err);
@@ -343,16 +403,53 @@ int db_vm_get_by_column_int(vm_t* vm, const char* colname, int value) {
 		err = ERRDB;
 		goto cleanup;
 	}
-	else {
-		err = ERRNOPE;
+
+	if(vm->id == 0) {
+		err = ERRNOTFOUND;
+		goto cleanup;
+	}
+
+	err = sqlite3_prepare_v2(global_db, "SELECT * FROM dev WHERE devvm = ? LIMIT 1", -1, &stmt1, 0);
+	CHECK_DB_ERROR(err);
+
+	err = sqlite3_bind_int(stmt1, 1, vm->id);
+	CHECK_DB_ERROR(err);
+
+	while((err = sqlite3_step(stmt1)) == SQLITE_ROW) {
+		vm_dev_type_t type = 0;
+		char* file = 0;
+
+		for(int col = 0; col < sqlite3_column_count(stmt1); ++col) {
+			const char* name = sqlite3_column_name(stmt1, col);
+
+			if(strcmp(name, "devtype") == 0) {
+				type = (vm_dev_type_t)sqlite3_column_int(stmt1, col);
+			}
+			else if(strcmp(name, "devfile") == 0) {
+				file = strdup(sqlite3_column_text(stmt1, col));
+			}
+		}
+
+		if(type && file) {
+			vm_params_device_add(&vm->params, type, file);
+		}
+	}
+
+	if(err != SQLITE_DONE) {
+		err = ERRDB;
+		goto cleanup;
 	}
 
 	if(vm->id == 0) {
 		err = ERRNOTFOUND;
 	}
+	else {
+		err = ERRNOPE;
+	}
 
 cleanup:
-	sqlite3_finalize(stmt);
+	if(stmt)  sqlite3_finalize(stmt);
+	if(stmt1) sqlite3_finalize(stmt1);
 	free(sql);
 	return err;
 }

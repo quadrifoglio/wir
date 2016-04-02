@@ -17,6 +17,7 @@
 #include "wird/db.h"
 #include "wird/server.h"
 #include "wird/qemu.h"
+#include "wird/utils.h"
 
 void on_request(http_request_t* req, http_response_t* res) {
 	http_path_t path = http_path_parse(req->uri);
@@ -47,6 +48,16 @@ void on_request(http_request_t* req, http_response_t* res) {
 		if(strcmp(ressource, "vm") == 0) {
 			result = server_vm_action(req->method, id, action, data);
 		}
+
+		if(result.status >= 200 && result.status <= 299 && result.message == 0) {
+			result.message = strdup("{\"success\": true}");
+		}
+		else if(result.status == 404 && result.message == 0) {
+			result.message = strdup("{\"success\": false, \"message\": \"Not found\"}");
+		}
+		else if(result.status == 500 && result.message == 0) {
+			result.message = strdup("{\"success\": false, \"message\": \"Server error\"}");
+		}
 	}
 
 	if(result.status != 0) {
@@ -63,16 +74,6 @@ void on_request(http_request_t* req, http_response_t* res) {
 		res->status = 404;
 		res->body.data = (void*)msg;
 		res->body.len = strlen(msg);
-	}
-
-	if(result.status >= 200 && result.status <= 299 && result.message == 0) {
-		result.message = strdup("{\"success\": true}");
-	}
-	else if(result.status == 404 && result.message == 0) {
-		result.message = strdup("{\"success\": false, \"message\": \"Not found\"}");
-	}
-	else if(result.status == 500 && result.message == 0) {
-		result.message = strdup("{\"success\": false, \"message\": \"Server error\"}");
 	}
 
 	char* server = malloc(strlen("wird ") + strlen(WIRD_VERSION) + 1);
