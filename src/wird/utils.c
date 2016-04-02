@@ -10,7 +10,7 @@
 const char* errstr(int err) {
 	switch(err) {
 		case ERRDB:
-			return sqlite3_errmsg(global_db);
+			return "database error";
 		case ERRNOHYP:
 			return "no hypervisor";
 		case ERREXEC:

@@ -4,7 +4,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define CHECK_DB_ERROR(err) if(err != SQLITE_OK) { err = ERRDB; goto cleanup; }
+#include "wird/utils.h"
+
+#define CHECK_DB_ERROR(err) \
+	if(err != SQLITE_OK) { \
+		wird_log("database: %s\n", sqlite3_errstr(err)); \
+		err = ERRDB; goto cleanup; \
+	}
 
 sqlite3* global_db = 0;
 
@@ -31,11 +37,11 @@ int db_connect(char* file) {
 			"pval      CHAR(10) NOT NULL,"
 			"PRIMARY KEY(pvm, pkey)"
 		");"
-		"CREATE TABLE IF NOT EXISTS dev ("
-			"devid     INTEGER PRIMARY KEY NOT NULL,"
-			"devvm     INTEGER NOT NULL REFERENCES vm(vmid),"
-			"devtype   INTEGER NOT NULL,"
-			"devfile   CHAR(255) NOT NULL"
+		"CREATE TABLE IF NOT EXISTS drive ("
+			"driveid   INTEGER PRIMARY KEY NOT NULL,"
+			"drivevm   INTEGER NOT NULL REFERENCES vm(vmid),"
+			"drivetype INTEGER NOT NULL,"
+			"drivefile CHAR(255) NOT NULL"
 		");";
 
 	err = sqlite3_exec(global_db, sql, 0, 0, 0);
@@ -182,9 +188,9 @@ cleanup:
 	return err;
 }
 
-int db_dev_cb(void* d, int argc, char** argv, char** colname) {
+int db_drive_cb(void* d, int argc, char** argv, char** colname) {
 	struct s {
-		vm_dev_t** devs;
+		vm_drive_t** drives;
 		int* count;
 	};
 
@@ -194,39 +200,40 @@ int db_dev_cb(void* d, int argc, char** argv, char** colname) {
 
 	struct s* ss = (struct s*)d;
 	++(*ss->count);
-	*ss->devs = realloc(*ss->devs, *ss->count * sizeof(vm_dev_t));
+	*ss->drives = realloc(*ss->drives, *ss->count * sizeof(vm_drive_t));
 
-	vm_dev_t* dev = *ss->devs + (*ss->count - 1);
-	memset(dev, 0, sizeof(vm_dev_t));
+	vm_drive_t* drive = *ss->drives + (*ss->count - 1);
+	memset(drive, 0, sizeof(vm_drive_t));
 
 	for(int i = 0; i < argc; ++i) {
-		if(strcmp(colname[i], "devtype") == 0) {
-			dev->type = (vm_dev_type_t)atoi(argv[i]);
+		if(strcmp(colname[i], "drivetype") == 0) {
+			drive->type = (vm_drive_type_t)atoi(argv[i]);
 		}
-		else if(strcmp(colname[i], "devfile") == 0) {
-			dev->file = (const char*)argv[i];
+		else if(strcmp(colname[i], "drivefile") == 0) {
+			puts(argv[i]);
+			drive->file = (const char*)argv[i];
 		}
 	}
 
 	return 0;
 }
 
-int db_dev_list_by_vmid(int vmid, vm_dev_t** devs, int* count) {
+int db_drive_list_by_vmid(int vmid, vm_drive_t** drives, int* count) {
 	int err = ERRNOPE;
 
 	struct s {
-		vm_dev_t** devs;
+		vm_drive_t** drives;
 		int* count;
 	};
 
 	struct s* d = malloc(sizeof(struct s));
-	d->devs = devs;
+	d->drives = drives;
 	d->count = count;
 
 	char* sql;
-	asprintf(&sql, "SELECT * FROM dev WHERE devvm = %d", vmid);
+	asprintf(&sql, "SELECT * FROM drive WHERE drivevm = %d", vmid);
 
-	err = sqlite3_exec(global_db, sql, db_dev_cb, (void*)d, 0);
+	err = sqlite3_exec(global_db, sql, db_drive_cb, (void*)d, 0);
 
 	free(d);
 	CHECK_DB_ERROR(err);
@@ -267,20 +274,20 @@ int db_vm_insert(vm_params_t* p, int* id) {
 
 	*id = (int)sqlite3_last_insert_rowid(global_db);
 
-	sql = "INSERT INTO dev (devtype, devvm, devfile) VALUES (?, ?, ?)";
-	for(int i = 0; i < p->device_count; ++i) {
+	sql = "INSERT INTO drive (drivetype, drivevm, drivefile) VALUES (?, ?, ?)";
+	for(int i = 0; i < p->drive_count; ++i) {
 		sqlite3_stmt* stmt1;
 
 		err = sqlite3_prepare_v2(global_db, sql, -1, &stmt1, 0);
 		CHECK_DB_ERROR(err);
 
-		err = sqlite3_bind_int(stmt1, 1, (int)p->devices[i].type);
+		err = sqlite3_bind_int(stmt1, 1, (int)p->drives[i].type);
 		CHECK_DB_ERROR(err);
 
 		err = sqlite3_bind_int(stmt1, 2, *id);
 		CHECK_DB_ERROR(err);
 
-		err = sqlite3_bind_text(stmt1, 3, p->devices[i].file, strlen(p->devices[i].file), SQLITE_STATIC);
+		err = sqlite3_bind_text(stmt1, 3, p->drives[i].file, strlen(p->drives[i].file), SQLITE_STATIC);
 		CHECK_DB_ERROR(err);
 
 		err = sqlite3_step(stmt1);
@@ -409,29 +416,29 @@ int db_vm_get_by_column_int(vm_t* vm, const char* colname, int value) {
 		goto cleanup;
 	}
 
-	err = sqlite3_prepare_v2(global_db, "SELECT * FROM dev WHERE devvm = ? LIMIT 1", -1, &stmt1, 0);
+	err = sqlite3_prepare_v2(global_db, "SELECT * FROM drive WHERE drivevm = ? LIMIT 1", -1, &stmt1, 0);
 	CHECK_DB_ERROR(err);
 
 	err = sqlite3_bind_int(stmt1, 1, vm->id);
 	CHECK_DB_ERROR(err);
 
 	while((err = sqlite3_step(stmt1)) == SQLITE_ROW) {
-		vm_dev_type_t type = 0;
+		vm_drive_type_t type = 0;
 		char* file = 0;
 
 		for(int col = 0; col < sqlite3_column_count(stmt1); ++col) {
 			const char* name = sqlite3_column_name(stmt1, col);
 
-			if(strcmp(name, "devtype") == 0) {
-				type = (vm_dev_type_t)sqlite3_column_int(stmt1, col);
+			if(strcmp(name, "drivetype") == 0) {
+				type = (vm_drive_type_t)sqlite3_column_int(stmt1, col);
 			}
-			else if(strcmp(name, "devfile") == 0) {
-				file = strdup(sqlite3_column_text(stmt1, col));
+			else if(strcmp(name, "drivefile") == 0) {
+				file = strdup((char*)sqlite3_column_text(stmt1, col));
 			}
 		}
 
 		if(type && file) {
-			vm_params_device_add(&vm->params, type, file);
+			vm_params_drive_add(&vm->params, type, file);
 		}
 	}
 

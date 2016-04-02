@@ -161,7 +161,7 @@ server_result_t server_vm_create(const char* data) {
 	const char* bs = json_object_get_string(obj, "backend");
 	int ncpu = (int)json_object_get_number(obj, "ncpu");
 	int mem = (int)json_object_get_number(obj, "memory");
-	JSON_Value* devicesv = json_object_get_value(obj, "devices");
+	JSON_Value* drivesv = json_object_get_value(obj, "drives");
 
 	if(!bs || ncpu == 0 || mem == 0) {
 		json_value_free(rootv);
@@ -175,8 +175,8 @@ server_result_t server_vm_create(const char* data) {
 	p.ncpu = ncpu;
 	p.memory = mem;
 
-	if(devicesv && json_value_get_type(devicesv) == JSONArray) {
-		JSON_Array* arr = json_value_get_array(devicesv);
+	if(drivesv && json_value_get_type(drivesv) == JSONArray) {
+		JSON_Array* arr = json_value_get_array(drivesv);
 
 		for(int i = 0; i < (int)json_array_get_count(arr); ++i) {
 			JSON_Value* v = json_array_get_value(arr, i);
@@ -184,45 +184,45 @@ server_result_t server_vm_create(const char* data) {
 				JSON_Object* o = json_value_get_object(v);
 				const char* type = json_object_get_string(o, "type");
 				const char* file = json_object_get_string(o, "file");
-				vm_dev_type_t ttype;
+				vm_drive_type_t ttype;
 
 				if(!type || !file) {
 					r.status = 400;
-					r.message = json_message(false, "Invalid device description");
+					r.message = json_message(false, "Invalid drive description");
 
-					free(devicesv);
+					free(drivesv);
 					free(v);
 					free(rootv);
 					return r;
 				}
 
 				if(strcmp(type, "hdd") == 0) {
-					ttype = DEV_HDD;
+					ttype = DRIVE_HDD;
 				}
 				else if(strcmp(type, "cdrom") == 0) {
-					ttype = DEV_CDROM;
+					ttype = DRIVE_CDROM;
 				}
 				else {
 					r.status = 400;
-					r.message = json_message(false, "Invalid device type");
+					r.message = json_message(false, "Invalid drive type");
 
-					free(devicesv);
+					free(drivesv);
 					free(v);
 					free(rootv);
 					return r;
 				}
 
-				vm_params_device_add(&p, ttype, file);
+				vm_params_drive_add(&p, ttype, file);
 			}
 		}
 	}
 
 	vm_t vm;
 	int err = vm_create(&p, &vm);
-	vm_params_free(&p);
 
 	if(err != ERRNOPE) {
 		json_value_free(rootv);
+		vm_params_free(&p);
 
 		r.status = 500;
 		r.message = json_message(false, errstr(err));
@@ -235,8 +235,9 @@ server_result_t server_vm_create(const char* data) {
 	r.status = 201;
 	r.message = json_serialize_to_string(res);
 
+	vm_params_free(&p);
 	json_value_free(res);
-	json_value_free(rootv);
+	//json_value_free(rootv);
 
 	return r;
 }
@@ -394,13 +395,7 @@ server_result_t server_image_action(const char* method, const char* id, const ch
 		if(action && id == 0 && strcmp(action, "list") == 0) {
 			r = server_image_list();
 		}
-		/*if(action && id != 0 && strcmp(action, "start") == 0) {
-			r = server_image_start(id);
-		}
-		if(action && id != 0 && strcmp(action, "stop") == 0) {
-			r = server_image_stop(id);
-		}
-		if(!action && id != 0) {
+		/*if(!action && id != 0) {
 			r = server_image_get(id);
 		}*/
 	}

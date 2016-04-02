@@ -23,9 +23,9 @@ void vm_image_free(vm_image_t* img) {
 	free((void*)img->path);
 }
 
-void vm_params_device_add(vm_params_t* p, vm_dev_type_t type, const char* file) {
-	p->devices = realloc(p->devices, (++p->device_count) * sizeof(vm_dev_t));
-	p->devices[p->device_count - 1] = (vm_dev_t){type, file};
+void vm_params_drive_add(vm_params_t* p, vm_drive_type_t type, const char* file) {
+	p->drives = realloc(p->drives, (++p->drive_count) * sizeof(vm_drive_t));
+	p->drives[p->drive_count - 1] = (vm_drive_t){type, file};
 }
 
 int vm_create(vm_params_t* p, vm_t* vm) {
@@ -67,21 +67,21 @@ int vm_json(vm_t* vm, JSON_Value** v) {
 	json_object_set_number(obj, "ncpu", vm->params.ncpu);
 	json_object_set_number(obj, "memory", vm->params.memory);
 
-	if(vm->params.device_count > 0) {
+	if(vm->params.drive_count > 0) {
 		JSON_Value* arrv = json_value_init_array();
 		JSON_Array* arr = json_value_get_array(arrv);
 
-		for(int i = 0; i < vm->params.device_count; ++i) {
+		for(int i = 0; i < vm->params.drive_count; ++i) {
 			JSON_Value* ov = json_value_init_object();
 			JSON_Object* o = json_value_get_object(ov);
 
-			json_object_set_string(o, "type", vm_dev_str(vm->params.devices[i].type));
-			json_object_set_string(o, "file", vm->params.devices[i].file);
+			json_object_set_string(o, "type", vm_drive_str(vm->params.drives[i].type));
+			json_object_set_string(o, "file", vm->params.drives[i].file);
 
 			json_array_append_value(arr, ov);
 		}
 
-		json_object_set_value(obj, "devices", arrv);
+		json_object_set_value(obj, "drives", arrv);
 	}
 
 	return ERRNOPE;
@@ -92,11 +92,11 @@ int vm_delete(vm_t* vm) {
 }
 
 void vm_params_free(vm_params_t* p) {
-	for(int i = 0; i < p->device_count; ++i) {
-		free((void*)p->devices[i].file);
+	for(int i = 0; i < p->drive_count; ++i) {
+		free((void*)p->drives[i].file);
 	}
 
-	free(p->devices);
+	free(p->drives);
 }
 
 const char* vm_backend_str(vm_backend_t b) {
@@ -110,11 +110,11 @@ const char* vm_backend_str(vm_backend_t b) {
 	}
 }
 
-const char* vm_dev_str(vm_dev_type_t d) {
+const char* vm_drive_str(vm_drive_type_t d) {
 	switch(d) {
-		case DEV_HDD:
+		case DRIVE_HDD:
 			return "hdd";
-		case DEV_CDROM:
+		case DRIVE_CDROM:
 			return "cdrom";
 		default:
 			return "unknown drive";
@@ -143,15 +143,15 @@ vm_backend_t vm_backend_id(const char* name) {
 	return BACKEND_UNKNOWN;
 }
 
-vm_dev_type_t vm_dev_id(const char* name) {
+vm_drive_type_t vm_drive_id(const char* name) {
 	if(strcmp(name, "hdd") == 0) {
-		return DEV_HDD;
+		return DRIVE_HDD;
 	}
 	else if(strcmp(name, "cdrom") == 0) {
-		return DEV_CDROM;
+		return DRIVE_CDROM;
 	}
 
-	return DEV_UNKNOWN;
+	return DRIVE_UNKNOWN;
 }
 
 vm_state_t vm_state_id(const char* name) {
