@@ -48,6 +48,7 @@ func HandleVmGet(w http.ResponseWriter, r *http.Request) {
 
 func HandleVmCreate(w http.ResponseWriter, r *http.Request) {
 	var params VmParams
+	params.Backend = BackendQemu
 
 	vm, err := VmCreate(&params)
 	if err != nil {

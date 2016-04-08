@@ -3,21 +3,32 @@ package main
 const (
 	BackendQemu   = "qemu"
 	BackendOpenVz = "openvz"
+
+	StateDown = 0
+	StateUp   = 1
 )
 
-type Backend string
+type VmBackend string
 
 type VmParams struct {
-	Backend Backend `json:"backend"`
+	Backend string `json:"backend"`
 }
 
+type VmState int
+
 type Vm struct {
-	ID     int `json:"id"`
-	Params VmParams
+	ID     int      `json:"id"`
+	Params VmParams `json:"params"`
+	State  VmState  `json:"state"`
 }
 
 func VmGetAll() ([]Vm, error) {
-	return nil, nil
+	vms, err := DatabaseListVms()
+	if err != nil {
+		return nil, err
+	}
+
+	return vms, nil
 }
 
 func VmGet(id int) (Vm, error) {
@@ -31,7 +42,7 @@ func VmCreate(p *VmParams) (Vm, error) {
 	var vm Vm
 	vm.Params.Backend = p.Backend
 
-	return vm, nil
+	return vm, DatabaseInsertVm(&vm)
 }
 
 func (vm *Vm) Start() error {
