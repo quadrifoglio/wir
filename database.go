@@ -24,7 +24,6 @@ func DatabaseOpen() error {
 	CREATE TABLE IF NOT EXISTS vm (
 		vmid INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
 		vmbackend CHAR(50) NOT NULL,
-		vmstate INTEGER NOT NULL,
 		vmcores INTEGER NOT NULL,
 		vmmem INTEGER NOT NULL
 	);
@@ -33,6 +32,12 @@ func DatabaseOpen() error {
 		attrkey CHAR(50) NOT NULL,
 		attrval CHAR(50) NOT NULL,
 		PRIMARY KEY(attrvm, attrkey)
+	);
+	CREATE TABLE IF NOT EXISTS vm_drive (
+		driveid INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
+		drivevm INTEGER NOT NULL REFERENCES vm(vmid),
+		drivetype CHAR(10) NOT NULL,
+		drivefile CHAR(1024) NOT NULL
 	);`
 
 	_, err = db.Exec(sql)
@@ -48,9 +53,16 @@ func DatabaseInsertVm(vm *Vm) error {
 	DatabaseMutex.Lock()
 	defer DatabaseMutex.Unlock()
 
-	_, err := Database.Exec("INSERT INTO vm (vmbackend, vmstate, vmcores, vmmem) VALUES (?, ?, ?, ?)", vm.Params.Backend, StateDown, vm.Params.Cores, vm.Params.Memory)
+	_, err := Database.Exec("INSERT INTO vm (vmbackend, vmcores, vmmem) VALUES (?, ?, ?)", vm.Params.Backend, vm.Params.Cores, vm.Params.Memory)
 	if err != nil {
 		return err
+	}
+
+	for _, d := range vm.Params.Drives {
+		_, err := Database.Exec("INSERT INTO vm_drive (drivevm, drivetype, drivefile) VALUES (?, ?, ?)", vm.ID, d.Type, d.File)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -72,8 +84,9 @@ func DatabaseListVms() ([]Vm, error) {
 	for res.Next() {
 		var vm Vm
 		vm.Attrs = make(map[string]string)
+		vm.Params.Drives = make([]VmDrive, 0)
 
-		err = res.Scan(&vm.ID, &vm.Params.Backend, &vm.State, &vm.Params.Cores, &vm.Params.Memory)
+		err = res.Scan(&vm.ID, &vm.Params.Backend, &vm.Params.Cores, &vm.Params.Memory)
 		if err != nil {
 			return nil, err
 		}
@@ -97,6 +110,24 @@ func DatabaseListVms() ([]Vm, error) {
 			vm.Attrs[key] = val
 		}
 
+		res2, err := Database.Query("SELECT drivetype, drivefile FROM vm_drive WHERE drivevm = ?", vm.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		defer res2.Close()
+
+		for res2.Next() {
+			var d VmDrive
+
+			err = res2.Scan(&d.Type, &d.File)
+			if err != nil {
+				return nil, err
+			}
+
+			vm.Params.Drives = append(vm.Params.Drives, d)
+		}
+
 		vms = append(vms, vm)
 	}
 
@@ -109,6 +140,7 @@ func DatabaseGetVmByID(id int) (Vm, error) {
 
 	var vm Vm
 	vm.Attrs = make(map[string]string, 0)
+	vm.Params.Drives = make([]VmDrive, 0)
 
 	res, err := Database.Query("SELECT * FROM vm WHERE vmid = ?", id)
 	if err != nil {
@@ -118,7 +150,7 @@ func DatabaseGetVmByID(id int) (Vm, error) {
 	defer res.Close()
 
 	if res.Next() {
-		err = res.Scan(&vm.ID, &vm.Params.Backend, &vm.State, &vm.Params.Cores, &vm.Params.Memory)
+		err = res.Scan(&vm.ID, &vm.Params.Backend, &vm.Params.Cores, &vm.Params.Memory)
 		if err != nil {
 			return vm, err
 		}
@@ -140,6 +172,24 @@ func DatabaseGetVmByID(id int) (Vm, error) {
 			}
 
 			vm.Attrs[key] = val
+		}
+
+		res2, err := Database.Query("SELECT drivetype, drivefile FROM vm_drive WHERE drivevm = ?", vm.ID)
+		if err != nil {
+			return vm, err
+		}
+
+		defer res2.Close()
+
+		for res2.Next() {
+			var d VmDrive
+
+			err = res2.Scan(&d.Type, &d.File)
+			if err != nil {
+				return vm, err
+			}
+
+			vm.Params.Drives = append(vm.Params.Drives, d)
 		}
 	}
 

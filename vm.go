@@ -4,24 +4,34 @@ const (
 	BackendQemu   = "qemu"
 	BackendOpenVz = "openvz"
 
+	DriveHDD   = "hdd"
+	DriveCDROM = "cdrom"
+
 	StateDown = 0
 	StateUp   = 1
 )
 
 type VmBackend string
+type VmDriveType string
+
+type VmDrive struct {
+	Type string `json:"type"`
+	File string `json:"file"`
+}
 
 type VmParams struct {
-	Backend string `json:"backend"`
-	Cores   int    `json:"cores"`
-	Memory  int    `json:"memory"`
+	Backend string    `json:"backend"`
+	Cores   int       `json:"cores"`
+	Memory  int       `json:"memory"`
+	Drives  []VmDrive `json:"drives"`
 }
 
 type VmState int
 
 type Vm struct {
 	ID     int               `json:"id"`
-	Params VmParams          `json:"params"`
 	State  VmState           `json:"state"`
+	Params VmParams          `json:"params"`
 	Attrs  map[string]string `json:"-"`
 }
 
@@ -31,11 +41,28 @@ func VmGetAll() ([]Vm, error) {
 		return nil, err
 	}
 
+	for _, vm := range vms {
+		err = vm.Status()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return vms, nil
 }
 
 func VmGet(id int) (Vm, error) {
-	return DatabaseGetVmByID(id)
+	vm, err := DatabaseGetVmByID(id)
+	if err != nil {
+		return vm, err
+	}
+
+	err = vm.Status()
+	if err != nil {
+		return vm, err
+	}
+
+	return vm, nil
 }
 
 func VmCreate(p *VmParams) (Vm, error) {
@@ -45,7 +72,22 @@ func VmCreate(p *VmParams) (Vm, error) {
 	return vm, DatabaseInsertVm(&vm)
 }
 
+func (vm *Vm) Status() error {
+	switch vm.Params.Backend {
+	case BackendQemu:
+		return QemuStatus(vm)
+	case BackendOpenVz:
+		return OpenVzStatus(vm)
+	}
+
+	return ErrInvalidBackend
+}
+
 func (vm *Vm) Start() error {
+	if vm.State == StateUp {
+		return ErrRunning
+	}
+
 	switch vm.Params.Backend {
 	case BackendQemu:
 		return QemuStart(vm)
@@ -57,6 +99,10 @@ func (vm *Vm) Start() error {
 }
 
 func (vm *Vm) Stop() error {
+	if vm.State != StateUp {
+		return ErrNotRunning
+	}
+
 	switch vm.Params.Backend {
 	case BackendQemu:
 		return QemuStop(vm)
