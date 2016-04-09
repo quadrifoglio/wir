@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -86,6 +87,12 @@ func HandleVmStart(w http.ResponseWriter, r *http.Request) {
 		SendError(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
+
+	err = json.NewEncoder(w).Encode(vm)
+	if err != nil {
+		SendError(w, r, http.StatusInternalServerError, "Can not encode vm to json: "+err.Error())
+		return
+	}
 }
 
 func HandleVmStop(w http.ResponseWriter, r *http.Request) {
@@ -108,10 +115,18 @@ func HandleVmStop(w http.ResponseWriter, r *http.Request) {
 		SendError(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
+
+	err = json.NewEncoder(w).Encode(vm)
+	if err != nil {
+		SendError(w, r, http.StatusInternalServerError, "Can not encode vm to json: "+err.Error())
+		return
+	}
 }
 
 func SendError(w http.ResponseWriter, r *http.Request, status int, msg string) {
 	log.Println("Error", r.RemoteAddr, r.Method, r.RequestURI, ":", msg)
+
+	msg = strings.Replace(msg, "\"", "\\\"", -1)
 
 	w.WriteHeader(status)
 	fmt.Fprintf(w, "{\"success\": false, \"message\": \"%s\"}", msg)

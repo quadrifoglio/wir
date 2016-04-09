@@ -3,14 +3,18 @@ package main
 import (
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
-	"log"
+	"sync"
 )
 
 var (
-	Database *sql.DB
+	Database      *sql.DB
+	DatabaseMutex = &sync.Mutex{}
 )
 
 func DatabaseOpen() error {
+	DatabaseMutex.Lock()
+	defer DatabaseMutex.Unlock()
+
 	db, err := sql.Open("sqlite3", "wird.db")
 	if err != nil {
 		return err
@@ -41,12 +45,10 @@ func DatabaseOpen() error {
 }
 
 func DatabaseInsertVm(vm *Vm) error {
-	stmt, err := Database.Prepare("INSERT INTO vm (vmbackend, vmstate, vmcores, vmmem) VALUES (?, ?, ?, ?)")
-	if err != nil {
-		return err
-	}
+	DatabaseMutex.Lock()
+	defer DatabaseMutex.Unlock()
 
-	_, err = stmt.Exec(vm.Params.Backend, StateDown, vm.Params.Cores, vm.Params.Memory)
+	_, err := Database.Exec("INSERT INTO vm (vmbackend, vmstate, vmcores, vmmem) VALUES (?, ?, ?, ?)", vm.Params.Backend, StateDown, vm.Params.Cores, vm.Params.Memory)
 	if err != nil {
 		return err
 	}
@@ -55,10 +57,15 @@ func DatabaseInsertVm(vm *Vm) error {
 }
 
 func DatabaseListVms() ([]Vm, error) {
+	DatabaseMutex.Lock()
+	defer DatabaseMutex.Unlock()
+
 	res, err := Database.Query("SELECT * FROM vm")
 	if err != nil {
 		return nil, err
 	}
+
+	defer res.Close()
 
 	var vms = make([]Vm, 0)
 
@@ -75,6 +82,8 @@ func DatabaseListVms() ([]Vm, error) {
 		if err != nil {
 			return nil, err
 		}
+
+		defer res1.Close()
 
 		for res1.Next() {
 			var key string
@@ -95,17 +104,18 @@ func DatabaseListVms() ([]Vm, error) {
 }
 
 func DatabaseGetVmByID(id int) (Vm, error) {
+	DatabaseMutex.Lock()
+	defer DatabaseMutex.Unlock()
+
 	var vm Vm
+	vm.Attrs = make(map[string]string, 0)
 
-	stmt, err := Database.Prepare("SELECT * FROM vm WHERE vmid = ?")
+	res, err := Database.Query("SELECT * FROM vm WHERE vmid = ?", id)
 	if err != nil {
 		return vm, err
 	}
 
-	res, err := stmt.Query(id)
-	if err != nil {
-		return vm, err
-	}
+	defer res.Close()
 
 	if res.Next() {
 		err = res.Scan(&vm.ID, &vm.Params.Backend, &vm.State, &vm.Params.Cores, &vm.Params.Memory)
@@ -117,6 +127,8 @@ func DatabaseGetVmByID(id int) (Vm, error) {
 		if err != nil {
 			return vm, err
 		}
+
+		defer res1.Close()
 
 		for res1.Next() {
 			var key string
@@ -135,9 +147,11 @@ func DatabaseGetVmByID(id int) (Vm, error) {
 }
 
 func DatabaseSetVmAttr(vm *Vm, key, value string) error {
-	_, err := Database.Exec("INSERT INTO vm_attr (attrvm, attrkey, attrval) VALUES (?, ?, ?)", vm.ID, key, value)
+	DatabaseMutex.Lock()
+	defer DatabaseMutex.Unlock()
+
+	_, err := Database.Exec("INSERT OR REPLACE INTO vm_attr (attrvm, attrkey, attrval) VALUES (?, ?, ?)", vm.ID, key, value)
 	if err != nil {
-		log.Println("mdr", key, value)
 		return err
 	}
 

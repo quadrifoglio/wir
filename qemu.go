@@ -22,6 +22,7 @@ func QemuStart(vm *Vm) error {
 		return err
 	}
 
+	vm.State = StateUp
 	return nil
 }
 
@@ -54,5 +55,6 @@ func QemuStop(vm *Vm) error {
 		return ErrKill
 	}
 
-	return ErrBackend
+	vm.State = StateDown
+	return nil
 }
