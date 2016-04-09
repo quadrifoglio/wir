@@ -12,14 +12,17 @@ type VmBackend string
 
 type VmParams struct {
 	Backend string `json:"backend"`
+	Cores   int    `json:"cores"`
+	Memory  int    `json:"memory"`
 }
 
 type VmState int
 
 type Vm struct {
-	ID     int      `json:"id"`
-	Params VmParams `json:"params"`
-	State  VmState  `json:"state"`
+	ID     int               `json:"id"`
+	Params VmParams          `json:"params"`
+	State  VmState           `json:"state"`
+	Attrs  map[string]string `json:"-"`
 }
 
 func VmGetAll() ([]Vm, error) {
@@ -32,15 +35,12 @@ func VmGetAll() ([]Vm, error) {
 }
 
 func VmGet(id int) (Vm, error) {
-	var vm Vm
-	vm.ID = id
-
-	return vm, nil
+	return DatabaseGetVmByID(id)
 }
 
 func VmCreate(p *VmParams) (Vm, error) {
 	var vm Vm
-	vm.Params.Backend = p.Backend
+	vm.Params = *p
 
 	return vm, DatabaseInsertVm(&vm)
 }

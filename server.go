@@ -48,7 +48,10 @@ func HandleVmGet(w http.ResponseWriter, r *http.Request) {
 
 func HandleVmCreate(w http.ResponseWriter, r *http.Request) {
 	var params VmParams
+
 	params.Backend = BackendQemu
+	params.Cores = 1
+	params.Memory = 512
 
 	vm, err := VmCreate(&params)
 	if err != nil {
@@ -59,6 +62,50 @@ func HandleVmCreate(w http.ResponseWriter, r *http.Request) {
 	err = json.NewEncoder(w).Encode(vm)
 	if err != nil {
 		SendError(w, r, http.StatusInternalServerError, "Can not encode vm to json: "+err.Error())
+		return
+	}
+}
+
+func HandleVmStart(w http.ResponseWriter, r *http.Request) {
+	v := mux.Vars(r)
+
+	id, err := strconv.Atoi(v["id"])
+	if err != nil {
+		SendError(w, r, http.StatusBadRequest, "Bad request: invalid id, should be an integer")
+		return
+	}
+
+	vm, err := VmGet(id)
+	if err != nil {
+		SendError(w, r, http.StatusNotFound, err.Error())
+		return
+	}
+
+	err = vm.Start()
+	if err != nil {
+		SendError(w, r, http.StatusInternalServerError, err.Error())
+		return
+	}
+}
+
+func HandleVmStop(w http.ResponseWriter, r *http.Request) {
+	v := mux.Vars(r)
+
+	id, err := strconv.Atoi(v["id"])
+	if err != nil {
+		SendError(w, r, http.StatusBadRequest, "Bad request: invalid id, should be an integer")
+		return
+	}
+
+	vm, err := VmGet(id)
+	if err != nil {
+		SendError(w, r, http.StatusNotFound, err.Error())
+		return
+	}
+
+	err = vm.Stop()
+	if err != nil {
+		SendError(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
 }

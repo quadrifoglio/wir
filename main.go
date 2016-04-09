@@ -25,7 +25,10 @@ func main() {
 
 	r.HandleFunc("/vm/create", HandleVmCreate).Methods("POST")
 	r.HandleFunc("/vm/list", HandleVmList).Methods("GET")
+
 	r.HandleFunc("/vm/{id}", HandleVmGet).Methods("GET")
+	r.HandleFunc("/vm/{id}/start", HandleVmStart).Methods("GET")
+	r.HandleFunc("/vm/{id}/stop", HandleVmStop).Methods("GET")
 
 	http.Handle("/", r)
 	log.Fatal(http.ListenAndServe(":8000", nil))
