@@ -53,10 +53,18 @@ func DatabaseInsertVm(vm *Vm) error {
 	DatabaseMutex.Lock()
 	defer DatabaseMutex.Unlock()
 
-	_, err := Database.Exec("INSERT INTO vm (vmbackend, vmcores, vmmem) VALUES (?, ?, ?)", vm.Params.Backend, vm.Params.Cores, vm.Params.Memory)
+	res, err := Database.Exec("INSERT INTO vm (vmbackend, vmcores, vmmem) VALUES (?, ?, ?)", vm.Params.Backend, vm.Params.Cores, vm.Params.Memory)
 	if err != nil {
 		return err
 	}
+
+	id, err := res.LastInsertId()
+	if err != nil {
+		return err
+	}
+
+	vm.ID = int(id)
+	vm.State = StateDown
 
 	for _, d := range vm.Params.Drives {
 		_, err := Database.Exec("INSERT INTO vm_drive (drivevm, drivetype, drivefile) VALUES (?, ?, ?)", vm.ID, d.Type, d.File)

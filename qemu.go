@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os"
 	"os/exec"
 	"strconv"
@@ -28,8 +29,9 @@ func QemuStart(vm *Vm) error {
 
 	cmd := exec.Command("qemu-system-x86_64", args...)
 
-	err := cmd.Start()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
+		log.Printf("Exec output: %s", string(out))
 		return err
 	}
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -49,10 +50,35 @@ func HandleVmGet(w http.ResponseWriter, r *http.Request) {
 
 func HandleVmCreate(w http.ResponseWriter, r *http.Request) {
 	var params VmParams
+	params.Drives = make([]VmDrive, 0)
 
-	params.Backend = BackendQemu
-	params.Cores = 1
-	params.Memory = 512
+	err := json.NewDecoder(r.Body).Decode(&params)
+	if err != nil {
+		SendError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if len(params.Backend) == 0 || params.Cores == 0 || params.Memory == 0 {
+		SendError(w, r, http.StatusBadRequest, "Required fields: backend, cores, memory")
+		return
+	}
+
+	if params.Backend != "qemu" {
+		SendError(w, r, http.StatusBadRequest, "Invalid backend. Supported: qemu")
+		return
+	}
+
+	for _, d := range params.Drives {
+		if d.Type != "hdd" && d.Type != "cdrom" {
+			SendError(w, r, http.StatusBadRequest, "Invalid drive type. Supported: hdd, cdrom")
+			return
+		}
+
+		if _, err := os.Stat(d.File); os.IsNotExist(err) {
+			SendError(w, r, http.StatusBadRequest, "Invalid drive file. File not found")
+			return
+		}
+	}
 
 	vm, err := VmCreate(&params)
 	if err != nil {
