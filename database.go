@@ -21,11 +21,17 @@ func DatabaseOpen() error {
 	}
 
 	sql := `
+	CREATE TABLE IF NOT EXISTS image (
+		imgid INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
+		imgtype CHAR(10) NOT NULL,
+		imgpath CHAR(1024) NOT NULL
+	);
 	CREATE TABLE IF NOT EXISTS vm (
 		vmid INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
-		vmbackend CHAR(50) NOT NULL,
+		vmbackend CHAR(10) NOT NULL,
 		vmcores INTEGER NOT NULL,
-		vmmem INTEGER NOT NULL
+		vmmem INTEGER NOT NULL,
+		vmimg INTEGER NOT NULL REFERENCES images(imgid)
 	);
 	CREATE TABLE IF NOT EXISTS vm_attr (
 		attrvm INTEGER NOT NULL REFERENCES vm(vmid),
@@ -49,11 +55,107 @@ func DatabaseOpen() error {
 	return nil
 }
 
+func DatabaseInsertImage(img *Image) error {
+	DatabaseMutex.Lock()
+	defer DatabaseMutex.Unlock()
+
+	res, err := Database.Exec("INSERT INTO image (imgtype, imgpath) VALUES (?, ?)", img.Type, img.Path)
+	if err != nil {
+		return err
+	}
+
+	id, err := res.LastInsertId()
+	if err != nil {
+		return err
+	}
+
+	img.ID = int(id)
+	return nil
+}
+
+func DatabaseListImages() ([]Image, error) {
+	DatabaseMutex.Lock()
+	defer DatabaseMutex.Unlock()
+
+	res, err := Database.Query("SELECT * FROM image")
+	if err != nil {
+		return nil, err
+	}
+
+	defer res.Close()
+
+	var imgs = make([]Image, 0)
+
+	for res.Next() {
+		var img Image
+
+		err = res.Scan(&img.ID, &img.Type, &img.Path)
+		if err != nil {
+			return imgs, err
+		}
+
+		imgs = append(imgs, img)
+	}
+
+	return imgs, nil
+}
+
+func DatabaseGetImage(id int) (Image, error) {
+	DatabaseMutex.Lock()
+	defer DatabaseMutex.Unlock()
+
+	var img Image
+
+	res, err := Database.Query("SELECT * FROM image WHERE imgid = ? LIMIT 1", id)
+	if err != nil {
+		return img, err
+	}
+
+	defer res.Close()
+
+	if res.Next() {
+		err = res.Scan(&img.ID, &img.Type, &img.Path)
+		if err != nil {
+			return img, err
+		}
+	} else {
+		return img, ErrImageNotFound
+	}
+
+	return img, nil
+}
+
+func DatabaseFreeVmId() (int, error) {
+	var id int
+
+	res, err := Database.Query("SELECT seq FROM sqlite_sequence WHERE name='vm'")
+	if err != nil {
+		return 0, err
+	}
+
+	defer res.Close()
+
+	if res.Next() {
+		err = res.Scan(&id)
+		if err != nil {
+			return 0, err
+		}
+
+		id++
+	}
+
+	if id == 0 {
+		id = 1
+	}
+
+	return id, nil
+}
+
 func DatabaseInsertVm(vm *Vm) error {
 	DatabaseMutex.Lock()
 	defer DatabaseMutex.Unlock()
 
-	res, err := Database.Exec("INSERT INTO vm (vmbackend, vmcores, vmmem) VALUES (?, ?, ?)", vm.Params.Backend, vm.Params.Cores, vm.Params.Memory)
+	res, err := Database.Exec("INSERT INTO vm (vmbackend, vmcores, vmmem, vmimg) VALUES (?, ?, ?, ?)", vm.Params.Backend, vm.Params.Cores, vm.Params.Memory, vm.Params.ImageID)
 	if err != nil {
 		return err
 	}
@@ -66,7 +168,7 @@ func DatabaseInsertVm(vm *Vm) error {
 	vm.ID = int(id)
 	vm.State = StateDown
 
-	for _, d := range vm.Params.Drives {
+	for _, d := range vm.Drives {
 		_, err := Database.Exec("INSERT INTO vm_drive (drivevm, drivetype, drivefile) VALUES (?, ?, ?)", vm.ID, d.Type, d.File)
 		if err != nil {
 			return err
@@ -92,9 +194,9 @@ func DatabaseListVms() ([]Vm, error) {
 	for res.Next() {
 		var vm Vm
 		vm.Attrs = make(map[string]string)
-		vm.Params.Drives = make([]VmDrive, 0)
+		vm.Drives = make([]VmDrive, 0)
 
-		err = res.Scan(&vm.ID, &vm.Params.Backend, &vm.Params.Cores, &vm.Params.Memory)
+		err = res.Scan(&vm.ID, &vm.Params.Backend, &vm.Params.Cores, &vm.Params.Memory, &vm.Params.ImageID)
 		if err != nil {
 			return nil, err
 		}
@@ -133,7 +235,7 @@ func DatabaseListVms() ([]Vm, error) {
 				return nil, err
 			}
 
-			vm.Params.Drives = append(vm.Params.Drives, d)
+			vm.Drives = append(vm.Drives, d)
 		}
 
 		vms = append(vms, vm)
@@ -148,9 +250,9 @@ func DatabaseGetVmByID(id int) (Vm, error) {
 
 	var vm Vm
 	vm.Attrs = make(map[string]string, 0)
-	vm.Params.Drives = make([]VmDrive, 0)
+	vm.Drives = make([]VmDrive, 0)
 
-	res, err := Database.Query("SELECT * FROM vm WHERE vmid = ?", id)
+	res, err := Database.Query("SELECT * FROM vm WHERE vmid = ? LIMIT 1", id)
 	if err != nil {
 		return vm, err
 	}
@@ -158,7 +260,7 @@ func DatabaseGetVmByID(id int) (Vm, error) {
 	defer res.Close()
 
 	if res.Next() {
-		err = res.Scan(&vm.ID, &vm.Params.Backend, &vm.Params.Cores, &vm.Params.Memory)
+		err = res.Scan(&vm.ID, &vm.Params.Backend, &vm.Params.Cores, &vm.Params.Memory, &vm.Params.ImageID)
 		if err != nil {
 			return vm, err
 		}
@@ -197,8 +299,10 @@ func DatabaseGetVmByID(id int) (Vm, error) {
 				return vm, err
 			}
 
-			vm.Params.Drives = append(vm.Params.Drives, d)
+			vm.Drives = append(vm.Drives, d)
 		}
+	} else {
+		return vm, ErrVmNotFound
 	}
 
 	return vm, nil

@@ -5,9 +5,47 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
 	"time"
 )
+
+func QemuSetupImage(vm *Vm) error {
+	img, err := DatabaseGetImage(vm.Params.ImageID)
+	if err != nil {
+		log.Println(err)
+		return ErrImageNotFound
+	}
+
+	id, err := DatabaseFreeVmId()
+	if err != nil {
+		return err
+	}
+
+	dir := DrivesDir + "/" + strconv.Itoa(id) + "/"
+	err = os.MkdirAll(dir, 0755)
+	if err != nil {
+		return err
+	}
+
+	path := dir + filepath.Base(img.Path) + ".img"
+
+	cmd := exec.Command("qemu-img", "create", "-f", "qcow2", "-o", "backing_file="+img.Path, path)
+	if err != nil {
+		return err
+	}
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Println(string(out))
+		return err
+	}
+
+	vm.Drives = make([]VmDrive, 1)
+	vm.Drives[0] = VmDrive{"hdd", path}
+
+	return nil
+}
 
 func QemuStart(vm *Vm) error {
 	vm.State = StateDown
@@ -18,7 +56,7 @@ func QemuStart(vm *Vm) error {
 	args[2] = "-smp"
 	args[3] = strconv.Itoa(vm.Params.Cores)
 
-	for _, d := range vm.Params.Drives {
+	for _, d := range vm.Drives {
 		switch d.Type {
 		case DriveHDD:
 			args = append(args, "-hda")
@@ -74,7 +112,7 @@ func QemuStart(vm *Vm) error {
 			errs = "exit status 0"
 		}
 
-		log.Printf("qemu vm %d process exited: %s", vm.ID, errs)
+		log.Printf("qemu vm %d: process exited: %s", vm.ID, errs)
 		errc <- true
 	}()
 

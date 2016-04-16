@@ -1,5 +1,9 @@
 package main
 
+import (
+	"log"
+)
+
 const (
 	BackendQemu   = "qemu"
 	BackendOpenVz = "openvz"
@@ -14,16 +18,22 @@ const (
 type VmBackend string
 type VmDriveType string
 
+type Image struct {
+	ID   int    `json:"id"`
+	Type string `json:"type"`
+	Path string `json:"path"`
+}
+
 type VmDrive struct {
 	Type string `json:"type"`
 	File string `json:"file"`
 }
 
 type VmParams struct {
-	Backend string    `json:"backend"`
-	Cores   int       `json:"cores"`
-	Memory  int       `json:"memory"`
-	Drives  []VmDrive `json:"drives"`
+	Backend string `json:"backend"`
+	Cores   int    `json:"cores"`
+	Memory  int    `json:"memory"`
+	ImageID int    `json:"image_id"`
 }
 
 type VmState int
@@ -32,6 +42,7 @@ type Vm struct {
 	ID     int               `json:"id"`
 	State  VmState           `json:"state"`
 	Params VmParams          `json:"params"`
+	Drives []VmDrive         `json:"drives"`
 	Attrs  map[string]string `json:"-"`
 }
 
@@ -54,7 +65,8 @@ func VmGetAll() ([]Vm, error) {
 func VmGet(id int) (Vm, error) {
 	vm, err := DatabaseGetVmByID(id)
 	if err != nil {
-		return vm, err
+		log.Println(err)
+		return vm, ErrVmNotFound
 	}
 
 	err = vm.Status()
@@ -66,8 +78,22 @@ func VmGet(id int) (Vm, error) {
 }
 
 func VmCreate(p *VmParams) (Vm, error) {
+	var err error
 	var vm Vm
 	vm.Params = *p
+
+	switch vm.Params.Backend {
+	case BackendQemu:
+		err = QemuSetupImage(&vm)
+		break
+	case BackendOpenVz:
+		err = OpenVzSetupImage(&vm)
+		break
+	}
+
+	if err != nil {
+		return vm, err
+	}
 
 	return vm, DatabaseInsertVm(&vm)
 }

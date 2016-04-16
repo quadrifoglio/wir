@@ -7,6 +7,8 @@ import (
 var (
 	ErrInvalidBackend  = errors.New("Invalid backend")
 	ErrBackend         = errors.New("Backend error")
+	ErrImageNotFound   = errors.New("Image not found")
+	ErrVmNotFound      = errors.New("Vm not found")
 	ErrNoAttrs         = errors.New("No vm attributes")
 	ErrInvalidAttrType = errors.New("Invalid attribute type")
 	ErrProcessNotFound = errors.New("Vm process not found")

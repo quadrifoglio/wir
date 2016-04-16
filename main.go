@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	Version = "0.0.1"
+	Version   = "0.0.1"
+	DrivesDir = "vm/drives"
 )
 
 func main() {
@@ -23,6 +24,9 @@ func main() {
 
 	r := mux.NewRouter()
 
+	r.HandleFunc("/image/create", HandleImageCreate).Methods("POST")
+	r.HandleFunc("/image/list", HandleImageList).Methods("GET")
+
 	r.HandleFunc("/vm/create", HandleVmCreate).Methods("POST")
 	r.HandleFunc("/vm/list", HandleVmList).Methods("GET")
 
@@ -31,5 +35,7 @@ func main() {
 	r.HandleFunc("/vm/{id}/stop", HandleVmStop).Methods("GET")
 
 	http.Handle("/", r)
+
+	log.Println("Listening on 0.0.0.0:8000...")
 	log.Fatal(http.ListenAndServe(":8000", nil))
 }

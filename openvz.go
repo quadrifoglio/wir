@@ -1,5 +1,9 @@
 package main
 
+func OpenVzSetupImage(vm *Vm) error {
+	return ErrBackend
+}
+
 func OpenVzStart(vm *Vm) error {
 	return ErrBackend
 }

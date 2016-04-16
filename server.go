@@ -12,6 +12,80 @@ import (
 	"github.com/gorilla/mux"
 )
 
+func HandleImageCreate(w http.ResponseWriter, r *http.Request) {
+	var img Image
+
+	err := json.NewDecoder(r.Body).Decode(&img)
+	if err != nil {
+		SendError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if _, err := os.Stat(img.Path); os.IsNotExist(err) {
+		SendError(w, r, http.StatusBadRequest, "Invalid image path. File not found")
+		return
+	}
+
+	img.ID = 0
+	err = DatabaseInsertImage(&img)
+	if err != nil {
+		SendError(w, r, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	err = json.NewEncoder(w).Encode(img)
+	if err != nil {
+		SendError(w, r, http.StatusInternalServerError, "Can not encode img to json: "+err.Error())
+		return
+	}
+}
+
+func HandleImageList(w http.ResponseWriter, r *http.Request) {
+	imgs, err := DatabaseListImages()
+	if err != nil {
+		SendError(w, r, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	err = json.NewEncoder(w).Encode(imgs)
+	if err != nil {
+		SendError(w, r, http.StatusInternalServerError, "Can not encode image list to json: "+err.Error())
+		return
+	}
+}
+
+func HandleVmCreate(w http.ResponseWriter, r *http.Request) {
+	var params VmParams
+
+	err := json.NewDecoder(r.Body).Decode(&params)
+	if err != nil {
+		SendError(w, r, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if len(params.Backend) == 0 || params.Cores == 0 || params.Memory == 0 || params.ImageID == 0 {
+		SendError(w, r, http.StatusBadRequest, "Required fields: backend, cores, memory, image_id")
+		return
+	}
+
+	if params.Backend != "qemu" {
+		SendError(w, r, http.StatusBadRequest, "Invalid backend. Supported: qemu")
+		return
+	}
+
+	vm, err := VmCreate(&params)
+	if err != nil {
+		SendError(w, r, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	err = json.NewEncoder(w).Encode(vm)
+	if err != nil {
+		SendError(w, r, http.StatusInternalServerError, "Can not encode vm to json: "+err.Error())
+		return
+	}
+}
+
 func HandleVmList(w http.ResponseWriter, r *http.Request) {
 	vms, err := VmGetAll()
 	if err != nil {
@@ -38,51 +112,6 @@ func HandleVmGet(w http.ResponseWriter, r *http.Request) {
 	vm, err := VmGet(id)
 	if err != nil {
 		SendError(w, r, http.StatusNotFound, err.Error())
-		return
-	}
-
-	err = json.NewEncoder(w).Encode(vm)
-	if err != nil {
-		SendError(w, r, http.StatusInternalServerError, "Can not encode vm to json: "+err.Error())
-		return
-	}
-}
-
-func HandleVmCreate(w http.ResponseWriter, r *http.Request) {
-	var params VmParams
-	params.Drives = make([]VmDrive, 0)
-
-	err := json.NewDecoder(r.Body).Decode(&params)
-	if err != nil {
-		SendError(w, r, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	if len(params.Backend) == 0 || params.Cores == 0 || params.Memory == 0 {
-		SendError(w, r, http.StatusBadRequest, "Required fields: backend, cores, memory")
-		return
-	}
-
-	if params.Backend != "qemu" {
-		SendError(w, r, http.StatusBadRequest, "Invalid backend. Supported: qemu")
-		return
-	}
-
-	for _, d := range params.Drives {
-		if d.Type != "hdd" && d.Type != "cdrom" {
-			SendError(w, r, http.StatusBadRequest, "Invalid drive type. Supported: hdd, cdrom")
-			return
-		}
-
-		if _, err := os.Stat(d.File); os.IsNotExist(err) {
-			SendError(w, r, http.StatusBadRequest, "Invalid drive file. File not found")
-			return
-		}
-	}
-
-	vm, err := VmCreate(&params)
-	if err != nil {
-		SendError(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
 
