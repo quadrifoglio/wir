@@ -30,7 +30,7 @@ func QemuSetupImage(vm *Vm) error {
 
 	path := dir + filepath.Base(img.Path) + ".img"
 
-	cmd := exec.Command("qemu-img", "create", "-f", "qcow2", "-o", "backing_file="+img.Path, path)
+	cmd := exec.Command("qemu-img", "create", "-b", img.Path, "-f", "qcow2", path)
 	if err != nil {
 		return err
 	}

@@ -10,8 +10,8 @@ import (
 const (
 	Version = "0.0.1"
 
-	ImagesDir = "vm/images"
-	DrivesDir = "vm/drives"
+	ImagesDir = "/var/lib/wir/images"
+	DrivesDir = "/var/lib/wir/drives"
 )
 
 func main() {
