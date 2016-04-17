@@ -24,6 +24,7 @@ func DatabaseOpen() error {
 	CREATE TABLE IF NOT EXISTS image (
 		imgid INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
 		imgtype CHAR(10) NOT NULL,
+		imgstate CHAR(10) NOT NULL,
 		imgpath CHAR(1024) NOT NULL
 	);
 	CREATE TABLE IF NOT EXISTS vm (
@@ -55,11 +56,37 @@ func DatabaseOpen() error {
 	return nil
 }
 
+func DatabaseFreeImageId() (int, error) {
+	var id int
+
+	res, err := Database.Query("SELECT seq FROM sqlite_sequence WHERE name='image'")
+	if err != nil {
+		return 0, err
+	}
+
+	defer res.Close()
+
+	if res.Next() {
+		err = res.Scan(&id)
+		if err != nil {
+			return 0, err
+		}
+
+		id++
+	}
+
+	if id == 0 {
+		id = 1
+	}
+
+	return id, nil
+}
+
 func DatabaseInsertImage(img *Image) error {
 	DatabaseMutex.Lock()
 	defer DatabaseMutex.Unlock()
 
-	res, err := Database.Exec("INSERT INTO image (imgtype, imgpath) VALUES (?, ?)", img.Type, img.Path)
+	res, err := Database.Exec("INSERT INTO image (imgtype, imgstate, imgpath) VALUES (?, ?, ?)", img.Type, img.State, img.Path)
 	if err != nil {
 		return err
 	}
@@ -70,6 +97,18 @@ func DatabaseInsertImage(img *Image) error {
 	}
 
 	img.ID = int(id)
+	return nil
+}
+
+func DatabaseUpdateImage(img *Image) error {
+	DatabaseMutex.Lock()
+	defer DatabaseMutex.Unlock()
+
+	_, err := Database.Exec("INSERT OR REPLACE INTO image VALUES (?, ?, ?, ?)", img.ID, img.Type, img.State, img.Path)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -89,7 +128,7 @@ func DatabaseListImages() ([]Image, error) {
 	for res.Next() {
 		var img Image
 
-		err = res.Scan(&img.ID, &img.Type, &img.Path)
+		err = res.Scan(&img.ID, &img.Type, &img.State, &img.Path)
 		if err != nil {
 			return imgs, err
 		}
@@ -114,7 +153,7 @@ func DatabaseGetImage(id int) (Image, error) {
 	defer res.Close()
 
 	if res.Next() {
-		err = res.Scan(&img.ID, &img.Type, &img.Path)
+		err = res.Scan(&img.ID, &img.Type, &img.State, &img.Path)
 		if err != nil {
 			return img, err
 		}
@@ -166,7 +205,7 @@ func DatabaseInsertVm(vm *Vm) error {
 	}
 
 	vm.ID = int(id)
-	vm.State = StateDown
+	vm.State = VmStateDown
 
 	for _, d := range vm.Drives {
 		_, err := Database.Exec("INSERT INTO vm_drive (drivevm, drivetype, drivefile) VALUES (?, ?, ?)", vm.ID, d.Type, d.File)

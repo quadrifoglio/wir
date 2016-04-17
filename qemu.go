@@ -48,7 +48,7 @@ func QemuSetupImage(vm *Vm) error {
 }
 
 func QemuStart(vm *Vm) error {
-	vm.State = StateDown
+	vm.State = VmStateDown
 
 	args := make([]string, 4)
 	args[0] = "-m"
@@ -122,7 +122,7 @@ func QemuStart(vm *Vm) error {
 	case <-errc:
 		return ErrStart
 	default:
-		vm.State = StateUp
+		vm.State = VmStateUp
 		break
 	}
 
@@ -135,34 +135,34 @@ func QemuStart(vm *Vm) error {
 
 func QemuStatus(vm *Vm) error {
 	if vm.Attrs == nil {
-		vm.State = StateDown
+		vm.State = VmStateDown
 		return nil
 	}
 
 	v := vm.Attrs["pid"]
 	if len(v) == 0 {
-		vm.State = StateDown
+		vm.State = VmStateDown
 		return nil
 	}
 
 	pid, err := strconv.Atoi(v)
 	if err != nil {
-		vm.State = StateDown
+		vm.State = VmStateDown
 		return ErrInvalidAttrType
 	}
 
 	out, err := exec.Command("kill", "-s", "0", strconv.Itoa(pid)).CombinedOutput()
 	if err != nil {
-		vm.State = StateDown
+		vm.State = VmStateDown
 		return nil
 	}
 
 	if string(out) == "" {
-		vm.State = StateUp
+		vm.State = VmStateUp
 		return nil
 	}
 
-	vm.State = StateDown
+	vm.State = VmStateDown
 	return nil
 }
 
@@ -183,7 +183,7 @@ func QemuStop(vm *Vm) error {
 
 	proc, err := os.FindProcess(pid)
 	if err != nil {
-		vm.State = StateDown
+		vm.State = VmStateDown
 		return nil
 	}
 
@@ -192,6 +192,6 @@ func QemuStop(vm *Vm) error {
 		return ErrKill
 	}
 
-	vm.State = StateDown
+	vm.State = VmStateDown
 	return nil
 }

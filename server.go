@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 
@@ -21,8 +20,25 @@ func HandleImageCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := os.Stat(img.Path); os.IsNotExist(err) {
-		SendError(w, r, http.StatusBadRequest, "Invalid image path. File not found")
+	img.State = ImgStateLoading
+
+	if strings.HasPrefix(img.Path, "file://") {
+		img.Path = img.Path[7:]
+		err = ImageLoadFile(&img)
+
+		if err != nil {
+			SendError(w, r, http.StatusBadRequest, err.Error())
+			return
+		}
+	} else if strings.HasPrefix(img.Path, "http://") {
+		err = ImageLoadHTTP(&img)
+
+		if err != nil {
+			SendError(w, r, http.StatusBadRequest, err.Error())
+			return
+		}
+	} else {
+		SendError(w, r, http.StatusBadRequest, "Invalid image path. Protocole not found (supported: file, http)")
 		return
 	}
 

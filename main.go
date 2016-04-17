@@ -8,7 +8,9 @@ import (
 )
 
 const (
-	Version   = "0.0.1"
+	Version = "0.0.1"
+
+	ImagesDir = "vm/images"
 	DrivesDir = "vm/drives"
 )
 

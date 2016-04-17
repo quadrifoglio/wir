@@ -11,18 +11,12 @@ const (
 	DriveHDD   = "hdd"
 	DriveCDROM = "cdrom"
 
-	StateDown = 0
-	StateUp   = 1
+	VmStateDown = 0
+	VmStateUp   = 1
 )
 
 type VmBackend string
 type VmDriveType string
-
-type Image struct {
-	ID   int    `json:"id"`
-	Type string `json:"type"`
-	Path string `json:"path"`
-}
 
 type VmDrive struct {
 	Type string `json:"type"`
@@ -110,7 +104,7 @@ func (vm *Vm) Status() error {
 }
 
 func (vm *Vm) Start() error {
-	if vm.State == StateUp {
+	if vm.State == VmStateUp {
 		return ErrRunning
 	}
 
@@ -125,7 +119,7 @@ func (vm *Vm) Start() error {
 }
 
 func (vm *Vm) Stop() error {
-	if vm.State != StateUp {
+	if vm.State != VmStateUp {
 		return ErrNotRunning
 	}
 
