@@ -13,6 +13,9 @@ const (
 
 	VmStateDown = 0
 	VmStateUp   = 1
+
+	VmNetworkNAT    = "nat"
+	VmNetworkBridge = "bridge"
 )
 
 type VmBackend string
@@ -24,10 +27,11 @@ type VmDrive struct {
 }
 
 type VmParams struct {
-	Backend string `json:"backend"`
-	Cores   int    `json:"cores"`
-	Memory  int    `json:"memory"`
-	ImageID int    `json:"image_id"`
+	Backend     string `json:"backend"`
+	Cores       int    `json:"cores"`
+	Memory      int    `json:"memory"`
+	ImageID     int    `json:"image_id"`
+	NetBridgeOn string `json:"net_bridge_on"`
 }
 
 type VmState int

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -69,6 +70,35 @@ func QemuStart(vm *Vm) error {
 		}
 	}
 
+	if len(vm.Params.NetBridgeOn) > 0 {
+		err := NetCreateBridge("br0")
+		if err != nil {
+			return err
+		}
+
+		err = NetCreateTAP("tap" + strconv.Itoa(vm.ID))
+		if err != nil {
+			return err
+		}
+
+		err = NetBridgeAddIf("br0", "tap"+strconv.Itoa(vm.ID))
+		if err != nil {
+			return err
+		}
+
+		err = NetBridgeAddIf("br0", vm.Params.NetBridgeOn)
+		if err != nil {
+			return err
+		}
+
+		args = append(args, "-netdev")
+		args = append(args, fmt.Sprintf("tap,id=net0,ifname=%s,script=no", "tap"+strconv.Itoa(vm.ID)))
+		args = append(args, "-device")
+		args = append(args, "driver=virtio-net,netdev=net0")
+	}
+
+	log.Println("mdr")
+	log.Printf("%v\n", args)
 	cmd := exec.Command("qemu-system-x86_64", args...)
 
 	stdout, err := cmd.StdoutPipe()
@@ -130,6 +160,7 @@ func QemuStart(vm *Vm) error {
 	if err != nil {
 		return err
 	}
+
 	return nil
 }
 

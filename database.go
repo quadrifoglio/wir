@@ -32,7 +32,8 @@ func DatabaseOpen() error {
 		vmbackend CHAR(10) NOT NULL,
 		vmcores INTEGER NOT NULL,
 		vmmem INTEGER NOT NULL,
-		vmimg INTEGER NOT NULL REFERENCES images(imgid)
+		vmimg INTEGER NOT NULL REFERENCES images(imgid),
+		vmnetbron CHAR(10) NOT NULL
 	);
 	CREATE TABLE IF NOT EXISTS vm_attr (
 		attrvm INTEGER NOT NULL REFERENCES vm(vmid),
@@ -194,7 +195,7 @@ func DatabaseInsertVm(vm *Vm) error {
 	DatabaseMutex.Lock()
 	defer DatabaseMutex.Unlock()
 
-	res, err := Database.Exec("INSERT INTO vm (vmbackend, vmcores, vmmem, vmimg) VALUES (?, ?, ?, ?)", vm.Params.Backend, vm.Params.Cores, vm.Params.Memory, vm.Params.ImageID)
+	res, err := Database.Exec("INSERT INTO vm (vmbackend, vmcores, vmmem, vmimg, vmnetbron) VALUES (?, ?, ?, ?, ?)", vm.Params.Backend, vm.Params.Cores, vm.Params.Memory, vm.Params.ImageID, vm.Params.NetBridgeOn)
 	if err != nil {
 		return err
 	}
@@ -299,7 +300,7 @@ func DatabaseGetVmByID(id int) (Vm, error) {
 	defer res.Close()
 
 	if res.Next() {
-		err = res.Scan(&vm.ID, &vm.Params.Backend, &vm.Params.Cores, &vm.Params.Memory, &vm.Params.ImageID)
+		err = res.Scan(&vm.ID, &vm.Params.Backend, &vm.Params.Cores, &vm.Params.Memory, &vm.Params.ImageID, &vm.Params.NetBridgeOn)
 		if err != nil {
 			return vm, err
 		}
