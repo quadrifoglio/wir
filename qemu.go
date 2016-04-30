@@ -51,11 +51,12 @@ func QemuSetupImage(vm *Vm) error {
 func QemuStart(vm *Vm) error {
 	vm.State = VmStateDown
 
-	args := make([]string, 4)
-	args[0] = "-m"
-	args[1] = strconv.Itoa(vm.Params.Memory)
-	args[2] = "-smp"
-	args[3] = strconv.Itoa(vm.Params.Cores)
+	args := make([]string, 5)
+	args[0] = "-enable-kvm"
+	args[1] = "-m"
+	args[2] = strconv.Itoa(vm.Params.Memory)
+	args[3] = "-smp"
+	args[4] = strconv.Itoa(vm.Params.Cores)
 
 	for _, d := range vm.Drives {
 		switch d.Type {
@@ -71,34 +72,34 @@ func QemuStart(vm *Vm) error {
 	}
 
 	if len(vm.Params.NetBridgeOn) > 0 {
-		err := NetCreateBridge("br0")
+		err := NetCreateBridge("wir0")
 		if err != nil {
 			return err
 		}
 
-		err = NetCreateTAP("tap" + strconv.Itoa(vm.ID))
+		NetDeleteTAP("tapvm" + strconv.Itoa(vm.ID))
+
+		err = NetCreateTAP("tapvm" + strconv.Itoa(vm.ID))
 		if err != nil {
 			return err
 		}
 
-		err = NetBridgeAddIf("br0", "tap"+strconv.Itoa(vm.ID))
+		err = NetBridgeAddIf("wir0", "tapvm"+strconv.Itoa(vm.ID))
 		if err != nil {
 			return err
 		}
 
-		err = NetBridgeAddIf("br0", vm.Params.NetBridgeOn)
+		err = NetBridgeAddIf("wir0", vm.Params.NetBridgeOn)
 		if err != nil {
 			return err
 		}
 
 		args = append(args, "-netdev")
-		args = append(args, fmt.Sprintf("tap,id=net0,ifname=%s,script=no", "tap"+strconv.Itoa(vm.ID)))
+		args = append(args, fmt.Sprintf("tap,id=net0,ifname=%s,script=no", "tapvm"+strconv.Itoa(vm.ID)))
 		args = append(args, "-device")
 		args = append(args, "driver=virtio-net,netdev=net0")
 	}
 
-	log.Println("mdr")
-	log.Printf("%v\n", args)
 	cmd := exec.Command("qemu-system-x86_64", args...)
 
 	stdout, err := cmd.StdoutPipe()
@@ -222,6 +223,8 @@ func QemuStop(vm *Vm) error {
 	if err != nil {
 		return ErrKill
 	}
+
+	NetDeleteTAP("tapvm" + strconv.Itoa(vm.ID))
 
 	vm.State = VmStateDown
 	return nil

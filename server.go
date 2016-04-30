@@ -20,8 +20,6 @@ func HandleImageCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	img.State = ImgStateLoading
-
 	if strings.HasPrefix(img.Path, "file://") {
 		img.Path = img.Path[7:]
 		err = ImageLoadFile(&img)
@@ -31,6 +29,7 @@ func HandleImageCreate(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	} else if strings.HasPrefix(img.Path, "http://") {
+		img.State = ImgStateLoading
 		err = ImageLoadHTTP(&img)
 
 		if err != nil {

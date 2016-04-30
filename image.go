@@ -26,6 +26,8 @@ func ImageLoadFile(img *Image) error {
 		return ErrImageFileNotFound
 	}
 
+	img.State = ImgStateAvailable
+
 	return nil
 }
 
