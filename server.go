@@ -36,6 +36,15 @@ func HandleImageCreate(w http.ResponseWriter, r *http.Request) {
 			SendError(w, r, http.StatusBadRequest, err.Error())
 			return
 		}
+	} else if strings.HasPrefix(img.Path, "scp://") {
+		img.Path = img.Path[6:]
+		img.State = ImgStateLoading
+		err = ImageLoadSCP(&img)
+
+		if err != nil {
+			SendError(w, r, http.StatusBadRequest, err.Error())
+			return
+		}
 	} else {
 		SendError(w, r, http.StatusBadRequest, "Invalid image path. Protocole not found (supported: file, http)")
 		return
