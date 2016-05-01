@@ -37,12 +37,12 @@ func ImageLoadHTTP(img *Image) error {
 		return err
 	}
 
-	err = os.MkdirAll(fmt.Sprintf("%s/%d", ImagesDir, id), 0755)
+	err = os.MkdirAll(fmt.Sprintf("%s/%d", Config.ImagesDir, id), 0755)
 	if err != nil {
 		return err
 	}
 
-	path := fmt.Sprintf("%s/%d/%s", ImagesDir, id, filepath.Base(img.Path))
+	path := fmt.Sprintf("%s/%d/%s", Config.ImagesDir, id, filepath.Base(img.Path))
 	url := img.Path
 
 	out, err := os.Create(path)

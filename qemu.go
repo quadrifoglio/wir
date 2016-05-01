@@ -23,7 +23,7 @@ func QemuSetupImage(vm *Vm) error {
 		return err
 	}
 
-	dir := DrivesDir + "/" + strconv.Itoa(id) + "/"
+	dir := Config.DrivesDir + "/" + strconv.Itoa(id) + "/"
 	err = os.MkdirAll(dir, 0755)
 	if err != nil {
 		return err

@@ -1,0 +1,5 @@
+{
+	"images_location": "/var/lib/wir/images",
+	"drives_location": "/var/lib/wir/drives",
+	"database_location": "/var/lib/wir/database.sqlite"
+}

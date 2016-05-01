@@ -11,11 +11,11 @@ var (
 	DatabaseMutex = &sync.Mutex{}
 )
 
-func DatabaseOpen() error {
+func DatabaseOpen(file string) error {
 	DatabaseMutex.Lock()
 	defer DatabaseMutex.Unlock()
 
-	db, err := sql.Open("sqlite3", "wird.db")
+	db, err := sql.Open("sqlite3", file)
 	if err != nil {
 		return err
 	}

@@ -1,23 +1,50 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/mux"
 )
 
 const (
-	Version = "0.0.1"
-
-	ImagesDir = "/var/lib/wir/images"
-	DrivesDir = "/var/lib/wir/drives"
+	Version    = "0.0.1"
+	ConfigFile = "/etc/wir.json"
 )
+
+var (
+	Config WirConfig
+)
+
+type WirConfig struct {
+	ImagesDir    string `json:"images_location"`
+	DrivesDir    string `json:"drives_location"`
+	DatabaseFile string `json:"database_location"`
+}
 
 func main() {
 	log.Println("Starting wird version", Version)
 
-	err := DatabaseOpen()
+	f, err := os.Open(ConfigFile)
+	if err != nil {
+		log.Fatal("Can not open config: ", err)
+	}
+
+	err = json.NewDecoder(f).Decode(&Config)
+	if err != nil {
+		f.Close()
+		log.Fatal("Can not decode config file: ", err)
+	}
+
+	f.Close()
+
+	if len(Config.ImagesDir) == 0 || len(Config.ImagesDir) == 0 || len(Config.DatabaseFile) == 0 {
+		log.Fatal("Invalid configuration file")
+	}
+
+	err = DatabaseOpen(Config.DatabaseFile)
 	if err != nil {
 		log.Fatal("Can not initialize database: ", err)
 	}
