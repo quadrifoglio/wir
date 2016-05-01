@@ -75,7 +75,7 @@ func ImageLoadHTTP(img *Image) error {
 
 		err = DatabaseUpdateImage(img)
 		if err != nil {
-			log.Println(fmt.Sprintf("Error downloading (HTTP) image %d (%s): %s", id, url, err))
+			log.Println(fmt.Sprintf("Error saving image %d data (%s): %s", id, url, err))
 			return
 		}
 	}()
@@ -109,6 +109,7 @@ func ImageLoadSCP(img *Image) error {
 		return err
 	}
 
+	log.Println(fmt.Sprintf("Started downloading (SCP) image %d (%s)", id, src))
 	go func() {
 		err := cmd.Wait()
 		if err != nil {
@@ -117,11 +118,13 @@ func ImageLoadSCP(img *Image) error {
 		} else {
 			img.Path = path
 			img.State = ImgStateAvailable
+
+			log.Println(fmt.Sprintf("Downloaded (SCP) image %d", id))
 		}
 
 		err = DatabaseUpdateImage(img)
 		if err != nil {
-			log.Println(fmt.Sprintf("Error downloading (SCP) image %d (%s): %s", id, src, err))
+			log.Println(fmt.Sprintf("Error saving image %d data (%s): %s", id, src, err))
 		}
 	}()
 

@@ -236,7 +236,7 @@ func DatabaseListVms() ([]Vm, error) {
 		vm.Attrs = make(map[string]string)
 		vm.Drives = make([]VmDrive, 0)
 
-		err = res.Scan(&vm.ID, &vm.Params.Backend, &vm.Params.Cores, &vm.Params.Memory, &vm.Params.ImageID)
+		err = res.Scan(&vm.ID, &vm.Params.Backend, &vm.Params.Cores, &vm.Params.Memory, &vm.Params.ImageID, &vm.Params.NetBridgeOn)
 		if err != nil {
 			return nil, err
 		}

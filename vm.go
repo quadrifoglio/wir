@@ -1,7 +1,13 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
+	"fmt"
 	"log"
+	"net/http"
+	"os/exec"
+	"path/filepath"
 )
 
 const (
@@ -27,6 +33,7 @@ type VmDrive struct {
 }
 
 type VmParams struct {
+	Migration   bool   `json:"migration"` // True if the VM is being migrated
 	Backend     string `json:"backend"`
 	Cores       int    `json:"cores"`
 	Memory      int    `json:"memory"`
@@ -135,4 +142,73 @@ func (vm *Vm) Stop() error {
 	}
 
 	return ErrInvalidBackend
+}
+
+func (vm *Vm) Migrate(dst string) (int, error) {
+	img, err := DatabaseGetImage(vm.Params.ImageID)
+	if err != nil {
+		return 0, err
+	}
+
+	if img.State != ImgStateAvailable {
+		return 0, fmt.Errorf("Can not migrate non-available image")
+	}
+
+	img.Path = fmt.Sprintf("scp://%s@%s:%s", Config.User, Config.Address, img.Path)
+
+	data, err := json.Marshal(img)
+	if err != nil {
+		return 0, fmt.Errorf("Can not encode image: %s", err)
+	}
+
+	resp, err := http.Post(fmt.Sprintf("http://%s/image/create", dst), "application/json", bytes.NewBuffer(data))
+	if err != nil {
+		return 0, fmt.Errorf("POST %s/image/create: %s", dst, err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return 0, fmt.Errorf("Cat not create new image (http %d)", resp.StatusCode)
+	}
+
+	var newImg Image
+	err = json.NewDecoder(resp.Body).Decode(&newImg)
+	if err != nil {
+		return 0, fmt.Errorf("Cat not decode migrated image: %s", err)
+	}
+
+	vm.Params.Migration = true
+	vm.Params.ImageID = newImg.ID
+
+	data, err = json.Marshal(vm.Params)
+	if err != nil {
+		return 0, fmt.Errorf("Can not encode vm: %s", err)
+	}
+
+	resp, err = http.Post(fmt.Sprintf("http://%s/vm/create", dst), "application/json", bytes.NewBuffer(data))
+	if err != nil {
+		return 0, fmt.Errorf("POST %s/vm/create: %s", dst, err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return 0, fmt.Errorf("Cat not create new vm (http %d)", resp.StatusCode)
+	}
+
+	var newVm Vm
+	err = json.NewDecoder(resp.Body).Decode(&newVm)
+	if err != nil {
+		return 0, fmt.Errorf("Can not decode new vm: %s", err)
+	}
+
+	for _, d := range vm.Drives {
+		path := fmt.Sprintf("%s/%d/%s", Config.DrivesDir, newVm.ID, filepath.Base(d.File))
+		cmd := exec.Command("scp", "-o", "UserKnownHostsFile=/dev/null", "-o", "StrictHostKeyChecking=no", d.File, path)
+
+		err = cmd.Run()
+		if err != nil {
+			return 0, fmt.Errorf("Can not scp vm drive: %s", err)
+		}
+	}
+
+	// TODO: Delete local VM from database and remove local files
+	return newVm.ID, nil
 }

@@ -1,4 +1,8 @@
 {
+	"user": "root",
+	"address": "127.0.0.1",
+	"port": 8000,
+
 	"images_location": "/var/lib/wir/images",
 	"drives_location": "/var/lib/wir/drives",
 	"database_location": "/var/lib/wir/database.sqlite"

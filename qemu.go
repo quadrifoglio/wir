@@ -12,10 +12,19 @@ import (
 )
 
 func QemuSetupImage(vm *Vm) error {
-	img, err := DatabaseGetImage(vm.Params.ImageID)
-	if err != nil {
-		log.Println(err)
-		return ErrImageNotFound
+	var err error
+	var img Image
+	var state string = ImgStateLoading
+
+	for state == ImgStateLoading {
+		img, err = DatabaseGetImage(vm.Params.ImageID)
+		if err != nil {
+			log.Println(err)
+			return ErrImageNotFound
+		}
+
+		state = img.State
+		time.Sleep(1 * time.Second)
 	}
 
 	id, err := DatabaseFreeVmId()
@@ -31,15 +40,18 @@ func QemuSetupImage(vm *Vm) error {
 
 	path := dir + filepath.Base(img.Path) + ".img"
 
-	cmd := exec.Command("qemu-img", "create", "-b", img.Path, "-f", "qcow2", path)
-	if err != nil {
-		return err
-	}
+	// If this is a migration, we should not create a new drive, it will already be there
+	if !vm.Params.Migration {
+		cmd := exec.Command("qemu-img", "create", "-b", img.Path, "-f", "qcow2", path)
+		if err != nil {
+			return err
+		}
 
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		log.Println(string(out))
-		return err
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			log.Println(string(out))
+			return err
+		}
 	}
 
 	vm.Drives = make([]VmDrive, 1)

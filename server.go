@@ -202,6 +202,52 @@ func HandleVmStop(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func HandleVmMigrate(w http.ResponseWriter, r *http.Request) {
+	type Req struct {
+		Target string `json:"target"`
+	}
+
+	type Res struct {
+		Target string `json:"target"`
+		VmId   int    `json:"vm_id"`
+	}
+
+	v := mux.Vars(r)
+
+	id, err := strconv.Atoi(v["id"])
+	if err != nil {
+		SendError(w, r, http.StatusBadRequest, "Bad request: invalid id, should be an integer")
+		return
+	}
+
+	var req Req
+	err = json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		SendError(w, r, http.StatusBadRequest, fmt.Sprintf("Can not decode body: %s", err))
+		return
+	}
+
+	vm, err := VmGet(id)
+	if err != nil {
+		SendError(w, r, http.StatusNotFound, err.Error())
+		return
+	}
+
+	newId, err := vm.Migrate(req.Target)
+	if err != nil {
+		SendError(w, r, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	res := Res{req.Target, newId}
+
+	err = json.NewEncoder(w).Encode(res)
+	if err != nil {
+		SendError(w, r, http.StatusInternalServerError, err.Error())
+		return
+	}
+}
+
 func SendError(w http.ResponseWriter, r *http.Request, status int, msg string) {
 	log.Println("Error", r.RemoteAddr, r.Method, r.RequestURI, ":", msg)
 
