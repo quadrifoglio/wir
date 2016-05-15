@@ -154,30 +154,54 @@ func (vm *Vm) Migrate(dst string) (int, error) {
 		return 0, fmt.Errorf("Can not migrate non-available image")
 	}
 
-	img.Path = fmt.Sprintf("scp://%s@%s:%s", Config.User, Config.Address, img.Path)
-
-	data, err := json.Marshal(img)
+	distantImgsData, err := http.Get(fmt.Sprintf("http://%s/images/list"))
 	if err != nil {
-		return 0, fmt.Errorf("Can not encode image: %s", err)
+		return 0, fmt.Errorf("Can not get distant image list")
 	}
 
-	resp, err := http.Post(fmt.Sprintf("http://%s/image/create", dst), "application/json", bytes.NewBuffer(data))
+	var distantImgs []Image
+
+	err = json.NewDecoder(distantImgsData).Decode(&distantImgs)
 	if err != nil {
-		return 0, fmt.Errorf("POST %s/image/create: %s", dst, err)
+		return 0, fmt.Errorf("Can not decode distant images data: %s", err)
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return 0, fmt.Errorf("Cat not create new image (http %d)", resp.StatusCode)
+	remoteImgId = 0
+	for _, i := range distantImgs {
+		if i.Name == img.Name {
+			remoteImgId = i.ID
+			break
+		}
 	}
 
-	var newImg Image
-	err = json.NewDecoder(resp.Body).Decode(&newImg)
-	if err != nil {
-		return 0, fmt.Errorf("Cat not decode migrated image: %s", err)
+	if remoteImgId == 0 {
+		img.Path = fmt.Sprintf("scp://%s@%s:%s", Config.User, Config.Address, img.Path)
+
+		data, err := json.Marshal(img)
+		if err != nil {
+			return 0, fmt.Errorf("Can not encode image: %s", err)
+		}
+
+		resp, err := http.Post(fmt.Sprintf("http://%s/image/create", dst), "application/json", bytes.NewBuffer(data))
+		if err != nil {
+			return 0, fmt.Errorf("POST %s/image/create: %s", dst, err)
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			return 0, fmt.Errorf("Cat not create new image (http %d)", resp.StatusCode)
+		}
+
+		var newImg Image
+		err = json.NewDecoder(resp.Body).Decode(&newImg)
+		if err != nil {
+			return 0, fmt.Errorf("Cat not decode migrated image: %s", err)
+		}
+
+		remoteImgId = newImg.ID
 	}
 
 	vm.Params.Migration = true
-	vm.Params.ImageID = newImg.ID
+	vm.Params.ImageID = remoteImgId
 
 	data, err = json.Marshal(vm.Params)
 	if err != nil {

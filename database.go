@@ -23,6 +23,7 @@ func DatabaseOpen(file string) error {
 	sql := `
 	CREATE TABLE IF NOT EXISTS image (
 		imgid INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL UNIQUE,
+		imgname CHAR(50) NOT NULL UNIQUE,
 		imgtype CHAR(10) NOT NULL,
 		imgstate CHAR(10) NOT NULL,
 		imgpath CHAR(1024) NOT NULL
@@ -87,7 +88,7 @@ func DatabaseInsertImage(img *Image) error {
 	DatabaseMutex.Lock()
 	defer DatabaseMutex.Unlock()
 
-	res, err := Database.Exec("INSERT INTO image (imgtype, imgstate, imgpath) VALUES (?, ?, ?)", img.Type, img.State, img.Path)
+	res, err := Database.Exec("INSERT INTO image (imgtype, imgname, imgstate, imgpath) VALUES (?, ?, ?, ?)", img.Type, img.Name, img.State, img.Path)
 	if err != nil {
 		return err
 	}
@@ -105,7 +106,7 @@ func DatabaseUpdateImage(img *Image) error {
 	DatabaseMutex.Lock()
 	defer DatabaseMutex.Unlock()
 
-	_, err := Database.Exec("INSERT OR REPLACE INTO image VALUES (?, ?, ?, ?)", img.ID, img.Type, img.State, img.Path)
+	_, err := Database.Exec("INSERT OR REPLACE INTO image VALUES (?, ?, ?, ?, ?)", img.ID, img.Name, img.Type, img.State, img.Path)
 	if err != nil {
 		return err
 	}
@@ -129,7 +130,7 @@ func DatabaseListImages() ([]Image, error) {
 	for res.Next() {
 		var img Image
 
-		err = res.Scan(&img.ID, &img.Type, &img.State, &img.Path)
+		err = res.Scan(&img.ID, &img.Name, &img.Type, &img.State, &img.Path)
 		if err != nil {
 			return imgs, err
 		}
@@ -154,7 +155,7 @@ func DatabaseGetImage(id int) (Image, error) {
 	defer res.Close()
 
 	if res.Next() {
-		err = res.Scan(&img.ID, &img.Type, &img.State, &img.Path)
+		err = res.Scan(&img.ID, &img.Name, &img.Type, &img.State, &img.Path)
 		if err != nil {
 			return img, err
 		}
