@@ -1,0 +1,7 @@
+{
+	"Address": "127.0.0.1:1997",
+	"DatabaseFile": "wir.db",
+
+	"ImagePath": "var/images",
+	"MachinePath": "var/machines"
+}
