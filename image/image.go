@@ -6,3 +6,9 @@ const (
 	TypeDocker  = 2
 	TypeVz      = 3
 )
+
+type Image struct {
+	Name string
+	Type int
+	Path string
+}

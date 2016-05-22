@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	"github.com/quadrifoglio/wir/errors"
 	"github.com/quadrifoglio/wir/image"
 )
@@ -28,15 +29,49 @@ func handleImageCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var img image.Image
+
 	switch i.Type {
 	case image.TypeQemu:
-		err = image.QemuFetch(i.Name, i.Source, Conf.ImagePath)
+		img, err = image.QemuCreate(i.Name, i.Source, Conf.ImagePath)
 		break
 	default:
 		err = errors.InvalidImageType
 		break
 	}
 
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	err = DBStoreImage(&img)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	SuccessResponse(img).Send(w, r)
+}
+
+func handleImageGet(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	name := vars["name"]
+
+	img, err := DBGetImage(name)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	SuccessResponse(img).Send(w, r)
+}
+
+func handleImageDelete(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	name := vars["name"]
+
+	err := DBDeleteImage(name)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return

@@ -40,10 +40,17 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 func Start(conf Config) error {
 	Conf = conf
 
+	err := DBOpen(Conf.DatabaseFile)
+	if err != nil {
+		return err
+	}
+
 	r := mux.NewRouter()
 
-	r.HandleFunc("/", handleIndex)
+	r.HandleFunc("/", handleIndex).Methods("GET")
 	r.HandleFunc("/image", handleImageCreate).Methods("POST")
+	r.HandleFunc("/image/{name}", handleImageGet).Methods("GET")
+	r.HandleFunc("/image/{name}", handleImageDelete).Methods("DELETE")
 
 	r.NotFoundHandler = http.HandlerFunc(handleNotFound)
 	http.Handle("/", r)
