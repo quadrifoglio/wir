@@ -56,6 +56,8 @@ func Start(conf Config) error {
 	r.HandleFunc("/machines", handleMachineCreate).Methods("POST")
 	r.HandleFunc("/machines", handleMachineList).Methods("GET")
 	r.HandleFunc("/machines/{id}", handleMachineGet).Methods("GET")
+	r.HandleFunc("/machines/{id}", handleMachineStart).Methods("START")
+	r.HandleFunc("/machines/{id}", handleMachineStop).Methods("STOP")
 	r.HandleFunc("/machines/{id}", handleMachineDelete).Methods("DELETE")
 
 	r.NotFoundHandler = http.HandlerFunc(handleNotFound)

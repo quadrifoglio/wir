@@ -42,6 +42,9 @@ func ErrorResponse(err error) Response {
 	case errors.ImageNotFound:
 		re.Status = 404
 		break
+	case errors.InvalidMachineState:
+		re.Status = 400
+		break
 	default:
 		re.Status = 500
 		break
@@ -59,7 +62,5 @@ func (re Response) Send(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(re.Status)
 	}
 
-	if re.Status != 200 {
-		log.Printf("%s %s from %s - %s\n", r.Method, r.URL.String(), r.RemoteAddr, re.Message)
-	}
+	log.Printf("%s %s from %s - %s\n", r.Method, r.URL.String(), r.RemoteAddr, re.Message)
 }

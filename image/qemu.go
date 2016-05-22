@@ -23,6 +23,11 @@ func QemuCreate(name, src, basePath string) (Image, error) {
 
 	path := basePath + "qemu/" + name + ".img"
 
+	err = os.MkdirAll(filepath.Dir(path), 0777)
+	if err != nil {
+		return i, err
+	}
+
 	f, err := os.Create(path)
 	if err != nil {
 		return i, err

@@ -35,7 +35,7 @@ func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
 
 	switch img.Type {
 	case image.TypeQemu:
-		mm, err = machine.QemuCreate(&img, m.Cores, m.Memory)
+		mm, err = machine.QemuCreate(Conf.MachinePath, &img, m.Cores, m.Memory)
 		break
 	default:
 		err = errors.InvalidImageType
@@ -58,6 +58,21 @@ func handleMachineList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	for _, m := range ms {
+		switch m.Type {
+		case image.TypeQemu:
+			// TODO: Fix: machine state is not shown properly on the fist listing after an unexpected kill
+			machine.QemuCheck(&m)
+			break
+		}
+
+		err = DBStoreMachine(&m)
+		if err != nil {
+			ErrorResponse(err).Send(w, r)
+			return
+		}
+	}
+
 	SuccessResponse(ms).Send(w, r)
 }
 
@@ -71,7 +86,95 @@ func handleMachineGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	switch m.Type {
+	case image.TypeQemu:
+		machine.QemuCheck(&m)
+		break
+	}
+
+	err = DBStoreMachine(&m)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
 	SuccessResponse(m).Send(w, r)
+}
+
+func handleMachineStart(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	m, err := DBGetMachine(id)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	if m.State != machine.StateDown {
+		ErrorResponse(errors.InvalidMachineState).Send(w, r)
+		return
+	}
+
+	switch m.Type {
+	case image.TypeQemu:
+		err = machine.QemuStart(&m, Conf.MachinePath)
+		break
+	default:
+		ErrorResponse(errors.InvalidImageType)
+		return
+	}
+
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	err = DBStoreMachine(&m)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	SuccessResponse(nil).Send(w, r)
+}
+
+func handleMachineStop(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	m, err := DBGetMachine(id)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	if m.State != machine.StateUp {
+		ErrorResponse(errors.InvalidMachineState).Send(w, r)
+		return
+	}
+
+	switch m.Type {
+	case image.TypeQemu:
+		err = machine.QemuStop(&m)
+		break
+	default:
+		ErrorResponse(errors.InvalidImageType)
+		return
+	}
+
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	err = DBStoreMachine(&m)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	SuccessResponse(nil).Send(w, r)
 }
 
 func handleMachineDelete(w http.ResponseWriter, r *http.Request) {
