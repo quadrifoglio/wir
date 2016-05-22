@@ -9,13 +9,8 @@ import (
 	"github.com/quadrifoglio/wir/api"
 )
 
-type config struct {
-	Address      string
-	DatabaseFile string
-}
-
-func readConfig(file string) (config, error) {
-	var c config
+func readConfig(file string) (api.Config, error) {
+	var c api.Config
 
 	f, err := os.Open(file)
 	if err != nil {
@@ -41,7 +36,7 @@ func main() {
 		log.Fatalf("Can not read configuration file: %s\n", err)
 	}
 
-	err = api.Start(config.DatabaseFile, config.Address)
+	err = api.Start(config)
 	if err != nil {
 		log.Fatalf("Can not start API: %s\n", err)
 	}

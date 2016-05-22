@@ -36,6 +36,9 @@ func ErrorResponse(err error) Response {
 	case errors.InvalidURL:
 		re.Status = 400
 		break
+	case errors.UnsupportedProto:
+		re.Status = 400
+		break
 	default:
 		re.Status = 500
 		break

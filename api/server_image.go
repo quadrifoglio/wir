@@ -3,11 +3,9 @@ package api
 import (
 	"encoding/json"
 	"net/http"
-	"net/url"
 
 	"github.com/quadrifoglio/wir/errors"
 	"github.com/quadrifoglio/wir/image"
-	"github.com/quadrifoglio/wir/utils"
 )
 
 type ImagePost struct {
@@ -25,19 +23,24 @@ func handleImageCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !image.TypeExists(i.Type) {
-		ErrorResponse(errors.InvalidImageType).Send(w, r)
+	if len(i.Source) <= 0 {
+		ErrorResponse(errors.BadRequest).Send(w, r)
 		return
 	}
 
-	url, err := url.Parse(i.Source)
-	if err != nil {
-		ErrorResponse(errors.InvalidURL).Send(w, r)
-		return
+	switch i.Type {
+	case image.TypeQemu:
+		err = image.QemuFetch(i.Name, i.Source, Conf.ImagePath)
+		break
+	default:
+		err = errors.InvalidImageType
+		break
 	}
 
-	_, err = utils.FetchResource(url)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
+		return
 	}
+
+	SuccessResponse(nil).Send(w, r)
 }

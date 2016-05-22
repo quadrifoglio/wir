@@ -1,4 +1,5 @@
 vm/
+var/
 
 *.swp
 *.swo

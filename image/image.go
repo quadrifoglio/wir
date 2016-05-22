@@ -6,7 +6,3 @@ const (
 	TypeDocker  = 2
 	TypeVz      = 3
 )
-
-func TypeExists(t int) bool {
-	return t > 0 && t <= 3
-}
