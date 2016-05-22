@@ -10,4 +10,5 @@ var (
 	InvalidImageType = errors.New("Invalid Image Type")
 	InvalidURL       = errors.New("Invalid URL")
 	UnsupportedProto = errors.New("Unsupported Protocol")
+	ImageNotFound    = errors.New("Image Not Found")
 )

@@ -8,7 +8,7 @@ const (
 )
 
 type Image struct {
-	Name string
-	Type int
-	Path string
+	Name   string
+	Type   int
+	Source string
 }

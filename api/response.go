@@ -39,6 +39,9 @@ func ErrorResponse(err error) Response {
 	case errors.UnsupportedProto:
 		re.Status = 400
 		break
+	case errors.ImageNotFound:
+		re.Status = 404
+		break
 	default:
 		re.Status = 500
 		break

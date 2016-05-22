@@ -7,6 +7,7 @@ import (
 	"github.com/boltdb/bolt"
 	"github.com/quadrifoglio/wir/errors"
 	"github.com/quadrifoglio/wir/image"
+	"github.com/quadrifoglio/wir/machine"
 )
 
 var (
@@ -83,6 +84,74 @@ func DBDeleteImage(name string) error {
 		}
 
 		err = bucket.Delete([]byte(name))
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return err
+}
+
+func DBStoreMachine(m *machine.Machine) error {
+	err := Database.Update(func(tx *bolt.Tx) error {
+		bucket, err := tx.CreateBucketIfNotExists(MachinesBucket)
+		if err != nil {
+			return err
+		}
+
+		data, err := json.Marshal(m)
+		if err != nil {
+			return err
+		}
+
+		err = bucket.Put([]byte(m.ID), data)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return err
+}
+
+func DBGetMachine(id string) (machine.Machine, error) {
+	var m machine.Machine
+
+	err := Database.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(MachinesBucket)
+
+		if bucket == nil {
+			return fmt.Errorf("Missing database bucket: %s", MachinesBucket)
+		}
+
+		data := bucket.Get([]byte(id))
+		if data == nil {
+			return errors.NotFound
+		}
+
+		err := json.Unmarshal(data, &m)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return m, err
+}
+
+func DBDeleteMachine(id string) error {
+	err := Database.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(MachinesBucket)
+
+		if bucket == nil {
+			return fmt.Errorf("Missing database bucket: %s", MachinesBucket)
+		}
+
+		err := bucket.Delete([]byte(id))
 		if err != nil {
 			return err
 		}

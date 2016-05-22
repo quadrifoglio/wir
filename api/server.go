@@ -46,11 +46,15 @@ func Start(conf Config) error {
 	}
 
 	r := mux.NewRouter()
-
 	r.HandleFunc("/", handleIndex).Methods("GET")
+
 	r.HandleFunc("/image", handleImageCreate).Methods("POST")
 	r.HandleFunc("/image/{name}", handleImageGet).Methods("GET")
 	r.HandleFunc("/image/{name}", handleImageDelete).Methods("DELETE")
+
+	r.HandleFunc("/machine", handleMachineCreate).Methods("POST")
+	r.HandleFunc("/machine/{id}", handleMachineGet).Methods("GET")
+	r.HandleFunc("/machine/{id}", handleMachineDelete).Methods("DELETE")
 
 	r.NotFoundHandler = http.HandlerFunc(handleNotFound)
 	http.Handle("/", r)

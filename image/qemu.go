@@ -42,7 +42,7 @@ func QemuCreate(name, src, basePath string) (Image, error) {
 
 	i.Name = name
 	i.Type = TypeQemu
-	i.Path = abs
+	i.Source = abs
 
 	return i, nil
 }
