@@ -51,6 +51,16 @@ func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(mm).Send(w, r)
 }
 
+func handleMachineList(w http.ResponseWriter, r *http.Request) {
+	ms, err := DBListMachines()
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	SuccessResponse(ms).Send(w, r)
+}
+
 func handleMachineGet(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]

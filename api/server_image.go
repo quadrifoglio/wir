@@ -54,6 +54,16 @@ func handleImageCreate(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(img).Send(w, r)
 }
 
+func handleImageList(w http.ResponseWriter, r *http.Request) {
+	imgs, err := DBListImages()
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	SuccessResponse(imgs).Send(w, r)
+}
+
 func handleImageGet(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]

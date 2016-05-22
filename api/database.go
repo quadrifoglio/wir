@@ -14,7 +14,7 @@ var (
 	Database *bolt.DB
 
 	ImagesBucket   = []byte("images")
-	MachinesBucket = []byte("images")
+	MachinesBucket = []byte("machines")
 )
 
 func DBOpen(file string) error {
@@ -48,6 +48,33 @@ func DBStoreImage(i *image.Image) error {
 	})
 
 	return err
+}
+
+func DBListImages() ([]image.Image, error) {
+	var imgs []image.Image = make([]image.Image, 0)
+
+	Database.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(ImagesBucket)
+		if b == nil {
+			return nil
+		}
+
+		b.ForEach(func(_, v []byte) error {
+			var i image.Image
+
+			err := json.Unmarshal(v, &i)
+			if err != nil {
+				return err
+			}
+
+			imgs = append(imgs, i)
+			return nil
+		})
+
+		return nil
+	})
+
+	return imgs, nil
 }
 
 func DBGetImage(name string) (image.Image, error) {
@@ -115,6 +142,33 @@ func DBStoreMachine(m *machine.Machine) error {
 	})
 
 	return err
+}
+
+func DBListMachines() ([]machine.Machine, error) {
+	var ms []machine.Machine = make([]machine.Machine, 0)
+
+	Database.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(MachinesBucket)
+		if b == nil {
+			return nil
+		}
+
+		b.ForEach(func(_, v []byte) error {
+			var m machine.Machine
+
+			err := json.Unmarshal(v, &m)
+			if err != nil {
+				return err
+			}
+
+			ms = append(ms, m)
+			return nil
+		})
+
+		return nil
+	})
+
+	return ms, nil
 }
 
 func DBGetMachine(id string) (machine.Machine, error) {
