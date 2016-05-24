@@ -3,9 +3,18 @@ package machine
 import (
 	"fmt"
 	"net"
+	"os"
 	"os/exec"
+	"syscall"
+	"unsafe"
 
 	"github.com/milosgajdos83/tenus"
+)
+
+const (
+	IFF_TUN   = 0x0001
+	IFF_TAP   = 0x0002
+	IFF_NO_PI = 0x1000
 )
 
 func NetCreateBridge(name string) error {
@@ -25,11 +34,32 @@ func NetCreateBridge(name string) error {
 }
 
 func NetCreateTAP(name string) error {
-	cmd := exec.Command("ip", "tuntap", "add", "dev", name, "mode", "tap")
+	type ifreq struct {
+		name  [0x10]byte
+		flags uint16
+		osef  [0x16]byte
+	}
 
-	err := cmd.Run()
+	f, err := os.OpenFile("/dev/net/tun", os.O_RDWR, 0)
 	if err != nil {
-		return fmt.Errorf("Create TAP: %s", err)
+		return err
+	}
+
+	defer f.Close()
+
+	var r ifreq
+	r.flags = IFF_TAP
+
+	copy(r.name[:], name[:14])
+
+	_, _, errno := syscall.Syscall(syscall.SYS_IOCTL, f.Fd(), uintptr(syscall.TUNSETIFF), uintptr(unsafe.Pointer(&r)))
+	if errno != 0 {
+		return errno
+	}
+
+	_, _, errno = syscall.Syscall(syscall.SYS_IOCTL, f.Fd(), uintptr(syscall.TUNSETPERSIST), 1)
+	if errno != 0 {
+		return errno
 	}
 
 	return nil
