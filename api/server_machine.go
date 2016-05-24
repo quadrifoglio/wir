@@ -58,18 +58,21 @@ func handleMachineList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for _, m := range ms {
-		switch m.Type {
+	for i, _ := range ms {
+		prevState := ms[i].State
+
+		switch ms[i].Type {
 		case image.TypeQemu:
-			// TODO: Fix: machine state is not shown properly on the fist listing after an unexpected kill
-			machine.QemuCheck(&m)
+			machine.QemuCheck(&ms[i])
 			break
 		}
 
-		err = DBStoreMachine(&m)
-		if err != nil {
-			ErrorResponse(err).Send(w, r)
-			return
+		if ms[i].State != prevState {
+			err = DBStoreMachine(&ms[i])
+			if err != nil {
+				ErrorResponse(err).Send(w, r)
+				return
+			}
 		}
 	}
 
