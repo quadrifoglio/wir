@@ -2,6 +2,7 @@ package machine
 
 import (
 	"bufio"
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
@@ -50,6 +51,37 @@ func QemuStart(m *Machine, basePath string) error {
 	args[4] = strconv.Itoa(m.Cores)
 	args[5] = "-hda"
 	args[6] = basePath + "qemu/" + m.ID + ".img"
+
+	if len(m.NetBridgeOn) > 0 {
+		id := m.ID[:14]
+
+		err := NetCreateBridge("wir0")
+		if err != nil {
+			return err
+		}
+
+		NetDeleteTAP(id)
+
+		err = NetCreateTAP(id)
+		if err != nil {
+			return err
+		}
+
+		err = NetBridgeAddIf("wir0", id)
+		if err != nil {
+			return err
+		}
+
+		err = NetBridgeAddIf("wir0", m.NetBridgeOn)
+		if err != nil {
+			return err
+		}
+
+		args = append(args, "-netdev")
+		args = append(args, fmt.Sprintf("tap,id=net0,ifname=%s,script=no", id))
+		args = append(args, "-device")
+		args = append(args, "driver=virtio-net,netdev=net0")
+	}
 
 	cmd := exec.Command("qemu-system-x86_64", args...)
 

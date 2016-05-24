@@ -5,22 +5,22 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/quadrifoglio/wir/client"
 	"github.com/quadrifoglio/wir/errors"
 	"github.com/quadrifoglio/wir/image"
 	"github.com/quadrifoglio/wir/machine"
 )
 
-type MachinePost struct {
-	Image  string
-	Cores  int
-	Memory int
-}
-
 func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
-	var m MachinePost
+	var m client.MachineRequest
 
 	err := json.NewDecoder(r.Body).Decode(&m)
 	if err != nil {
+		ErrorResponse(errors.BadRequest).Send(w, r)
+		return
+	}
+
+	if len(m.Name) == 0 {
 		ErrorResponse(errors.BadRequest).Send(w, r)
 		return
 	}
@@ -41,6 +41,8 @@ func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
 		err = errors.InvalidImageType
 		break
 	}
+
+	mm.NetBridgeOn = m.NetBridgeOn
 
 	err = DBStoreMachine(&mm)
 	if err != nil {

@@ -6,11 +6,12 @@ const (
 )
 
 type Machine struct {
-	ID     string
-	Type   int
-	Image  string
-	State  int
-	Cores  int
-	Memory int
-	PID    int
+	ID          string
+	Type        int
+	Image       string
+	NetBridgeOn string
+	State       int
+	Cores       int
+	Memory      int
+	PID         int
 }
