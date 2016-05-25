@@ -52,7 +52,7 @@ func QemuStart(m *Machine, basePath string) error {
 	args[5] = "-hda"
 	args[6] = basePath + "qemu/" + m.ID + ".img"
 
-	if len(m.NetBridgeOn) > 0 {
+	if len(m.Network.BridgeOn) > 0 {
 		id := m.ID[:14]
 
 		err := NetCreateBridge("wir0")
@@ -72,7 +72,7 @@ func QemuStart(m *Machine, basePath string) error {
 			return err
 		}
 
-		err = NetBridgeAddIf("wir0", m.NetBridgeOn)
+		err = NetBridgeAddIf("wir0", m.Network.BridgeOn)
 		if err != nil {
 			return err
 		}
@@ -140,15 +140,15 @@ func QemuStart(m *Machine, basePath string) error {
 		break
 	}
 
-	m.PID = cmd.Process.Pid
+	m.Qemu.PID = cmd.Process.Pid
 	return nil
 }
 
 func QemuCheck(m *Machine) {
-	out, err := exec.Command("kill", "-s", "0", strconv.Itoa(m.PID)).CombinedOutput()
-	if m.PID == 0 || err != nil {
+	out, err := exec.Command("kill", "-s", "0", strconv.Itoa(m.Qemu.PID)).CombinedOutput()
+	if m.Qemu.PID == 0 || err != nil {
 		m.State = StateDown
-		m.PID = 0
+		m.Qemu.PID = 0
 		return
 	}
 
@@ -160,11 +160,11 @@ func QemuCheck(m *Machine) {
 	log.Println(string(out))
 
 	m.State = StateDown
-	m.PID = 0
+	m.Qemu.PID = 0
 }
 
 func QemuStop(m *Machine) error {
-	proc, err := os.FindProcess(m.PID)
+	proc, err := os.FindProcess(m.Qemu.PID)
 	if err != nil {
 		m.State = StateDown
 		return nil
@@ -176,13 +176,13 @@ func QemuStop(m *Machine) error {
 	}
 
 	m.State = StateDown
-	m.PID = 0
+	m.Qemu.PID = 0
 
 	return nil
 }
 
 func QemuDelete(m *Machine) error {
-	if len(m.NetBridgeOn) != 0 {
+	if len(m.Network.BridgeOn) != 0 {
 		return NetDeleteTAP(m.ID)
 	}
 

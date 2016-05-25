@@ -42,7 +42,7 @@ func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
 		break
 	}
 
-	mm.NetBridgeOn = m.NetBridgeOn
+	mm.Network = m.Network
 
 	err = DBStoreMachine(&mm)
 	if err != nil {
@@ -116,6 +116,12 @@ func handleMachineStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	switch m.Type {
+	case image.TypeQemu:
+		machine.QemuCheck(&m)
+		break
+	}
+
 	if m.State != machine.StateDown {
 		ErrorResponse(errors.InvalidMachineState).Send(w, r)
 		return
@@ -154,22 +160,30 @@ func handleMachineStop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if m.State != machine.StateUp {
-		ErrorResponse(errors.InvalidMachineState).Send(w, r)
-		return
-	}
-
 	switch m.Type {
 	case image.TypeQemu:
-		err = machine.QemuStop(&m)
+		machine.QemuCheck(&m)
 		break
 	default:
 		ErrorResponse(errors.InvalidImageType)
 		return
 	}
 
-	if err != nil {
-		ErrorResponse(err).Send(w, r)
+	if m.State != machine.StateUp {
+		ErrorResponse(errors.InvalidMachineState)
+		return
+	}
+
+	switch m.Type {
+	case image.TypeQemu:
+		err = machine.QemuStop(&m)
+		if err != nil {
+			ErrorResponse(err).Send(w, r)
+			return
+		}
+		break
+	default:
+		ErrorResponse(errors.InvalidImageType)
 		return
 	}
 

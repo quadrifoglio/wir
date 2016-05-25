@@ -11,9 +11,8 @@ import (
 )
 
 const (
-	IFF_TUN   = 0x0001
-	IFF_TAP   = 0x0002
-	IFF_NO_PI = 0x1000
+	IFF_TUN = 0x0001
+	IFF_TAP = 0x0002
 )
 
 type ifreq struct {

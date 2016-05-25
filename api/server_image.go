@@ -5,18 +5,13 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/quadrifoglio/wir/client"
 	"github.com/quadrifoglio/wir/errors"
 	"github.com/quadrifoglio/wir/image"
 )
 
-type ImagePost struct {
-	Name   string
-	Type   int
-	Source string
-}
-
 func handleImageCreate(w http.ResponseWriter, r *http.Request) {
-	var i ImagePost
+	var i client.ImageRequest
 
 	err := json.NewDecoder(r.Body).Decode(&i)
 	if err != nil {
