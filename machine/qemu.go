@@ -180,3 +180,11 @@ func QemuStop(m *Machine) error {
 
 	return nil
 }
+
+func QemuDelete(m *Machine) error {
+	if len(m.NetBridgeOn) != 0 {
+		return NetDeleteTAP(m.ID)
+	}
+
+	return nil
+}

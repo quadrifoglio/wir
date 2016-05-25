@@ -186,7 +186,24 @@ func handleMachineDelete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
 
-	err := DBDeleteMachine(id)
+	m, err := DBGetMachine(id)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	switch m.Type {
+	case image.TypeQemu:
+		err = machine.QemuDelete(&m)
+		break
+	}
+
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	DBDeleteMachine(id)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
