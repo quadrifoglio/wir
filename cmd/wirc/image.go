@@ -36,14 +36,10 @@ func createImage(name, t, source string) {
 		req.Source = "file://" + source
 	}
 
-	img, err := client.CreateImage(req)
+	_, err := client.CreateImage(req)
 	if err != nil {
 		fatal(err)
 	}
-
-	fmt.Println("Name:", img.Name)
-	fmt.Println("Type:", image.TypeToString(img.Type))
-	fmt.Println("Source:", img.Source)
 }
 
 func showImage(name string) {
@@ -62,6 +58,4 @@ func deleteImage(name string) {
 	if err != nil {
 		fatal(err)
 	}
-
-	fmt.Println("Image successfully deleted")
 }

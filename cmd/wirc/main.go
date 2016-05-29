@@ -26,13 +26,23 @@ var (
 	cmdMachine  = kingpin.Command("machine", "Machine management")
 
 	machineCreate      = cmdMachine.Command("create", "Create a new machine based on an existing image")
+	machineCreateCores = machineCreate.Flag("cpus", "Number of CPU cores to use").Short('c').Default("1").Int()
+	machineCreateMem   = machineCreate.Flag("memory", "Amount of memory to use").Short('m').Default("512").Int()
+	machineCreateNet   = machineCreate.Flag("net", "Type of networking to use").Short('n').Default("bridge").String()
+	machineCreateNetIf = machineCreate.Flag("net-if", "Network interface to use (in case of bridge networking)").Short('i').Default("eth0").String()
 	machineCreateImage = machineCreate.Arg("image", "Name of image to use").Required().String()
 
-	machineShow     = cmdMachine.Command("show", "Show machine details")
-	machineShowName = machineShow.Arg("id", "Machine ID").Required().String()
+	machineShow   = cmdMachine.Command("show", "Show machine details")
+	machineShowId = machineShow.Arg("id", "Machine ID").Required().String()
 
-	machineDelete     = cmdMachine.Command("delete", "Delete a machine")
-	machineDeleteName = machineDelete.Arg("id", "Machine ID").Required().String()
+	machineStart   = cmdMachine.Command("start", "Start machine")
+	machineStartId = machineStart.Arg("id", "Machine ID").Required().String()
+
+	machineStop   = cmdMachine.Command("stop", "Stop machine")
+	machineStopId = machineStop.Arg("id", "Machine ID").Required().String()
+
+	machineDelete   = cmdMachine.Command("delete", "Delete a machine")
+	machineDeleteId = machineDelete.Arg("id", "Machine ID").Required().String()
 )
 
 func fatal(err error) {
@@ -58,13 +68,20 @@ func main() {
 		listMachines()
 		break
 	case "machine create":
-		createMachine(*machineCreateImage)
+		net := machineNet{*machineCreateNet, *machineCreateNetIf}
+		createMachine(*machineCreateImage, *machineCreateCores, *machineCreateMem, net)
 		break
 	case "machine show":
-		showMachine(*machineShowName)
+		showMachine(*machineShowId)
+		break
+	case "machine start":
+		startMachine(*machineStartId)
+		break
+	case "machine stop":
+		stopMachine(*machineStopId)
 		break
 	case "machine delete":
-		deleteMachine(*machineDeleteName)
+		deleteMachine(*machineDeleteId)
 		break
 	}
 }

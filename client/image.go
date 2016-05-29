@@ -84,7 +84,7 @@ func GetImage(name string) (image.Image, error) {
 func DeleteImage(name string) error {
 	type Response struct {
 		ResponseBase
-		Content image.Image
+		Content interface{}
 	}
 
 	var r Response

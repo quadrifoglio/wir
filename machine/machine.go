@@ -23,3 +23,25 @@ type Machine struct {
 	Network NetworkMode `json:",omitempty"`
 	Qemu    BackendQemu
 }
+
+func StateToString(s int) string {
+	switch s {
+	case StateDown:
+		return "down"
+	case StateUp:
+		return "up"
+	default:
+		return "unknown"
+	}
+}
+
+func StringToState(s string) int {
+	switch s {
+	case "down":
+		return StateDown
+	case "up":
+		return StateUp
+	default:
+		return StateDown
+	}
+}
