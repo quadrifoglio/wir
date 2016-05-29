@@ -12,3 +12,29 @@ type Image struct {
 	Type   int
 	Source string
 }
+
+func TypeToString(t int) string {
+	switch t {
+	case TypeQemu:
+		return "qemu"
+	case TypeDocker:
+		return "docker"
+	case TypeVz:
+		return "openvz"
+	default:
+		return "unknown"
+	}
+}
+
+func StringToType(t string) int {
+	switch t {
+	case "qemu":
+		return TypeQemu
+	case "docker":
+		return TypeDocker
+	case "openvz":
+		return TypeVz
+	default:
+		return TypeUnknown
+	}
+}

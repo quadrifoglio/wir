@@ -20,11 +20,6 @@ func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(m.Name) == 0 {
-		ErrorResponse(errors.BadRequest).Send(w, r)
-		return
-	}
-
 	img, err := DBGetImage(m.Image)
 	if err != nil {
 		ErrorResponse(errors.ImageNotFound).Send(w, r)
