@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -206,7 +207,7 @@ func DBListMachines() ([]machine.Machine, error) {
 	return ms, nil
 }
 
-func DBGetMachine(id string) (machine.Machine, error) {
+func DBGetMachine(idf string) (machine.Machine, error) {
 	var m machine.Machine
 
 	err := Database.View(func(tx *bolt.Tx) error {
@@ -216,14 +217,32 @@ func DBGetMachine(id string) (machine.Machine, error) {
 			return fmt.Errorf("Missing database bucket: %s", MachinesBucket)
 		}
 
-		data := bucket.Get([]byte(id))
-		if data == nil {
-			return errors.NotFound
-		}
+		_, err := hex.DecodeString(idf)
+		if err == nil {
+			data := bucket.Get([]byte(idf))
+			if data == nil {
+				return errors.NotFound
+			}
 
-		err := json.Unmarshal(data, &m)
-		if err != nil {
-			return err
+			err := json.Unmarshal(data, &m)
+			if err != nil {
+				return err
+			}
+		} else {
+			bucket.ForEach(func(_, v []byte) error {
+				var mm machine.Machine
+
+				err := json.Unmarshal(v, &mm)
+				if err != nil {
+					return fmt.Errorf("JSON: %s", err)
+				}
+
+				if mm.Name == idf {
+					m = mm
+				}
+
+				return nil
+			})
 		}
 
 		return nil

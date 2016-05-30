@@ -84,9 +84,9 @@ func handleMachineList(w http.ResponseWriter, r *http.Request) {
 
 func handleMachineGet(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id := vars["id"]
+	idf := vars["idf"]
 
-	m, err := DBGetMachine(id)
+	m, err := DBGetMachine(idf)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
