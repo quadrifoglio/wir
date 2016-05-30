@@ -15,6 +15,7 @@ type BackendQemu struct {
 
 type Machine struct {
 	ID      string
+	Name    string
 	Type    int
 	Image   string
 	State   int

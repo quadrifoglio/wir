@@ -11,8 +11,7 @@ import (
 )
 
 type machineNet struct {
-	Type string
-	If   string
+	BrIf string
 }
 
 func listMachines() {
@@ -22,24 +21,22 @@ func listMachines() {
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"ID", "Type", "Image", "State"})
+	table.SetHeader([]string{"ID", "Name", "Type", "Image", "State"})
 
 	for _, m := range ms {
-		table.Append([]string{m.ID, image.TypeToString(m.Type), m.Image, machine.StateToString(m.State)})
+		table.Append([]string{m.ID, m.Name, image.TypeToString(m.Type), m.Image, machine.StateToString(m.State)})
 	}
 
 	table.Render()
 }
 
-func createMachine(img string, cpus, mem int, net machineNet) {
+func createMachine(name, img string, cpus, mem int, net machineNet) {
 	var req client.MachineRequest
+	req.Name = name
 	req.Image = img
 	req.Cores = cpus
 	req.Memory = mem
-
-	if net.Type == "bridge" {
-		req.Network = machine.NetworkMode{net.If}
-	}
+	req.Network = machine.NetworkMode{net.BrIf}
 
 	m, err := client.CreateMachine(req)
 	if err != nil {
@@ -56,6 +53,7 @@ func showMachine(id string) {
 	}
 
 	fmt.Println("ID:", m.ID)
+	fmt.Println("Name:", m.Name)
 	fmt.Println("Type:", image.TypeToString(m.Type))
 	fmt.Println("Image:", m.Image)
 	fmt.Println("State:", machine.StateToString(m.State))

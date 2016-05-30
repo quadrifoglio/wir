@@ -42,6 +42,9 @@ func ErrorResponse(err error) Response {
 	case errors.ImageNotFound:
 		re.Status = 404
 		break
+	case errors.NameUsed:
+		re.Status = 400
+		break
 	case errors.InvalidMachineState:
 		re.Status = 400
 		break

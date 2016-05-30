@@ -11,6 +11,7 @@ var (
 	InvalidURL          = errors.New("Invalid URL")
 	UnsupportedProto    = errors.New("Unsupported Protocol")
 	ImageNotFound       = errors.New("Image Not Found")
+	NameUsed            = errors.New("Name already used")
 	InvalidMachineState = errors.New("Invalid Machine State")
 	StartFailed         = errors.New("Machine Start Failed")
 	KillFailed          = errors.New("Process kill failed")

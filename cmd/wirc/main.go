@@ -25,12 +25,12 @@ var (
 	cmdMachines = kingpin.Command("machines", "List machines")
 	cmdMachine  = kingpin.Command("machine", "Machine management")
 
-	machineCreate      = cmdMachine.Command("create", "Create a new machine based on an existing image")
-	machineCreateCores = machineCreate.Flag("cpus", "Number of CPU cores to use").Short('c').Default("1").Int()
-	machineCreateMem   = machineCreate.Flag("memory", "Amount of memory to use").Short('m').Default("512").Int()
-	machineCreateNet   = machineCreate.Flag("net", "Type of networking to use").Short('n').Default("bridge").String()
-	machineCreateNetIf = machineCreate.Flag("net-if", "Network interface to use (in case of bridge networking)").Short('i').Default("eth0").String()
-	machineCreateImage = machineCreate.Arg("image", "Name of image to use").Required().String()
+	machineCreate        = cmdMachine.Command("create", "Create a new machine based on an existing image")
+	machineCreateName    = machineCreate.Flag("name", "Name of the machine").Short('n').String()
+	machineCreateCores   = machineCreate.Flag("cpus", "Number of CPU cores to use").Short('c').Default("1").Int()
+	machineCreateMem     = machineCreate.Flag("memory", "Amount of memory to use").Short('m').Default("512").Int()
+	machineCreateNetBrIf = machineCreate.Flag("bridge-if", "Network interface to use (in case of bridge networking)").Short('b').String()
+	machineCreateImage   = machineCreate.Arg("image", "Name of image to use").Required().String()
 
 	machineShow   = cmdMachine.Command("show", "Show machine details")
 	machineShowId = machineShow.Arg("id", "Machine ID").Required().String()
@@ -68,8 +68,8 @@ func main() {
 		listMachines()
 		break
 	case "machine create":
-		net := machineNet{*machineCreateNet, *machineCreateNetIf}
-		createMachine(*machineCreateImage, *machineCreateCores, *machineCreateMem, net)
+		net := machineNet{*machineCreateNetBrIf}
+		createMachine(*machineCreateName, *machineCreateImage, *machineCreateCores, *machineCreateMem, net)
 		break
 	case "machine show":
 		showMachine(*machineShowId)

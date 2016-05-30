@@ -26,6 +26,11 @@ func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(m.Name) != 0 && !DBMachineNameFree(m.Name) {
+		ErrorResponse(errors.NameUsed).Send(w, r)
+		return
+	}
+
 	var mm machine.Machine
 
 	switch img.Type {
@@ -37,6 +42,7 @@ func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
 		break
 	}
 
+	mm.Name = m.Name
 	mm.Network = m.Network
 
 	err = DBStoreMachine(&mm)

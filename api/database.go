@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/boltdb/bolt"
 	"github.com/quadrifoglio/wir/errors"
@@ -119,6 +120,40 @@ func DBDeleteImage(name string) error {
 	})
 
 	return err
+}
+
+func DBMachineNameFree(name string) bool {
+	err := Database.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(MachinesBucket)
+		if b == nil {
+			return nil
+		}
+
+		return b.ForEach(func(_, v []byte) error {
+			var m machine.Machine
+
+			err := json.Unmarshal(v, &m)
+			if err != nil {
+				return fmt.Errorf("JSON: %s", err)
+			}
+
+			if m.Name == name {
+				return fmt.Errorf("Found")
+			}
+
+			return nil
+		})
+	})
+
+	if err != nil {
+		if err.Error() != "Found" {
+			log.Println("Database: ", err)
+		}
+
+		return false
+	}
+
+	return true
 }
 
 func DBStoreMachine(m *machine.Machine) error {
