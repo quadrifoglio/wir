@@ -13,6 +13,10 @@ type BackendQemu struct {
 	PID int
 }
 
+type BackendVz struct {
+	CTID string
+}
+
 type Machine struct {
 	ID      string
 	Name    string
@@ -22,7 +26,9 @@ type Machine struct {
 	Cores   int
 	Memory  int
 	Network NetworkMode `json:",omitempty"`
-	Qemu    BackendQemu
+
+	Qemu BackendQemu
+	Vz   BackendVz
 }
 
 func StateToString(s int) string {

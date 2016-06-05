@@ -21,6 +21,42 @@ type ifreq struct {
 	osef  [0x16]byte
 }
 
+func NetOpenTAP(name string) (*os.File, error) {
+	f, err := os.OpenFile("/dev/net/tun", os.O_RDWR, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	var r ifreq
+	r.flags = IFF_TAP
+
+	copy(r.name[:], name[:14])
+
+	_, _, errno := syscall.Syscall(syscall.SYS_IOCTL, f.Fd(), uintptr(syscall.TUNSETIFF), uintptr(unsafe.Pointer(&r)))
+	if errno != 0 {
+		f.Close()
+		return nil, errno
+	}
+
+	return f, nil
+}
+
+func NetTAPPersist(f *os.File, persist bool) error {
+	var i int
+	if persist {
+		i = 1
+	} else {
+		i = 0
+	}
+
+	_, _, errno := syscall.Syscall(syscall.SYS_IOCTL, f.Fd(), uintptr(syscall.TUNSETPERSIST), uintptr(i))
+	if errno != 0 {
+		return errno
+	}
+
+	return nil
+}
+
 func NetCreateBridge(name string) error {
 	br, err := tenus.BridgeFromName(name)
 	if err != nil {
@@ -31,59 +67,7 @@ func NetCreateBridge(name string) error {
 	}
 
 	if err = br.SetLinkUp(); err != nil {
-		return fmt.Errorf("Create bridge: %s", err)
-	}
-
-	return nil
-}
-
-func NetCreateTAP(name string) error {
-	f, err := os.OpenFile("/dev/net/tun", os.O_RDWR, 0)
-	if err != nil {
-		return err
-	}
-
-	defer f.Close()
-
-	var r ifreq
-	r.flags = IFF_TAP
-
-	copy(r.name[:], name[:14])
-
-	_, _, errno := syscall.Syscall(syscall.SYS_IOCTL, f.Fd(), uintptr(syscall.TUNSETIFF), uintptr(unsafe.Pointer(&r)))
-	if errno != 0 {
-		return errno
-	}
-
-	_, _, errno = syscall.Syscall(syscall.SYS_IOCTL, f.Fd(), uintptr(syscall.TUNSETPERSIST), 1)
-	if errno != 0 {
-		return errno
-	}
-
-	return nil
-}
-
-func NetDeleteTAP(name string) error {
-	f, err := os.OpenFile("/dev/net/tun", os.O_RDWR, 0)
-	if err != nil {
-		return err
-	}
-
-	defer f.Close()
-
-	var r ifreq
-	r.flags = IFF_TAP
-
-	copy(r.name[:], name[:14])
-
-	_, _, errno := syscall.Syscall(syscall.SYS_IOCTL, f.Fd(), uintptr(syscall.TUNSETIFF), uintptr(unsafe.Pointer(&r)))
-	if errno != 0 {
-		return errno
-	}
-
-	_, _, errno = syscall.Syscall(syscall.SYS_IOCTL, f.Fd(), uintptr(syscall.TUNSETPERSIST), 0)
-	if errno != 0 {
-		return errno
+		return fmt.Errorf("Bridge up: %s", err)
 	}
 
 	return nil

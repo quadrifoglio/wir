@@ -18,7 +18,7 @@ func FetchResource(url *url.URL, dst io.Writer) error {
 	case "scp":
 		return FetchScp(url.Host, url.User, url.Path, dst)
 	case "http":
-		return FetchFile(url.String(), dst)
+		return FetchHTTP(url.String(), dst)
 	default:
 		return errors.UnsupportedProto
 	}

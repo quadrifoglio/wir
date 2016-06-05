@@ -60,12 +60,17 @@ func QemuStart(m *Machine, basePath string) error {
 			return err
 		}
 
-		NetDeleteTAP(id)
-
-		err = NetCreateTAP(id)
+		tap, err := NetOpenTAP(id)
 		if err != nil {
 			return err
 		}
+
+		err = NetTAPPersist(tap, true)
+		if err != nil {
+			return err
+		}
+
+		tap.Close()
 
 		err = NetBridgeAddIf("wir0", id)
 		if err != nil {
@@ -183,7 +188,17 @@ func QemuStop(m *Machine) error {
 
 func QemuDelete(m *Machine) error {
 	if len(m.Network.BridgeOn) != 0 {
-		return NetDeleteTAP(m.ID)
+		tap, err := NetOpenTAP(m.ID)
+		if err != nil {
+			return err
+		}
+
+		err = NetTAPPersist(tap, false)
+		if err != nil {
+			return err
+		}
+
+		tap.Close()
 	}
 
 	return nil

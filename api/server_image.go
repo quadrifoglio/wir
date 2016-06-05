@@ -30,6 +30,8 @@ func handleImageCreate(w http.ResponseWriter, r *http.Request) {
 	case image.TypeQemu:
 		img, err = image.QemuCreate(i.Name, i.Source, Conf.ImagePath)
 		break
+	case image.TypeVz:
+		img, err = image.VzCreate(i.Name, i.Source, Conf.ImagePath)
 	default:
 		err = errors.InvalidImageType
 		break

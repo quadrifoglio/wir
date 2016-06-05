@@ -37,6 +37,9 @@ func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
 	case image.TypeQemu:
 		mm, err = machine.QemuCreate(Conf.MachinePath, &img, m.Cores, m.Memory)
 		break
+	case image.TypeVz:
+		mm, err = machine.VzCreate(Conf.MachinePath, &img, m.Name, m.Cores, m.Memory)
+		break
 	default:
 		err = errors.InvalidImageType
 		break
@@ -68,6 +71,9 @@ func handleMachineList(w http.ResponseWriter, r *http.Request) {
 		case image.TypeQemu:
 			machine.QemuCheck(&ms[i])
 			break
+		case image.TypeVz:
+			machine.VzCheck(&ms[i])
+			break
 		}
 
 		if ms[i].State != prevState {
@@ -96,6 +102,9 @@ func handleMachineGet(w http.ResponseWriter, r *http.Request) {
 	case image.TypeQemu:
 		machine.QemuCheck(&m)
 		break
+	case image.TypeVz:
+		machine.VzCheck(&m)
+		break
 	}
 
 	err = DBStoreMachine(&m)
@@ -121,6 +130,9 @@ func handleMachineStart(w http.ResponseWriter, r *http.Request) {
 	case image.TypeQemu:
 		machine.QemuCheck(&m)
 		break
+	case image.TypeVz:
+		machine.VzCheck(&m)
+		break
 	}
 
 	if m.State != machine.StateDown {
@@ -131,6 +143,9 @@ func handleMachineStart(w http.ResponseWriter, r *http.Request) {
 	switch m.Type {
 	case image.TypeQemu:
 		err = machine.QemuStart(&m, Conf.MachinePath)
+		break
+	case image.TypeVz:
+		err = machine.VzStart(&m)
 		break
 	default:
 		ErrorResponse(errors.InvalidImageType)
@@ -165,6 +180,9 @@ func handleMachineStop(w http.ResponseWriter, r *http.Request) {
 	case image.TypeQemu:
 		machine.QemuCheck(&m)
 		break
+	case image.TypeVz:
+		machine.VzCheck(&m)
+		break
 	default:
 		ErrorResponse(errors.InvalidImageType)
 		return
@@ -178,6 +196,13 @@ func handleMachineStop(w http.ResponseWriter, r *http.Request) {
 	switch m.Type {
 	case image.TypeQemu:
 		err = machine.QemuStop(&m)
+		if err != nil {
+			ErrorResponse(err).Send(w, r)
+			return
+		}
+		break
+	case image.TypeVz:
+		err = machine.VzStop(&m)
 		if err != nil {
 			ErrorResponse(err).Send(w, r)
 			return
@@ -209,7 +234,27 @@ func handleMachineDelete(w http.ResponseWriter, r *http.Request) {
 
 	switch m.Type {
 	case image.TypeQemu:
+		machine.QemuCheck(&m)
+		break
+	case image.TypeVz:
+		machine.VzCheck(&m)
+		break
+	default:
+		ErrorResponse(errors.InvalidImageType)
+		return
+	}
+
+	if m.State != machine.StateDown {
+		ErrorResponse(errors.InvalidMachineState)
+		return
+	}
+
+	switch m.Type {
+	case image.TypeQemu:
 		err = machine.QemuDelete(&m)
+		break
+	case image.TypeVz:
+		err = machine.VzDelete(&m)
 		break
 	}
 
