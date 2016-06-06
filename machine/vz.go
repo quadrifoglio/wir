@@ -1,6 +1,7 @@
 package machine
 
 import (
+	"fmt"
 	"log"
 	"os/exec"
 	"strconv"
@@ -32,11 +33,11 @@ func VzCreate(basePath string, img *image.Image, name string, cores, memory int)
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return m, err
-	}
+		if out != nil {
+			log.Println("OpenVZ:", string(out))
+		}
 
-	if out != nil {
-		log.Println("OpenVZ:", string(out))
+		return m, err
 	}
 
 	args[0] = "set"
@@ -50,11 +51,36 @@ func VzCreate(basePath string, img *image.Image, name string, cores, memory int)
 
 	out, err = cmd.CombinedOutput()
 	if err != nil {
+		if out != nil {
+			log.Println("OpenVZ:", string(out))
+		}
+
 		return m, err
 	}
 
-	if out != nil {
-		log.Println("OpenVZ:", string(out))
+	if len(m.Network.BridgeOn) > 0 {
+		err := NetCreateBridge("wir0")
+		if err != nil {
+			return m, err
+		}
+
+		args := []string{"set", m.Vz.CTID, "--netif", "add", "eth0", "--save"}
+		cmd = exec.Command("/usr/sbin/vzctl", args...)
+
+		out, err = cmd.CombinedOutput()
+		if err != nil {
+			if out != nil {
+				log.Println("OpenVZ:", string(out))
+			}
+
+			return m, err
+		}
+
+		err = NetBridgeAddIf("wir0", fmt.Sprintf("veth%s.0", m.Vz.CTID))
+		if err != nil {
+			return m, err
+		}
+
 	}
 
 	return m, nil
@@ -65,11 +91,11 @@ func VzStart(m *Machine) error {
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return err
-	}
+		if out != nil {
+			log.Println("OpenVZ:", string(out))
+		}
 
-	if out != nil {
-		log.Println("OpenVZ:", string(out))
+		return err
 	}
 
 	return nil
@@ -96,11 +122,11 @@ func VzStop(m *Machine) error {
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return err
-	}
+		if out != nil {
+			log.Println("OpenVZ:", string(out))
+		}
 
-	if out != nil {
-		log.Println("OpenVZ:", string(out))
+		return err
 	}
 
 	return nil
@@ -111,11 +137,11 @@ func VzDelete(m *Machine) error {
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return err
-	}
+		if out != nil {
+			log.Println("OpenVZ:", string(out))
+		}
 
-	if out != nil {
-		log.Println("OpenVZ:", string(out))
+		return err
 	}
 
 	return nil

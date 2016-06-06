@@ -45,6 +45,11 @@ func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
 		break
 	}
 
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
 	mm.Name = m.Name
 	mm.Network = m.Network
 
@@ -245,7 +250,7 @@ func handleMachineDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if m.State != machine.StateDown {
-		ErrorResponse(errors.InvalidMachineState)
+		ErrorResponse(errors.InvalidMachineState).Send(w, r)
 		return
 	}
 
