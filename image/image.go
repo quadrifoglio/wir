@@ -5,6 +5,7 @@ const (
 	TypeQemu    = 1
 	TypeDocker  = 2
 	TypeVz      = 3
+	TypeLXC     = 4
 )
 
 type Image struct {
@@ -21,6 +22,8 @@ func TypeToString(t int) string {
 		return "docker"
 	case TypeVz:
 		return "openvz"
+	case TypeLXC:
+		return "lxc"
 	default:
 		return "unknown"
 	}
@@ -34,6 +37,8 @@ func StringToType(t string) int {
 		return TypeDocker
 	case "openvz":
 		return TypeVz
+	case "lxc":
+		return TypeLXC
 	default:
 		return TypeUnknown
 	}

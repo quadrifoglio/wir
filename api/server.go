@@ -4,7 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+
 	"github.com/quadrifoglio/wir/errors"
+	"github.com/quadrifoglio/wir/image"
 )
 
 const (
@@ -37,10 +39,26 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(i).Send(w, r)
 }
 
+func addLxcImages() error {
+	for _, i := range image.LxcTemplates {
+		err := DBStoreImage(&i)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func Start(conf Config) error {
 	Conf = conf
 
 	err := DBOpen(Conf.DatabaseFile)
+	if err != nil {
+		return err
+	}
+
+	err = addLxcImages()
 	if err != nil {
 		return err
 	}
