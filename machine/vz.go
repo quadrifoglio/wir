@@ -8,12 +8,11 @@ import (
 	"strings"
 
 	"github.com/quadrifoglio/wir/image"
-	"github.com/quadrifoglio/wir/utils"
 )
 
-func VzCreate(basePath string, img *image.Image, name string, cores, memory int) (Machine, error) {
+func VzCreate(basePath string, name string, img *image.Image, cores, memory int) (Machine, error) {
 	var m Machine
-	m.ID = utils.UniqueID()
+	m.Name = name
 	m.Type = img.Type
 	m.Image = img.Name
 	m.Cores = cores

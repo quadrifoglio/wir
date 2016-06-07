@@ -21,10 +21,10 @@ func listMachines() {
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"ID", "Name", "Type", "Image", "State"})
+	table.SetHeader([]string{"Name", "Type", "Image", "State"})
 
 	for _, m := range ms {
-		table.Append([]string{m.ID, m.Name, image.TypeToString(m.Type), m.Image, machine.StateToString(m.State)})
+		table.Append([]string{m.Name, image.TypeToString(m.Type), m.Image, machine.StateToString(m.State)})
 	}
 
 	table.Render()
@@ -43,16 +43,15 @@ func createMachine(name, img string, cpus, mem int, net machineNet) {
 		fatal(err)
 	}
 
-	fmt.Println(m.ID)
+	fmt.Println(m.Name)
 }
 
-func showMachine(id string) {
-	m, err := client.GetMachine(id)
+func showMachine(name string) {
+	m, err := client.GetMachine(name)
 	if err != nil {
 		fatal(err)
 	}
 
-	fmt.Println("ID:", m.ID)
 	fmt.Println("Name:", m.Name)
 	fmt.Println("Type:", image.TypeToString(m.Type))
 	fmt.Println("Image:", m.Image)
@@ -61,22 +60,22 @@ func showMachine(id string) {
 	fmt.Println("Memory:", m.Memory)
 }
 
-func startMachine(id string) {
-	err := client.StartMachine(id)
+func startMachine(name string) {
+	err := client.StartMachine(name)
 	if err != nil {
 		fatal(err)
 	}
 }
 
-func stopMachine(id string) {
-	err := client.StopMachine(id)
+func stopMachine(name string) {
+	err := client.StopMachine(name)
 	if err != nil {
 		fatal(err)
 	}
 }
 
-func deleteMachine(id string) {
-	err := client.DeleteMachine(id)
+func deleteMachine(name string) {
+	err := client.DeleteMachine(name)
 	if err != nil {
 		fatal(err)
 	}

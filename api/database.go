@@ -1,10 +1,8 @@
 package api
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"log"
 
 	"github.com/boltdb/bolt"
 	"github.com/quadrifoglio/wir/errors"
@@ -125,36 +123,25 @@ func DBDeleteImage(name string) error {
 
 func DBMachineNameFree(name string) bool {
 	err := Database.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket(MachinesBucket)
-		if b == nil {
-			return nil
+		bucket := tx.Bucket(MachinesBucket)
+
+		if bucket == nil {
+			return fmt.Errorf("Missing database bucket: %s", MachinesBucket)
 		}
 
-		return b.ForEach(func(_, v []byte) error {
-			var m machine.Machine
+		data := bucket.Get([]byte(name))
+		if data == nil {
+			return errors.NotFound
+		}
 
-			err := json.Unmarshal(v, &m)
-			if err != nil {
-				return fmt.Errorf("JSON: %s", err)
-			}
-
-			if m.Name == name {
-				return fmt.Errorf("Found")
-			}
-
-			return nil
-		})
+		return nil
 	})
 
 	if err != nil {
-		if err.Error() != "Found" {
-			log.Println("Database: ", err)
-		}
-
-		return false
+		return true
 	}
 
-	return true
+	return false
 }
 
 func DBStoreMachine(m *machine.Machine) error {
@@ -169,7 +156,7 @@ func DBStoreMachine(m *machine.Machine) error {
 			return err
 		}
 
-		err = bucket.Put([]byte(m.ID), data)
+		err = bucket.Put([]byte(m.Name), data)
 		if err != nil {
 			return err
 		}
@@ -207,7 +194,7 @@ func DBListMachines() ([]machine.Machine, error) {
 	return ms, nil
 }
 
-func DBGetMachine(idf string) (machine.Machine, error) {
+func DBGetMachine(name string) (machine.Machine, error) {
 	var m machine.Machine
 
 	err := Database.View(func(tx *bolt.Tx) error {
@@ -217,32 +204,14 @@ func DBGetMachine(idf string) (machine.Machine, error) {
 			return fmt.Errorf("Missing database bucket: %s", MachinesBucket)
 		}
 
-		_, err := hex.DecodeString(idf)
-		if err == nil {
-			data := bucket.Get([]byte(idf))
-			if data == nil {
-				return errors.NotFound
-			}
+		data := bucket.Get([]byte(name))
+		if data == nil {
+			return errors.NotFound
+		}
 
-			err := json.Unmarshal(data, &m)
-			if err != nil {
-				return err
-			}
-		} else {
-			bucket.ForEach(func(_, v []byte) error {
-				var mm machine.Machine
-
-				err := json.Unmarshal(v, &mm)
-				if err != nil {
-					return fmt.Errorf("JSON: %s", err)
-				}
-
-				if mm.Name == idf {
-					m = mm
-				}
-
-				return nil
-			})
+		err := json.Unmarshal(data, &m)
+		if err != nil {
+			return err
 		}
 
 		return nil
@@ -251,7 +220,7 @@ func DBGetMachine(idf string) (machine.Machine, error) {
 	return m, err
 }
 
-func DBDeleteMachine(id string) error {
+func DBDeleteMachine(name string) error {
 	err := Database.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(MachinesBucket)
 
@@ -259,7 +228,7 @@ func DBDeleteMachine(id string) error {
 			return fmt.Errorf("Missing database bucket: %s", MachinesBucket)
 		}
 
-		err := bucket.Delete([]byte(id))
+		err := bucket.Delete([]byte(name))
 		if err != nil {
 			return err
 		}

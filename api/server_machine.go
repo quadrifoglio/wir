@@ -9,6 +9,7 @@ import (
 	"github.com/quadrifoglio/wir/errors"
 	"github.com/quadrifoglio/wir/image"
 	"github.com/quadrifoglio/wir/machine"
+	"github.com/quadrifoglio/wir/utils"
 )
 
 func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
@@ -20,14 +21,18 @@ func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	img, err := DBGetImage(m.Image)
-	if err != nil {
-		ErrorResponse(errors.ImageNotFound).Send(w, r)
+	if len(m.Name) == 0 {
+		m.Name = utils.UniqueID()
+	}
+
+	if !DBMachineNameFree(m.Name) {
+		ErrorResponse(errors.NameUsed).Send(w, r)
 		return
 	}
 
-	if len(m.Name) != 0 && !DBMachineNameFree(m.Name) {
-		ErrorResponse(errors.NameUsed).Send(w, r)
+	img, err := DBGetImage(m.Image)
+	if err != nil {
+		ErrorResponse(errors.ImageNotFound).Send(w, r)
 		return
 	}
 
@@ -35,10 +40,10 @@ func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
 
 	switch img.Type {
 	case image.TypeQemu:
-		mm, err = machine.QemuCreate(Conf.MachinePath, &img, m.Cores, m.Memory)
+		mm, err = machine.QemuCreate(Conf.MachinePath, m.Name, &img, m.Cores, m.Memory)
 		break
 	case image.TypeVz:
-		mm, err = machine.VzCreate(Conf.MachinePath, &img, m.Name, m.Cores, m.Memory)
+		mm, err = machine.VzCreate(Conf.MachinePath, m.Name, &img, m.Cores, m.Memory)
 		break
 	default:
 		err = errors.InvalidImageType
@@ -50,7 +55,6 @@ func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mm.Name = m.Name
 	mm.Network = m.Network
 
 	err = DBStoreMachine(&mm)
@@ -95,9 +99,9 @@ func handleMachineList(w http.ResponseWriter, r *http.Request) {
 
 func handleMachineGet(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	idf := vars["idf"]
+	name := vars["name"]
 
-	m, err := DBGetMachine(idf)
+	m, err := DBGetMachine(name)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
@@ -123,9 +127,9 @@ func handleMachineGet(w http.ResponseWriter, r *http.Request) {
 
 func handleMachineStart(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id := vars["id"]
+	name := vars["name"]
 
-	m, err := DBGetMachine(id)
+	m, err := DBGetMachine(name)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
@@ -173,9 +177,9 @@ func handleMachineStart(w http.ResponseWriter, r *http.Request) {
 
 func handleMachineStop(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id := vars["id"]
+	name := vars["name"]
 
-	m, err := DBGetMachine(id)
+	m, err := DBGetMachine(name)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
@@ -229,9 +233,9 @@ func handleMachineStop(w http.ResponseWriter, r *http.Request) {
 
 func handleMachineDelete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	id := vars["id"]
+	name := vars["name"]
 
-	m, err := DBGetMachine(id)
+	m, err := DBGetMachine(name)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
@@ -268,7 +272,7 @@ func handleMachineDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	DBDeleteMachine(id)
+	DBDeleteMachine(name)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return

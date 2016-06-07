@@ -12,18 +12,17 @@ import (
 
 	"github.com/quadrifoglio/wir/errors"
 	"github.com/quadrifoglio/wir/image"
-	"github.com/quadrifoglio/wir/utils"
 )
 
-func QemuCreate(basePath string, img *image.Image, cores, memory int) (Machine, error) {
+func QemuCreate(basePath string, name string, img *image.Image, cores, memory int) (Machine, error) {
 	var m Machine
-	m.ID = utils.UniqueID()
+	m.Name = name
 	m.Type = img.Type
 	m.Image = img.Name
 	m.Cores = cores
 	m.Memory = memory
 
-	path := basePath + "qemu/" + m.ID + ".img"
+	path := basePath + "qemu/" + name + ".img"
 
 	err := os.MkdirAll(filepath.Dir(path), 0777)
 	if err != nil {
@@ -50,10 +49,10 @@ func QemuStart(m *Machine, basePath string) error {
 	args[3] = "-smp"
 	args[4] = strconv.Itoa(m.Cores)
 	args[5] = "-hda"
-	args[6] = basePath + "qemu/" + m.ID + ".img"
+	args[6] = basePath + "qemu/" + m.Name + ".img"
 
 	if len(m.Network.BridgeOn) > 0 {
-		id := m.ID[:14]
+		id := m.Name[:14] // DANGER
 
 		err := NetCreateBridge("wir0")
 		if err != nil {
@@ -98,7 +97,7 @@ func QemuStart(m *Machine, basePath string) error {
 	go func() {
 		in := bufio.NewScanner(stdout)
 		for in.Scan() {
-			log.Printf("Qemu machine %s: %s\n", m.ID, in.Text())
+			log.Printf("Qemu machine %s: %s\n", m.Name, in.Text())
 		}
 	}()
 
@@ -110,7 +109,7 @@ func QemuStart(m *Machine, basePath string) error {
 	go func() {
 		in := bufio.NewScanner(stderr)
 		for in.Scan() {
-			log.Printf("Qemu machine %s: %s\n", m.ID, in.Text())
+			log.Printf("Qemu machine %s: %s\n", m.Name, in.Text())
 		}
 	}()
 
@@ -131,7 +130,7 @@ func QemuStart(m *Machine, basePath string) error {
 			errs = "exit status 0"
 		}
 
-		log.Printf("Qemu machine %s: process exited: %s", m.ID, errs)
+		log.Printf("Qemu machine %s: process exited: %s", m.Name, errs)
 		errc <- true
 	}()
 
@@ -188,7 +187,7 @@ func QemuStop(m *Machine) error {
 
 func QemuDelete(m *Machine) error {
 	if len(m.Network.BridgeOn) != 0 {
-		tap, err := NetOpenTAP(m.ID)
+		tap, err := NetOpenTAP(m.Name)
 		if err != nil {
 			return err
 		}

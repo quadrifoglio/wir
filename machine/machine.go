@@ -18,7 +18,6 @@ type BackendVz struct {
 }
 
 type Machine struct {
-	ID      string
 	Name    string
 	Type    int
 	Image   string
