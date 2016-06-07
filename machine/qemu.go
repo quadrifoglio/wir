@@ -14,7 +14,7 @@ import (
 	"github.com/quadrifoglio/wir/image"
 )
 
-func QemuCreate(basePath string, name string, img *image.Image, cores, memory int) (Machine, error) {
+func QemuCreate(imgCmd, basePath, name string, img *image.Image, cores, memory int) (Machine, error) {
 	var m Machine
 	m.Name = name
 	m.Type = img.Type
@@ -29,7 +29,7 @@ func QemuCreate(basePath string, name string, img *image.Image, cores, memory in
 		return m, err
 	}
 
-	cmd := exec.Command("qemu-img", "create", "-b", img.Source, "-f", "qcow2", path)
+	cmd := exec.Command(imgCmd, "create", "-b", img.Source, "-f", "qcow2", path)
 
 	err = cmd.Run()
 	if err != nil {
@@ -39,7 +39,7 @@ func QemuCreate(basePath string, name string, img *image.Image, cores, memory in
 	return m, nil
 }
 
-func QemuStart(m *Machine, basePath string) error {
+func QemuStart(qemuCmd string, m *Machine, basePath string) error {
 	m.State = StateDown
 
 	args := make([]string, 7)
@@ -51,23 +51,23 @@ func QemuStart(m *Machine, basePath string) error {
 	args[5] = "-hda"
 	args[6] = basePath + "qemu/" + m.Name + ".img"
 
+	tap, err := NetOpenTAP(m.IfName())
+	if err != nil {
+		return err
+	}
+
+	defer tap.Close()
+
+	err = NetTAPPersist(tap, true)
+	if err != nil {
+		return err
+	}
+
 	if len(m.Network.BridgeOn) > 0 {
 		err := NetCreateBridge("wir0")
 		if err != nil {
 			return err
 		}
-
-		tap, err := NetOpenTAP(m.IfName())
-		if err != nil {
-			return err
-		}
-
-		err = NetTAPPersist(tap, true)
-		if err != nil {
-			return err
-		}
-
-		tap.Close()
 
 		err = NetBridgeAddIf("wir0", m.IfName())
 		if err != nil {
@@ -85,7 +85,7 @@ func QemuStart(m *Machine, basePath string) error {
 		args = append(args, "driver=virtio-net,netdev=net0")
 	}
 
-	cmd := exec.Command("qemu-system-x86_64", args...)
+	cmd := exec.Command(qemuCmd, args...)
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {

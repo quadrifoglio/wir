@@ -41,10 +41,10 @@ func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
 
 	switch img.Type {
 	case image.TypeQemu:
-		mm, err = machine.QemuCreate(Conf.MachinePath, m.Name, &img, m.Cores, m.Memory)
+		mm, err = machine.QemuCreate(Conf.QemuImg, Conf.MachinePath, m.Name, &img, m.Cores, m.Memory)
 		break
 	case image.TypeVz:
-		mm, err = machine.VzCreate(Conf.MachinePath, m.Name, &img, m.Cores, m.Memory)
+		mm, err = machine.VzCreate(Conf.Vzctl, Conf.MachinePath, m.Name, &img, m.Cores, m.Memory)
 		break
 	default:
 		err = errors.InvalidImageType
@@ -84,7 +84,7 @@ func handleMachineList(w http.ResponseWriter, r *http.Request) {
 			machine.QemuCheck(&ms[i])
 			break
 		case image.TypeVz:
-			machine.VzCheck(&ms[i])
+			machine.VzCheck(Conf.Vzctl, &ms[i])
 			break
 		}
 
@@ -115,7 +115,7 @@ func handleMachineGet(w http.ResponseWriter, r *http.Request) {
 		machine.QemuCheck(&m)
 		break
 	case image.TypeVz:
-		machine.VzCheck(&m)
+		machine.VzCheck(Conf.Vzctl, &m)
 		break
 	}
 
@@ -143,7 +143,7 @@ func handleMachineStart(w http.ResponseWriter, r *http.Request) {
 		machine.QemuCheck(&m)
 		break
 	case image.TypeVz:
-		machine.VzCheck(&m)
+		machine.VzCheck(Conf.Vzctl, &m)
 		break
 	}
 
@@ -154,10 +154,10 @@ func handleMachineStart(w http.ResponseWriter, r *http.Request) {
 
 	switch m.Type {
 	case image.TypeQemu:
-		err = machine.QemuStart(&m, Conf.MachinePath)
+		err = machine.QemuStart(Conf.Qemu, &m, Conf.MachinePath)
 		break
 	case image.TypeVz:
-		err = machine.VzStart(&m)
+		err = machine.VzStart(Conf.Vzctl, &m)
 		break
 	default:
 		ErrorResponse(errors.InvalidImageType)
@@ -193,7 +193,7 @@ func handleMachineStop(w http.ResponseWriter, r *http.Request) {
 		machine.QemuCheck(&m)
 		break
 	case image.TypeVz:
-		machine.VzCheck(&m)
+		machine.VzCheck(Conf.Vzctl, &m)
 		break
 	default:
 		ErrorResponse(errors.InvalidImageType)
@@ -214,7 +214,7 @@ func handleMachineStop(w http.ResponseWriter, r *http.Request) {
 		}
 		break
 	case image.TypeVz:
-		err = machine.VzStop(&m)
+		err = machine.VzStop(Conf.Vzctl, &m)
 		if err != nil {
 			ErrorResponse(err).Send(w, r)
 			return
@@ -249,7 +249,7 @@ func handleMachineDelete(w http.ResponseWriter, r *http.Request) {
 		machine.QemuCheck(&m)
 		break
 	case image.TypeVz:
-		machine.VzCheck(&m)
+		machine.VzCheck(Conf.Vzctl, &m)
 		break
 	default:
 		ErrorResponse(errors.InvalidImageType)
@@ -266,7 +266,7 @@ func handleMachineDelete(w http.ResponseWriter, r *http.Request) {
 		err = machine.QemuDelete(&m)
 		break
 	case image.TypeVz:
-		err = machine.VzDelete(&m)
+		err = machine.VzDelete(Conf.Vzctl, &m)
 		break
 	}
 

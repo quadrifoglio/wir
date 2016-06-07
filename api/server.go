@@ -17,6 +17,10 @@ type Config struct {
 	Address      string
 	DatabaseFile string
 
+	QemuImg string `json:"QemuImgCommand"`
+	Qemu    string `json:"QemuCommand"`
+	Vzctl   string `json:"VzctlCommand"`
+
 	ImagePath   string
 	MachinePath string
 }

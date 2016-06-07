@@ -10,7 +10,7 @@ import (
 	"github.com/quadrifoglio/wir/image"
 )
 
-func VzCreate(basePath string, name string, img *image.Image, cores, memory int) (Machine, error) {
+func VzCreate(vzCmd, basePath, name string, img *image.Image, cores, memory int) (Machine, error) {
 	var m Machine
 	m.Name = name
 	m.Type = img.Type
@@ -28,7 +28,7 @@ func VzCreate(basePath string, name string, img *image.Image, cores, memory int)
 	args[4] = "--name"
 	args[5] = name
 
-	cmd := exec.Command("/usr/sbin/vzctl", args...)
+	cmd := exec.Command(vzCmd, args...)
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -46,7 +46,7 @@ func VzCreate(basePath string, name string, img *image.Image, cores, memory int)
 	args[4] = "--cpus"
 	args[5] = strconv.Itoa(cores)
 
-	cmd = exec.Command("/usr/sbin/vzctl", args...)
+	cmd = exec.Command(vzCmd, args...)
 
 	out, err = cmd.CombinedOutput()
 	if err != nil {
@@ -64,7 +64,7 @@ func VzCreate(basePath string, name string, img *image.Image, cores, memory int)
 		}
 
 		args := []string{"set", m.Vz.CTID, "--netif", "add", "eth0", "--save"}
-		cmd = exec.Command("/usr/sbin/vzctl", args...)
+		cmd = exec.Command(vzCmd, args...)
 
 		out, err = cmd.CombinedOutput()
 		if err != nil {
@@ -85,8 +85,8 @@ func VzCreate(basePath string, name string, img *image.Image, cores, memory int)
 	return m, nil
 }
 
-func VzStart(m *Machine) error {
-	cmd := exec.Command("/usr/sbin/vzctl", "start", m.Vz.CTID)
+func VzStart(vzCmd string, m *Machine) error {
+	cmd := exec.Command(vzCmd, "start", m.Vz.CTID)
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -100,8 +100,8 @@ func VzStart(m *Machine) error {
 	return nil
 }
 
-func VzCheck(m *Machine) {
-	cmd := exec.Command("/usr/sbin/vzctl", "status", m.Vz.CTID)
+func VzCheck(vzCmd string, m *Machine) {
+	cmd := exec.Command(vzCmd, "status", m.Vz.CTID)
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -116,8 +116,8 @@ func VzCheck(m *Machine) {
 	}
 }
 
-func VzStop(m *Machine) error {
-	cmd := exec.Command("/usr/sbin/vzctl", "stop", m.Vz.CTID)
+func VzStop(vzCmd string, m *Machine) error {
+	cmd := exec.Command(vzCmd, "stop", m.Vz.CTID)
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -131,8 +131,8 @@ func VzStop(m *Machine) error {
 	return nil
 }
 
-func VzDelete(m *Machine) error {
-	cmd := exec.Command("/usr/sbin/vzctl", "destroy", m.Vz.CTID)
+func VzDelete(vzCmd string, m *Machine) error {
+	cmd := exec.Command(vzCmd, "destroy", m.Vz.CTID)
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {

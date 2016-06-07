@@ -2,6 +2,10 @@
 	"Address": "127.0.0.1:1997",
 	"DatabaseFile": "var/wir.db",
 
+	"QemuImgCommand": "/usr/bin/qemu-img",
+	"QemuCommand": "/usr/bin/qemu-system-x86_64",
+	"VzctlCommand": "/usr/sbin/vzctl",
+
 	"ImagePath": "var/images/",
 	"MachinePath": "var/machines/"
 }
