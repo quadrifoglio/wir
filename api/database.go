@@ -151,6 +151,15 @@ func DBStoreMachine(m *machine.Machine) error {
 			return err
 		}
 
+		if m.Index == 0 {
+			n, err := bucket.NextSequence()
+			if err != nil {
+				return err
+			}
+
+			m.Index = n
+		}
+
 		data, err := json.Marshal(m)
 		if err != nil {
 			return err
@@ -167,7 +176,7 @@ func DBStoreMachine(m *machine.Machine) error {
 	return err
 }
 
-func DBListMachines() ([]machine.Machine, error) {
+func DBListMachines() (machine.Machines, error) {
 	var ms []machine.Machine = make([]machine.Machine, 0)
 
 	Database.View(func(tx *bolt.Tx) error {
@@ -191,7 +200,7 @@ func DBListMachines() ([]machine.Machine, error) {
 		return nil
 	})
 
-	return ms, nil
+	return machine.Machines(ms), nil
 }
 
 func DBGetMachine(name string) (machine.Machine, error) {

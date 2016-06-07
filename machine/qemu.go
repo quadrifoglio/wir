@@ -52,14 +52,12 @@ func QemuStart(m *Machine, basePath string) error {
 	args[6] = basePath + "qemu/" + m.Name + ".img"
 
 	if len(m.Network.BridgeOn) > 0 {
-		id := m.Name[:14] // DANGER
-
 		err := NetCreateBridge("wir0")
 		if err != nil {
 			return err
 		}
 
-		tap, err := NetOpenTAP(id)
+		tap, err := NetOpenTAP(m.IfName())
 		if err != nil {
 			return err
 		}
@@ -71,7 +69,7 @@ func QemuStart(m *Machine, basePath string) error {
 
 		tap.Close()
 
-		err = NetBridgeAddIf("wir0", id)
+		err = NetBridgeAddIf("wir0", m.IfName())
 		if err != nil {
 			return err
 		}
@@ -82,7 +80,7 @@ func QemuStart(m *Machine, basePath string) error {
 		}
 
 		args = append(args, "-netdev")
-		args = append(args, fmt.Sprintf("tap,id=net0,ifname=%s,script=no", id))
+		args = append(args, fmt.Sprintf("tap,id=net0,ifname=%s,script=no", m.IfName()))
 		args = append(args, "-device")
 		args = append(args, "driver=virtio-net,netdev=net0")
 	}
@@ -187,7 +185,7 @@ func QemuStop(m *Machine) error {
 
 func QemuDelete(m *Machine) error {
 	if len(m.Network.BridgeOn) != 0 {
-		tap, err := NetOpenTAP(m.Name)
+		tap, err := NetOpenTAP(m.IfName())
 		if err != nil {
 			return err
 		}

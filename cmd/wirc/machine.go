@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/olekukonko/tablewriter"
 	"github.com/quadrifoglio/wir/client"
@@ -21,10 +22,10 @@ func listMachines() {
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Name", "Type", "Image", "State"})
+	table.SetHeader([]string{"Index", "Name", "Type", "Image", "State"})
 
 	for _, m := range ms {
-		table.Append([]string{m.Name, image.TypeToString(m.Type), m.Image, machine.StateToString(m.State)})
+		table.Append([]string{strconv.Itoa(int(m.Index)), m.Name, image.TypeToString(m.Type), m.Image, machine.StateToString(m.State)})
 	}
 
 	table.Render()
@@ -52,6 +53,7 @@ func showMachine(name string) {
 		fatal(err)
 	}
 
+	fmt.Println("Index:", m.Index)
 	fmt.Println("Name:", m.Name)
 	fmt.Println("Type:", image.TypeToString(m.Type))
 	fmt.Println("Image:", m.Image)

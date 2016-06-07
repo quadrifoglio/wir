@@ -30,7 +30,7 @@ func NetOpenTAP(name string) (*os.File, error) {
 	var r ifreq
 	r.flags = IFF_TAP
 
-	copy(r.name[:], name[:14])
+	copy(r.name[:], name)
 
 	_, _, errno := syscall.Syscall(syscall.SYS_IOCTL, f.Fd(), uintptr(syscall.TUNSETIFF), uintptr(unsafe.Pointer(&r)))
 	if errno != 0 {

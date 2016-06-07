@@ -26,23 +26,23 @@ var (
 	cmdMachine  = kingpin.Command("machine", "Machine management")
 
 	machineCreate        = cmdMachine.Command("create", "Create a new machine based on an existing image")
-	machineCreateName    = machineCreate.Flag("name", "Name of the machine").Short('n').String()
+	machineCreateName    = machineCreate.Flag("name", "Name of the machine (will be generated if not specified)").Short('n').String()
 	machineCreateCores   = machineCreate.Flag("cpus", "Number of CPU cores to use").Short('c').Default("1").Int()
 	machineCreateMem     = machineCreate.Flag("memory", "Amount of memory to use").Short('m').Default("512").Int()
 	machineCreateNetBrIf = machineCreate.Flag("bridge-if", "Network interface to use (in case of bridge networking)").Short('b').String()
 	machineCreateImage   = machineCreate.Arg("image", "Name of image to use").Required().String()
 
-	machineShow   = cmdMachine.Command("show", "Show machine details")
-	machineShowId = machineShow.Arg("id", "Machine ID").Required().String()
+	machineShow     = cmdMachine.Command("show", "Show machine details")
+	machineShowName = machineShow.Arg("id", "Machine name").Required().String()
 
-	machineStart   = cmdMachine.Command("start", "Start machine")
-	machineStartId = machineStart.Arg("id", "Machine ID").Required().String()
+	machineStart     = cmdMachine.Command("start", "Start machine")
+	machineStartName = machineStart.Arg("id", "Machine name").Required().String()
 
-	machineStop   = cmdMachine.Command("stop", "Stop machine")
-	machineStopId = machineStop.Arg("id", "Machine ID").Required().String()
+	machineStop     = cmdMachine.Command("stop", "Stop machine")
+	machineStopName = machineStop.Arg("id", "Machine name").Required().String()
 
-	machineDelete   = cmdMachine.Command("delete", "Delete a machine")
-	machineDeleteId = machineDelete.Arg("id", "Machine ID").Required().String()
+	machineDelete     = cmdMachine.Command("delete", "Delete a machine")
+	machineDeleteName = machineDelete.Arg("id", "Machine name").Required().String()
 )
 
 func fatal(err error) {
@@ -72,16 +72,16 @@ func main() {
 		createMachine(*machineCreateName, *machineCreateImage, *machineCreateCores, *machineCreateMem, net)
 		break
 	case "machine show":
-		showMachine(*machineShowId)
+		showMachine(*machineShowName)
 		break
 	case "machine start":
-		startMachine(*machineStartId)
+		startMachine(*machineStartName)
 		break
 	case "machine stop":
-		stopMachine(*machineStopId)
+		stopMachine(*machineStopName)
 		break
 	case "machine delete":
-		deleteMachine(*machineDeleteId)
+		deleteMachine(*machineDeleteName)
 		break
 	}
 }

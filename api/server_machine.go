@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"sort"
 
 	"github.com/gorilla/mux"
 	"github.com/quadrifoglio/wir/client"
@@ -72,6 +73,8 @@ func handleMachineList(w http.ResponseWriter, r *http.Request) {
 		ErrorResponse(err).Send(w, r)
 		return
 	}
+
+	sort.Sort(ms)
 
 	for i, _ := range ms {
 		prevState := ms[i].State
