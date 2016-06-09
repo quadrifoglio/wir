@@ -32,6 +32,11 @@ func LxcCreate(basePath, name string, img *image.Image, cores, memory int) (Mach
 		return m, err
 	}
 
+	if err := c.SetLogFile(path + "/" + name + "/log.txt"); err != nil {
+		return m, err
+	}
+
+	// TODO: Uncomment
 	var opts lxc.TemplateOptions
 	opts.Template = img.Source
 	/*opts.Distro = img.Name
@@ -56,6 +61,23 @@ func LxcStart(basePath string, m *Machine) error {
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {
 		return err
+	}
+
+	if len(m.Network.BridgeOn) > 0 {
+		err := NetCreateBridge("wir0")
+		if err != nil {
+			return err
+		}
+
+		if err := c.SetConfigItem("lxc.network.type", "veth"); err != nil {
+			return err
+		}
+		if err := c.SetConfigItem("lxc.network.flags", "up"); err != nil {
+			return err
+		}
+		if err := c.SetConfigItem("lxc.network.link", "wir0"); err != nil {
+			return err
+		}
 	}
 
 	err = c.Start()
