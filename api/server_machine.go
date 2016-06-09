@@ -46,6 +46,9 @@ func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
 	case image.TypeVz:
 		mm, err = machine.VzCreate(Conf.Vzctl, Conf.MachinePath, m.Name, &img, m.Cores, m.Memory)
 		break
+	case image.TypeLXC:
+		mm, err = machine.LxcCreate(Conf.MachinePath+"lxc/", m.Name, &img, m.Cores, m.Memory)
+		break
 	default:
 		err = errors.InvalidImageType
 		break
@@ -86,6 +89,9 @@ func handleMachineList(w http.ResponseWriter, r *http.Request) {
 		case image.TypeVz:
 			machine.VzCheck(Conf.Vzctl, &ms[i])
 			break
+		case image.TypeLXC:
+			machine.LxcCheck(Conf.MachinePath+"lxc/", &ms[i])
+			break
 		}
 
 		if ms[i].State != prevState {
@@ -117,6 +123,9 @@ func handleMachineGet(w http.ResponseWriter, r *http.Request) {
 	case image.TypeVz:
 		machine.VzCheck(Conf.Vzctl, &m)
 		break
+	case image.TypeLXC:
+		machine.LxcCheck(Conf.MachinePath+"lxc/", &m)
+		break
 	}
 
 	err = DBStoreMachine(&m)
@@ -145,6 +154,9 @@ func handleMachineStart(w http.ResponseWriter, r *http.Request) {
 	case image.TypeVz:
 		machine.VzCheck(Conf.Vzctl, &m)
 		break
+	case image.TypeLXC:
+		machine.LxcCheck(Conf.MachinePath+"lxc/", &m)
+		break
 	}
 
 	if m.State != machine.StateDown {
@@ -158,6 +170,9 @@ func handleMachineStart(w http.ResponseWriter, r *http.Request) {
 		break
 	case image.TypeVz:
 		err = machine.VzStart(Conf.Vzctl, &m)
+		break
+	case image.TypeLXC:
+		err = machine.LxcStart(Conf.MachinePath+"lxc/", &m)
 		break
 	default:
 		ErrorResponse(errors.InvalidImageType)
@@ -195,6 +210,9 @@ func handleMachineStop(w http.ResponseWriter, r *http.Request) {
 	case image.TypeVz:
 		machine.VzCheck(Conf.Vzctl, &m)
 		break
+	case image.TypeLXC:
+		machine.LxcCheck(Conf.MachinePath+"lxc/", &m)
+		break
 	default:
 		ErrorResponse(errors.InvalidImageType)
 		return
@@ -215,6 +233,13 @@ func handleMachineStop(w http.ResponseWriter, r *http.Request) {
 		break
 	case image.TypeVz:
 		err = machine.VzStop(Conf.Vzctl, &m)
+		if err != nil {
+			ErrorResponse(err).Send(w, r)
+			return
+		}
+		break
+	case image.TypeLXC:
+		err = machine.LxcStop(Conf.MachinePath+"lxc/", &m)
 		if err != nil {
 			ErrorResponse(err).Send(w, r)
 			return
@@ -251,6 +276,9 @@ func handleMachineDelete(w http.ResponseWriter, r *http.Request) {
 	case image.TypeVz:
 		machine.VzCheck(Conf.Vzctl, &m)
 		break
+	case image.TypeLXC:
+		machine.LxcCheck(Conf.MachinePath+"lxc/", &m)
+		break
 	default:
 		ErrorResponse(errors.InvalidImageType)
 		return
@@ -267,6 +295,9 @@ func handleMachineDelete(w http.ResponseWriter, r *http.Request) {
 		break
 	case image.TypeVz:
 		err = machine.VzDelete(Conf.Vzctl, &m)
+		break
+	case image.TypeLXC:
+		err = machine.LxcDelete(Conf.MachinePath+"lxc/", &m)
 		break
 	}
 
