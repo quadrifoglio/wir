@@ -32,7 +32,9 @@ func LxcCreate(basePath, name string, img *image.Image, cores, memory int) (Mach
 		return m, err
 	}
 
-	if err := c.SetLogFile(path + "/" + name + "/log.txt"); err != nil {
+	c.SetVerbosity(lxc.Verbose)
+
+	if err := c.SetLogFile(path + "/" + m.Name + "/log.txt"); err != nil {
 		return m, err
 	}
 
@@ -62,6 +64,8 @@ func LxcStart(basePath string, m *Machine) error {
 	if err != nil {
 		return err
 	}
+
+	c.SetVerbosity(lxc.Verbose)
 
 	if len(m.Network.BridgeOn) > 0 {
 		err := NetCreateBridge("wir0")
@@ -99,8 +103,10 @@ func LxcCheck(basePath string, m *Machine) error {
 		return err
 	}
 
-	r := c.Running()
-	if r {
+	c.SetVerbosity(lxc.Verbose)
+
+	s := c.State()
+	if s == lxc.RUNNING {
 		m.State = StateUp
 	} else {
 		m.State = StateDown
@@ -120,6 +126,8 @@ func LxcStop(basePath string, m *Machine) error {
 		return err
 	}
 
+	c.SetVerbosity(lxc.Verbose)
+
 	err = c.Stop()
 	if err != nil {
 		return err
@@ -138,6 +146,8 @@ func LxcDelete(basePath string, m *Machine) error {
 	if err != nil {
 		return err
 	}
+
+	c.SetVerbosity(lxc.Verbose)
 
 	err = c.Destroy()
 	if err != nil {

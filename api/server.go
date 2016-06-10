@@ -7,6 +7,7 @@ import (
 
 	"github.com/quadrifoglio/wir/errors"
 	"github.com/quadrifoglio/wir/image"
+	"github.com/quadrifoglio/wir/machine"
 )
 
 const (
@@ -17,9 +18,10 @@ type Config struct {
 	Address      string
 	DatabaseFile string
 
-	QemuImg string `json:"QemuImgCommand"`
-	Qemu    string `json:"QemuCommand"`
-	Vzctl   string `json:"VzctlCommand"`
+	Ebtables string `json:"EbtablesCommand"`
+	QemuImg  string `json:"QemuImgCommand"`
+	Qemu     string `json:"QemuCommand"`
+	Vzctl    string `json:"VzctlCommand"`
 
 	ImagePath   string
 	MachinePath string
@@ -63,6 +65,11 @@ func Start(conf Config) error {
 	}
 
 	err = addLxcImages()
+	if err != nil {
+		return err
+	}
+
+	err = machine.NetInitEbtables(Conf.Ebtables)
 	if err != nil {
 		return err
 	}

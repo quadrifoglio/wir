@@ -56,12 +56,12 @@ func QemuStart(qemuCmd string, m *Machine, basePath string) error {
 		return err
 	}
 
-	defer tap.Close()
-
 	err = NetTAPPersist(tap, true)
 	if err != nil {
 		return err
 	}
+
+	tap.Close()
 
 	if len(m.Network.BridgeOn) > 0 {
 		err := NetCreateBridge("wir0")

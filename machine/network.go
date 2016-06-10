@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"os/exec"
 	"syscall"
 	"unsafe"
 
@@ -39,6 +40,52 @@ func NetOpenTAP(name string) (*os.File, error) {
 	}
 
 	return f, nil
+}
+
+func NetInitEbtables(cmds string) error {
+	cmd := exec.Command(cmds, "-L", "WIR")
+
+	err := cmd.Run()
+	if err != nil {
+		cmd = exec.Command(cmds, "-N", "WIR", "-P", "DROP")
+
+		err := cmd.Run()
+		if err != nil {
+			return fmt.Errorf("Creating WIR chain: %s", err)
+		}
+
+		cmd = exec.Command(cmds, "-A", "FORWARD", "-p", "ip", "-i", "v+", "-j", "WIR")
+
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			fmt.Printf(string(out))
+			return fmt.Errorf("Adding forwarding rule to WIR chain: %s", err)
+		}
+	}
+
+	return nil
+}
+
+func NetGrantTraffic(cmds, mac, ip string) error {
+	cmd := exec.Command(cmds, "-A", "WIR", "-p", "ip", "--ip-src", ip, "-s", mac, "-j", "ACCEPT")
+
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf("Granting traffic: %s", err)
+	}
+
+	return nil
+}
+
+func NetDenyTraffic(cmds, mac, ip string) error {
+	cmd := exec.Command(cmds, "-D", "WIR", "-p", "ip", "--ip-src", ip, "-s", mac, "-j", "ACCEPT")
+
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf("Denying traffic: %s", err)
+	}
+
+	return nil
 }
 
 func NetTAPPersist(f *os.File, persist bool) error {
