@@ -2,14 +2,45 @@ package client
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 )
 
+type APIConfig struct {
+	Address      string
+	DatabaseFile string
+	ImagePath    string
+	MachinePath  string
+}
+
 type ResponseBase struct {
 	Status  int
 	Message string
+}
+
+func GetConfig(target Remote) (APIConfig, error) {
+	type Response struct {
+		ResponseBase
+		Content struct {
+			Configuration APIConfig
+		}
+	}
+
+	var r Response
+
+	data, err := apiRequest(target, "GET", "/", nil)
+	if err != nil {
+		return APIConfig{}, err
+	}
+
+	err = json.Unmarshal(data, &r)
+	if err != nil {
+		return APIConfig{}, fmt.Errorf("JSON: %s", err)
+	}
+
+	return r.Content.Configuration, apiError(r.ResponseBase)
 }
 
 func apiRequest(target Remote, method, url string, body []byte) ([]byte, error) {

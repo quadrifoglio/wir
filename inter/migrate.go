@@ -19,10 +19,15 @@ func MigrateQemu(basePath string, m machine.Machine, i image.Image, src, dst cli
 		}
 	}
 
-	// TODO: Determine the remote's image directory
-	path := basePath + "qemu/" + m.Name + ".img"
+	conf, err := client.GetConfig(dst)
+	if err != nil {
+		return fmt.Errorf("Remote configuration: %s", err)
+	}
 
-	err = Scp(path, dst.Addr, path)
+	srcPath := basePath + "qemu/" + m.Name + ".img"
+	dstPath := conf.MachinePath + "qemu/" + m.Name + ".img"
+
+	err = Scp(srcPath, dst.Addr, dstPath)
 	if err != nil {
 		return fmt.Errorf("SCP to remote: %s", err)
 	}

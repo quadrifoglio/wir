@@ -37,11 +37,12 @@ func handleNotFound(w http.ResponseWriter, r *http.Request) {
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
 	type info struct {
-		Name    string
-		Version string
+		Name          string
+		Version       string
+		Configuration Config
 	}
 
-	i := info{"wir api", Version}
+	i := info{"wir api", Version, Conf}
 	SuccessResponse(i).Send(w, r)
 }
 
@@ -87,6 +88,7 @@ func Start(conf Config) error {
 	r.HandleFunc("/machines/{name}", handleMachineGet).Methods("GET")
 	r.HandleFunc("/machines/{name}", handleMachineStart).Methods("START")
 	r.HandleFunc("/machines/{name}", handleMachineStop).Methods("STOP")
+	r.HandleFunc("/machines/{name}", handleMachineMigrate).Methods("MIGRATE")
 	r.HandleFunc("/machines/{name}", handleMachineDelete).Methods("DELETE")
 
 	r.NotFoundHandler = http.HandlerFunc(handleNotFound)

@@ -260,6 +260,60 @@ func handleMachineStop(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(nil).Send(w, r)
 }
 
+func handleMachineMigrate(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	name := vars["name"]
+
+	// TODO: Do not hardcode
+	src := client.Remote{"127.0.0.1", 1997}
+	dst := client.Remote{"127.0.0.1", 1998}
+
+	m, err := DBGetMachine(name)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	i, err := DBGetImage(m.Image)
+	if err != nil {
+		ErrorResponse(errors.ImageNotFound).Send(w, r)
+		return
+	}
+
+	switch m.Type {
+	case image.TypeQemu:
+		machine.QemuCheck(&m)
+		break
+	case image.TypeVz:
+		machine.VzCheck(Conf.Vzctl, &m)
+		break
+	case image.TypeLXC:
+		machine.LxcCheck(Conf.MachinePath+"lxc/", &m)
+		break
+	}
+
+	if m.State != machine.StateDown {
+		ErrorResponse(errors.InvalidMachineState).Send(w, r)
+		return
+	}
+
+	switch m.Type {
+	case image.TypeQemu:
+		err = inter.MigrateQemu(Conf.MachinePath, m, i, src, dst)
+		break
+	default:
+		ErrorResponse(errors.InvalidImageType)
+		return
+	}
+
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	SuccessResponse(nil).Send(w, r)
+}
+
 func handleMachineDelete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
@@ -308,60 +362,6 @@ func handleMachineDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	DBDeleteMachine(name)
-	if err != nil {
-		ErrorResponse(err).Send(w, r)
-		return
-	}
-
-	SuccessResponse(nil).Send(w, r)
-}
-
-func handleMachineMigrate(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	name := vars["name"]
-
-	// TODO: Do not hardcode
-	src := client.Remote{"127.0.0.1", 1997}
-	dst := client.Remote{"127.0.0.1", 1998}
-
-	m, err := DBGetMachine(name)
-	if err != nil {
-		ErrorResponse(err).Send(w, r)
-		return
-	}
-
-	i, err := DBGetImage(m.Image)
-	if err != nil {
-		ErrorResponse(errors.ImageNotFound).Send(w, r)
-		return
-	}
-
-	switch m.Type {
-	case image.TypeQemu:
-		machine.QemuCheck(&m)
-		break
-	case image.TypeVz:
-		machine.VzCheck(Conf.Vzctl, &m)
-		break
-	case image.TypeLXC:
-		machine.LxcCheck(Conf.MachinePath+"lxc/", &m)
-		break
-	}
-
-	if m.State != machine.StateDown {
-		ErrorResponse(errors.InvalidMachineState).Send(w, r)
-		return
-	}
-
-	switch m.Type {
-	case image.TypeQemu:
-		err = inter.MigrateQemu(Conf.MachinePath, m, i, src, dst)
-		break
-	default:
-		ErrorResponse(errors.InvalidImageType)
-		return
-	}
-
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
