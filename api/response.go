@@ -65,5 +65,9 @@ func (re Response) Send(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(re.Status)
 	}
 
+	if re.Status != 200 {
+		re.Message = "Error - " + re.Message
+	}
+
 	log.Printf("%s %s from %s - %s\n", r.Method, r.URL.String(), r.RemoteAddr, re.Message)
 }

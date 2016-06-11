@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/alecthomas/kingpin"
+	"github.com/quadrifoglio/wir/client"
 )
 
 var (
@@ -43,6 +44,8 @@ var (
 
 	machineDelete     = cmdMachine.Command("delete", "Delete a machine")
 	machineDeleteName = machineDelete.Arg("id", "Machine name").Required().String()
+
+	defaultRemote = client.Remote{"127.0.0.1", 1997}
 )
 
 func fatal(err error) {
@@ -53,35 +56,35 @@ func fatal(err error) {
 func main() {
 	switch kingpin.Parse() {
 	case "images":
-		listImages()
+		listImages(defaultRemote)
 		break
 	case "image create":
-		createImage(*imageCreateName, *imageCreateType, *imageCreateSrc)
+		createImage(defaultRemote, *imageCreateName, *imageCreateType, *imageCreateSrc)
 		break
 	case "image show":
-		showImage(*imageShowName)
+		showImage(defaultRemote, *imageShowName)
 		break
 	case "image delete":
-		deleteImage(*imageDeleteName)
+		deleteImage(defaultRemote, *imageDeleteName)
 		break
 	case "machines":
-		listMachines()
+		listMachines(defaultRemote)
 		break
 	case "machine create":
 		net := machineNet{*machineCreateNetBrIf}
-		createMachine(*machineCreateName, *machineCreateImage, *machineCreateCores, *machineCreateMem, net)
+		createMachine(defaultRemote, *machineCreateName, *machineCreateImage, *machineCreateCores, *machineCreateMem, net)
 		break
 	case "machine show":
-		showMachine(*machineShowName)
+		showMachine(defaultRemote, *machineShowName)
 		break
 	case "machine start":
-		startMachine(*machineStartName)
+		startMachine(defaultRemote, *machineStartName)
 		break
 	case "machine stop":
-		stopMachine(*machineStopName)
+		stopMachine(defaultRemote, *machineStopName)
 		break
 	case "machine delete":
-		deleteMachine(*machineDeleteName)
+		deleteMachine(defaultRemote, *machineDeleteName)
 		break
 	}
 }

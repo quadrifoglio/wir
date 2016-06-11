@@ -38,6 +38,11 @@ func LxcCreate(basePath, name string, img *image.Image, cores, memory int) (Mach
 		return m, err
 	}
 
+	err = c.SetMemoryLimit(lxc.ByteSize(memory) * lxc.MB)
+	if err != nil {
+		return m, err
+	}
+
 	// TODO: Uncomment
 	var opts lxc.TemplateOptions
 	opts.Template = img.Source

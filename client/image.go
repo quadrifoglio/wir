@@ -13,7 +13,7 @@ type ImageRequest struct {
 	Source string
 }
 
-func ListImages() ([]image.Image, error) {
+func ListImages(target Remote) ([]image.Image, error) {
 	type Response struct {
 		ResponseBase
 		Content []image.Image
@@ -21,7 +21,7 @@ func ListImages() ([]image.Image, error) {
 
 	var r Response
 
-	data, err := apiRequest("GET", "/images", nil)
+	data, err := apiRequest(target, "GET", "/images", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +34,7 @@ func ListImages() ([]image.Image, error) {
 	return r.Content, apiError(r.ResponseBase)
 }
 
-func CreateImage(i ImageRequest) (image.Image, error) {
+func CreateImage(target Remote, i ImageRequest) (image.Image, error) {
 	type Response struct {
 		ResponseBase
 		Content image.Image
@@ -47,7 +47,7 @@ func CreateImage(i ImageRequest) (image.Image, error) {
 		return r.Content, fmt.Errorf("JSON: %s", err)
 	}
 
-	data, err = apiRequest("POST", "/images", data)
+	data, err = apiRequest(target, "POST", "/images", data)
 	if err != nil {
 		return r.Content, err
 	}
@@ -60,7 +60,7 @@ func CreateImage(i ImageRequest) (image.Image, error) {
 	return r.Content, apiError(r.ResponseBase)
 }
 
-func GetImage(name string) (image.Image, error) {
+func GetImage(target Remote, name string) (image.Image, error) {
 	type Response struct {
 		ResponseBase
 		Content image.Image
@@ -68,7 +68,7 @@ func GetImage(name string) (image.Image, error) {
 
 	var r Response
 
-	data, err := apiRequest("GET", "/images/"+name, nil)
+	data, err := apiRequest(target, "GET", "/images/"+name, nil)
 	if err != nil {
 		return r.Content, err
 	}
@@ -81,7 +81,7 @@ func GetImage(name string) (image.Image, error) {
 	return r.Content, apiError(r.ResponseBase)
 }
 
-func DeleteImage(name string) error {
+func DeleteImage(target Remote, name string) error {
 	type Response struct {
 		ResponseBase
 		Content interface{}
@@ -89,7 +89,7 @@ func DeleteImage(name string) error {
 
 	var r Response
 
-	data, err := apiRequest("DELETE", "/images/"+name, nil)
+	data, err := apiRequest(target, "DELETE", "/images/"+name, nil)
 	if err != nil {
 		return err
 	}

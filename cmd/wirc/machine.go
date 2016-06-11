@@ -15,8 +15,8 @@ type machineNet struct {
 	BrIf string
 }
 
-func listMachines() {
-	ms, err := client.ListMachines()
+func listMachines(target client.Remote) {
+	ms, err := client.ListMachines(target)
 	if err != nil {
 		fatal(err)
 	}
@@ -31,7 +31,7 @@ func listMachines() {
 	table.Render()
 }
 
-func createMachine(name, img string, cpus, mem int, net machineNet) {
+func createMachine(target client.Remote, name, img string, cpus, mem int, net machineNet) {
 	var req client.MachineRequest
 	req.Name = name
 	req.Image = img
@@ -39,7 +39,7 @@ func createMachine(name, img string, cpus, mem int, net machineNet) {
 	req.Memory = mem
 	req.Network = machine.NetworkMode{net.BrIf}
 
-	m, err := client.CreateMachine(req)
+	m, err := client.CreateMachine(target, req)
 	if err != nil {
 		fatal(err)
 	}
@@ -47,8 +47,8 @@ func createMachine(name, img string, cpus, mem int, net machineNet) {
 	fmt.Println(m.Name)
 }
 
-func showMachine(name string) {
-	m, err := client.GetMachine(name)
+func showMachine(target client.Remote, name string) {
+	m, err := client.GetMachine(target, name)
 	if err != nil {
 		fatal(err)
 	}
@@ -62,22 +62,22 @@ func showMachine(name string) {
 	fmt.Println("Memory:", m.Memory)
 }
 
-func startMachine(name string) {
-	err := client.StartMachine(name)
+func startMachine(target client.Remote, name string) {
+	err := client.StartMachine(target, name)
 	if err != nil {
 		fatal(err)
 	}
 }
 
-func stopMachine(name string) {
-	err := client.StopMachine(name)
+func stopMachine(target client.Remote, name string) {
+	err := client.StopMachine(target, name)
 	if err != nil {
 		fatal(err)
 	}
 }
 
-func deleteMachine(name string) {
-	err := client.DeleteMachine(name)
+func deleteMachine(target client.Remote, name string) {
+	err := client.DeleteMachine(target, name)
 	if err != nil {
 		fatal(err)
 	}

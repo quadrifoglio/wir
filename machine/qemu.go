@@ -29,7 +29,13 @@ func QemuCreate(imgCmd, basePath, name string, img *image.Image, cores, memory i
 		return m, err
 	}
 
-	cmd := exec.Command(imgCmd, "create", "-b", img.Source, "-f", "qcow2", path)
+	var cmd *exec.Cmd
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		cmd = exec.Command(imgCmd, "create", "-b", img.Source, "-f", "qcow2", path)
+	} else {
+		cmd = exec.Command(imgCmd, "rebase", "-b", img.Source, path)
+	}
 
 	err = cmd.Run()
 	if err != nil {

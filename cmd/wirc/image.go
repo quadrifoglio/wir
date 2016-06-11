@@ -10,8 +10,8 @@ import (
 	"github.com/quadrifoglio/wir/image"
 )
 
-func listImages() {
-	imgs, err := client.ListImages()
+func listImages(target client.Remote) {
+	imgs, err := client.ListImages(target)
 	if err != nil {
 		fatal(err)
 	}
@@ -26,7 +26,7 @@ func listImages() {
 	table.Render()
 }
 
-func createImage(name, t, source string) {
+func createImage(target client.Remote, name, t, source string) {
 	var req client.ImageRequest
 	req.Name = name
 	req.Type = image.StringToType(t)
@@ -36,14 +36,14 @@ func createImage(name, t, source string) {
 		req.Source = "file://" + source
 	}
 
-	_, err := client.CreateImage(req)
+	_, err := client.CreateImage(target, req)
 	if err != nil {
 		fatal(err)
 	}
 }
 
-func showImage(name string) {
-	img, err := client.GetImage(name)
+func showImage(target client.Remote, name string) {
+	img, err := client.GetImage(target, name)
 	if err != nil {
 		fatal(err)
 	}
@@ -53,8 +53,8 @@ func showImage(name string) {
 	fmt.Println("Source:", img.Source)
 }
 
-func deleteImage(name string) {
-	err := client.DeleteImage(name)
+func deleteImage(target client.Remote, name string) {
+	err := client.DeleteImage(target, name)
 	if err != nil {
 		fatal(err)
 	}

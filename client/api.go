@@ -7,19 +7,15 @@ import (
 	"net/http"
 )
 
-var (
-	apiURL = "http://127.0.0.1:1997"
-)
-
 type ResponseBase struct {
 	Status  int
 	Message string
 }
 
-func apiRequest(method, url string, body []byte) ([]byte, error) {
+func apiRequest(target Remote, method, url string, body []byte) ([]byte, error) {
 	var c http.Client
 
-	req, err := http.NewRequest(method, apiURL+url, bytes.NewBuffer(body))
+	req, err := http.NewRequest(method, fmt.Sprintf("http://%s:%d%s", target.Addr, target.APIPort, url), bytes.NewBuffer(body))
 	if err != nil {
 		return nil, fmt.Errorf("HTTP: %s", err)
 	}

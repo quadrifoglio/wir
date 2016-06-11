@@ -15,7 +15,7 @@ type MachineRequest struct {
 	Network machine.NetworkMode
 }
 
-func ListMachines() ([]machine.Machine, error) {
+func ListMachines(target Remote) ([]machine.Machine, error) {
 	type Response struct {
 		ResponseBase
 		Content []machine.Machine
@@ -23,7 +23,7 @@ func ListMachines() ([]machine.Machine, error) {
 
 	var r Response
 
-	data, err := apiRequest("GET", "/machines", nil)
+	data, err := apiRequest(target, "GET", "/machines", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +36,7 @@ func ListMachines() ([]machine.Machine, error) {
 	return r.Content, apiError(r.ResponseBase)
 }
 
-func CreateMachine(i MachineRequest) (machine.Machine, error) {
+func CreateMachine(target Remote, i MachineRequest) (machine.Machine, error) {
 	type Response struct {
 		ResponseBase
 		Content machine.Machine
@@ -49,7 +49,7 @@ func CreateMachine(i MachineRequest) (machine.Machine, error) {
 		return r.Content, fmt.Errorf("JSON: %s", err)
 	}
 
-	data, err = apiRequest("POST", "/machines", data)
+	data, err = apiRequest(target, "POST", "/machines", data)
 	if err != nil {
 		return r.Content, err
 	}
@@ -62,7 +62,7 @@ func CreateMachine(i MachineRequest) (machine.Machine, error) {
 	return r.Content, apiError(r.ResponseBase)
 }
 
-func GetMachine(id string) (machine.Machine, error) {
+func GetMachine(target Remote, name string) (machine.Machine, error) {
 	type Response struct {
 		ResponseBase
 		Content machine.Machine
@@ -70,7 +70,7 @@ func GetMachine(id string) (machine.Machine, error) {
 
 	var r Response
 
-	data, err := apiRequest("GET", "/machines/"+id, nil)
+	data, err := apiRequest(target, "GET", "/machines/"+name, nil)
 	if err != nil {
 		return r.Content, err
 	}
@@ -83,7 +83,7 @@ func GetMachine(id string) (machine.Machine, error) {
 	return r.Content, apiError(r.ResponseBase)
 }
 
-func StartMachine(id string) error {
+func StartMachine(target Remote, name string) error {
 	type Response struct {
 		ResponseBase
 		Content machine.Machine
@@ -91,7 +91,7 @@ func StartMachine(id string) error {
 
 	var r Response
 
-	data, err := apiRequest("START", "/machines/"+id, nil)
+	data, err := apiRequest(target, "START", "/machines/"+name, nil)
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func StartMachine(id string) error {
 	return apiError(r.ResponseBase)
 }
 
-func StopMachine(id string) error {
+func StopMachine(target Remote, name string) error {
 	type Response struct {
 		ResponseBase
 		Content machine.Machine
@@ -112,7 +112,7 @@ func StopMachine(id string) error {
 
 	var r Response
 
-	data, err := apiRequest("STOP", "/machines/"+id, nil)
+	data, err := apiRequest(target, "STOP", "/machines/"+name, nil)
 	if err != nil {
 		return err
 	}
@@ -125,7 +125,7 @@ func StopMachine(id string) error {
 	return apiError(r.ResponseBase)
 }
 
-func DeleteMachine(id string) error {
+func DeleteMachine(target Remote, name string) error {
 	type Response struct {
 		ResponseBase
 		Content interface{}
@@ -133,7 +133,7 @@ func DeleteMachine(id string) error {
 
 	var r Response
 
-	data, err := apiRequest("DELETE", "/machines/"+id, nil)
+	data, err := apiRequest(target, "DELETE", "/machines/"+name, nil)
 	if err != nil {
 		return err
 	}
