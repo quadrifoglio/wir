@@ -2,6 +2,7 @@ package inter
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/quadrifoglio/wir/client"
 	"github.com/quadrifoglio/wir/image"
@@ -24,10 +25,15 @@ func MigrateQemu(basePath string, m machine.Machine, i image.Image, src, dst cli
 		return fmt.Errorf("Remote configuration: %s", err)
 	}
 
-	srcPath := basePath + "qemu/" + m.Name + ".img"
-	dstPath := conf.MachinePath + "qemu/" + m.Name + ".img"
+	srcPath := basePath + "qemu/" + m.Name + ".qcow2"
+	dstPath := conf.MachinePath + "qemu/" + m.Name + ".qcow2"
 
-	err = Scp(srcPath, dst.Addr, dstPath)
+	err = RemoteMkdir(dst, filepath.Dir(dstPath))
+	if err != nil {
+		return fmt.Errorf("MkdirRemote: %s", err)
+	}
+
+	err = SCP(srcPath, dst, dstPath)
 	if err != nil {
 		return fmt.Errorf("SCP to remote: %s", err)
 	}

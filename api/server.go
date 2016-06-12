@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -15,16 +16,17 @@ const (
 )
 
 type Config struct {
-	Address      string
-	DatabaseFile string
+	Address string
+	Port    int
 
 	Ebtables string `json:"EbtablesCommand"`
 	QemuImg  string `json:"QemuImgCommand"`
 	Qemu     string `json:"QemuCommand"`
 	Vzctl    string `json:"VzctlCommand"`
 
-	ImagePath   string
-	MachinePath string
+	DatabaseFile string
+	ImagePath    string
+	MachinePath  string
 }
 
 var (
@@ -94,5 +96,5 @@ func Start(conf Config) error {
 	r.NotFoundHandler = http.HandlerFunc(handleNotFound)
 	http.Handle("/", r)
 
-	return http.ListenAndServe(Conf.Address, nil)
+	return http.ListenAndServe(fmt.Sprintf("%s:%d", Conf.Address, Conf.Port), nil)
 }

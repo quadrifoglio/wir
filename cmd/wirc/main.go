@@ -12,6 +12,10 @@ var (
 	cmdImages = kingpin.Command("images", "List images")
 	cmdImage  = kingpin.Command("image", "Image management")
 
+	remoteAddr = kingpin.Flag("remote-addr", "IP address of the remote server").Default("127.0.0.1").String()
+	remotePort = kingpin.Flag("remote-port", "Port of the remote server").Default("1997").Int()
+	remoteUser = kingpin.Flag("remote-user", "Username to use in SSH-related actions").Default("root").String()
+
 	imageCreate     = cmdImage.Command("create", "Create an image from the specified source")
 	imageCreateType = imageCreate.Flag("type", "Image type (qemu, docker, openvz)").Short('t').Default("qemu").String()
 	imageCreateName = imageCreate.Arg("name", "Image name").Required().String()
@@ -44,8 +48,6 @@ var (
 
 	machineDelete     = cmdMachine.Command("delete", "Delete a machine")
 	machineDeleteName = machineDelete.Arg("id", "Machine name").Required().String()
-
-	defaultRemote = client.Remote{"127.0.0.1", 1997}
 )
 
 func fatal(err error) {
@@ -54,37 +56,44 @@ func fatal(err error) {
 }
 
 func main() {
-	switch kingpin.Parse() {
+	s := kingpin.Parse()
+
+	var remote client.Remote
+	remote.Addr = *remoteAddr
+	remote.APIPort = *remotePort
+	remote.SSHUser = *remoteUser
+
+	switch s {
 	case "images":
-		listImages(defaultRemote)
+		listImages(remote)
 		break
 	case "image create":
-		createImage(defaultRemote, *imageCreateName, *imageCreateType, *imageCreateSrc)
+		createImage(remote, *imageCreateName, *imageCreateType, *imageCreateSrc)
 		break
 	case "image show":
-		showImage(defaultRemote, *imageShowName)
+		showImage(remote, *imageShowName)
 		break
 	case "image delete":
-		deleteImage(defaultRemote, *imageDeleteName)
+		deleteImage(remote, *imageDeleteName)
 		break
 	case "machines":
-		listMachines(defaultRemote)
+		listMachines(remote)
 		break
 	case "machine create":
 		net := machineNet{*machineCreateNetBrIf}
-		createMachine(defaultRemote, *machineCreateName, *machineCreateImage, *machineCreateCores, *machineCreateMem, net)
+		createMachine(remote, *machineCreateName, *machineCreateImage, *machineCreateCores, *machineCreateMem, net)
 		break
 	case "machine show":
-		showMachine(defaultRemote, *machineShowName)
+		showMachine(remote, *machineShowName)
 		break
 	case "machine start":
-		startMachine(defaultRemote, *machineStartName)
+		startMachine(remote, *machineStartName)
 		break
 	case "machine stop":
-		stopMachine(defaultRemote, *machineStopName)
+		stopMachine(remote, *machineStopName)
 		break
 	case "machine delete":
-		deleteMachine(defaultRemote, *machineDeleteName)
+		deleteMachine(remote, *machineDeleteName)
 		break
 	}
 }

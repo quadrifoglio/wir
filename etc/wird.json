@@ -1,12 +1,13 @@
 {
-	"Address": "127.0.0.1:1997",
-	"DatabaseFile": "/var/lib/wir/wir.db",
+	"Address": "127.0.0.1",
+	"Port": 1997,
 
 	"EbtablesCommand": "/sbin/ebtables",
 	"QemuImgCommand": "/usr/bin/qemu-img",
 	"QemuCommand": "/usr/bin/qemu-system-x86_64",
 	"VzctlCommand": "/usr/sbin/vzctl",
 
+	"DatabaseFile": "/var/lib/wir/wir.db",
 	"ImagePath": "/var/lib/wir/images/",
 	"MachinePath": "/var/lib/wir/machines/"
 }

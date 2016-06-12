@@ -41,9 +41,15 @@ func FetchFile(path string, dst io.Writer) error {
 }
 
 func FetchScp(host string, user *url.Userinfo, path string, dst io.Writer) error {
-	srcf := fmt.Sprintf("%s@%s:%s", user.Username(), host, path)
-	cmd := exec.Command("scp", "-o", "UserKnownHostsFile=/dev/null", "-o", "StrictHostKeyChecking=no", srcf, "/dev/stdout")
+	var srcf string
 
+	if user != nil {
+		srcf = fmt.Sprintf("%s@%s:%s", user.Username(), host, path)
+	} else {
+		srcf = fmt.Sprintf("%s:%s", host, path)
+	}
+
+	cmd := exec.Command("scp", "-o", "UserKnownHostsFile=/dev/null", "-o", "StrictHostKeyChecking=no", srcf, "/dev/stdout")
 	cmd.Stdout = dst
 
 	err := cmd.Run()

@@ -17,7 +17,7 @@ func LxcCreate(basePath, name string, img *image.Image, cores, memory int) (Mach
 	m.Memory = memory
 	m.State = StateDown
 
-	path, err := filepath.Abs(basePath)
+	path, err := filepath.Abs(basePath + "lxc/")
 	if err != nil {
 		return m, err
 	}
@@ -60,7 +60,7 @@ func LxcCreate(basePath, name string, img *image.Image, cores, memory int) (Mach
 }
 
 func LxcStart(basePath string, m *Machine) error {
-	path, err := filepath.Abs(basePath)
+	path, err := filepath.Abs(basePath + "lxc/")
 	if err != nil {
 		return err
 	}
@@ -98,7 +98,7 @@ func LxcStart(basePath string, m *Machine) error {
 }
 
 func LxcCheck(basePath string, m *Machine) error {
-	path, err := filepath.Abs(basePath)
+	path, err := filepath.Abs(basePath + "lxc/")
 	if err != nil {
 		return err
 	}
@@ -121,7 +121,7 @@ func LxcCheck(basePath string, m *Machine) error {
 }
 
 func LxcStop(basePath string, m *Machine) error {
-	path, err := filepath.Abs(basePath)
+	path, err := filepath.Abs(basePath + "lxc/")
 	if err != nil {
 		return err
 	}
@@ -142,7 +142,7 @@ func LxcStop(basePath string, m *Machine) error {
 }
 
 func LxcDelete(basePath string, m *Machine) error {
-	path, err := filepath.Abs(basePath)
+	path, err := filepath.Abs(basePath + "lxc/")
 	if err != nil {
 		return err
 	}

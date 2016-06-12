@@ -55,7 +55,7 @@ func QemuStart(qemuCmd string, m *Machine, basePath string) error {
 	args[3] = "-smp"
 	args[4] = strconv.Itoa(m.Cores)
 	args[5] = "-hda"
-	args[6] = basePath + "qemu/" + m.Name + ".img"
+	args[6] = basePath + "qemu/" + m.Name + ".qcow2"
 
 	tap, err := NetOpenTAP(m.IfName())
 	if err != nil {
