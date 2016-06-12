@@ -22,7 +22,7 @@ func QemuCreate(imgCmd, basePath, name string, img *image.Image, cores, memory i
 	m.Cores = cores
 	m.Memory = memory
 
-	path := basePath + "qemu/" + name + ".img"
+	path := basePath + "qemu/" + name + ".qcow2"
 
 	err := os.MkdirAll(filepath.Dir(path), 0777)
 	if err != nil {
