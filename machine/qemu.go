@@ -26,7 +26,7 @@ func QemuCreate(imgCmd, basePath, name string, img *image.Image, cores, memory i
 
 	err := os.MkdirAll(filepath.Dir(path), 0777)
 	if err != nil {
-		return m, err
+		return m, fmt.Errorf("mkdirall: %s", err)
 	}
 
 	var cmd *exec.Cmd
@@ -39,7 +39,7 @@ func QemuCreate(imgCmd, basePath, name string, img *image.Image, cores, memory i
 
 	err = cmd.Run()
 	if err != nil {
-		return m, err
+		return m, fmt.Errorf("qemu-img: %s", err)
 	}
 
 	return m, nil
@@ -59,12 +59,12 @@ func QemuStart(qemuCmd string, m *Machine, basePath string) error {
 
 	tap, err := NetOpenTAP(m.IfName())
 	if err != nil {
-		return err
+		return fmt.Errorf("open tap: %s", err)
 	}
 
 	err = NetTAPPersist(tap, true)
 	if err != nil {
-		return err
+		return fmt.Errorf("tap persist: %s", err)
 	}
 
 	tap.Close()
@@ -95,7 +95,7 @@ func QemuStart(qemuCmd string, m *Machine, basePath string) error {
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		return err
+		return fmt.Errorf("qemu's stdout: %s", err)
 	}
 
 	go func() {
@@ -107,7 +107,7 @@ func QemuStart(qemuCmd string, m *Machine, basePath string) error {
 
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
-		return err
+		return fmt.Errorf("qemu's stderr: %s", err)
 	}
 
 	go func() {
@@ -119,7 +119,7 @@ func QemuStart(qemuCmd string, m *Machine, basePath string) error {
 
 	err = cmd.Start()
 	if err != nil {
-		return err
+		return fmt.Errorf("qemu: %s", err)
 	}
 
 	errc := make(chan bool)
@@ -193,12 +193,12 @@ func QemuDelete(m *Machine) error {
 	if len(m.Network.BridgeOn) != 0 {
 		tap, err := NetOpenTAP(m.IfName())
 		if err != nil {
-			return err
+			return fmt.Errorf("open tap: %s", err)
 		}
 
 		err = NetTAPPersist(tap, false)
 		if err != nil {
-			return err
+			return fmt.Errorf("tap persist: %s", err)
 		}
 
 		tap.Close()
