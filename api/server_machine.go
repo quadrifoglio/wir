@@ -45,7 +45,10 @@ func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
 		mm, err = machine.QemuCreate(Conf.QemuImg, Conf.MachinePath, m.Name, &img, m.Cores, m.Memory)
 		break
 	case image.TypeVz:
-		mm, err = machine.VzCreate(Conf.Vzctl, Conf.MachinePath, m.Name, &img, m.Cores, m.Memory)
+		i, err := DBFreeMachineIndex()
+		if err == nil {
+			mm, err = machine.VzCreate(Conf.Vzctl, Conf.MachinePath, m.Name, i, &img, m.Cores, m.Memory)
+		}
 		break
 	case image.TypeLXC:
 		mm, err = machine.LxcCreate(Conf.MachinePath, m.Name, &img, m.Cores, m.Memory)

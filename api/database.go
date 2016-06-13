@@ -144,6 +144,41 @@ func DBMachineNameFree(name string) bool {
 	return false
 }
 
+// TODO: Opzimize / find a better way
+func DBFreeMachineIndex() (uint64, error) {
+	var i uint64
+
+	err := Database.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(MachinesBucket)
+		if b == nil {
+			return nil
+		}
+
+		b.ForEach(func(_, v []byte) error {
+			var m machine.Machine
+
+			err := json.Unmarshal(v, &m)
+			if err != nil {
+				return err
+			}
+
+			if m.Index > i {
+				i = m.Index
+			}
+
+			return nil
+		})
+
+		return nil
+	})
+
+	if err != nil {
+		return 0, err
+	}
+
+	return i + 1, nil
+}
+
 func DBStoreMachine(m *machine.Machine) error {
 	err := Database.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists(MachinesBucket)
