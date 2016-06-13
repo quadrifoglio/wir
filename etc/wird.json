@@ -2,6 +2,7 @@
 	"Address": "127.0.0.1",
 	"Port": 1997,
 
+	"EnableKVM": false,
 	"EbtablesCommand": "/sbin/ebtables",
 	"QemuImgCommand": "/usr/bin/qemu-img",
 	"QemuCommand": "/usr/bin/qemu-system-x86_64",

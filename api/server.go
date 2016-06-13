@@ -19,6 +19,7 @@ type Config struct {
 	Address string
 	Port    int
 
+	EnableKVM bool
 	Ebtables string `json:"EbtablesCommand"`
 	QemuImg  string `json:"QemuImgCommand"`
 	Qemu     string `json:"QemuCommand"`

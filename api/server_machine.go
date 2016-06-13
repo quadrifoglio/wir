@@ -167,7 +167,7 @@ func handleMachineStart(w http.ResponseWriter, r *http.Request) {
 
 	switch m.Type {
 	case image.TypeQemu:
-		err = machine.QemuStart(Conf.Qemu, &m, Conf.MachinePath)
+		err = machine.QemuStart(Conf.Qemu, Conf.EnableKVM, &m, Conf.MachinePath)
 		break
 	case image.TypeVz:
 		err = machine.VzStart(Conf.Vzctl, &m)

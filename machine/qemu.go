@@ -45,17 +45,23 @@ func QemuCreate(imgCmd, basePath, name string, img *image.Image, cores, memory i
 	return m, nil
 }
 
-func QemuStart(qemuCmd string, m *Machine, basePath string) error {
+func QemuStart(qemuCmd string, kvm bool, m *Machine, basePath string) error {
 	m.State = StateDown
 
-	args := make([]string, 7)
-	args[0] = "-enable-kvm"
-	args[1] = "-m"
-	args[2] = strconv.Itoa(m.Memory)
-	args[3] = "-smp"
-	args[4] = strconv.Itoa(m.Cores)
-	args[5] = "-hda"
-	args[6] = basePath + "qemu/" + m.Name + ".qcow2"
+	args := make([]string, 8)
+	args[0] = "-m"
+	args[1] = strconv.Itoa(m.Memory)
+	args[2] = "-smp"
+	args[3] = strconv.Itoa(m.Cores)
+	args[4] = "-hda"
+	args[5] = basePath + "qemu/" + m.Name + ".qcow2"
+	args[6] = "-vnc"
+	args[7] = fmt.Sprintf(":%d", m.Index)
+
+	if kvm {
+		fmt.Println("mdr")
+		args = append(args, "-enable-kvm")
+	}
 
 	tap, err := NetOpenTAP(m.IfName())
 	if err != nil {

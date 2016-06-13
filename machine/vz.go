@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
-	"strconv"
+	//"strconv"
 	"strings"
 
 	"github.com/quadrifoglio/wir/image"
@@ -39,28 +39,27 @@ func VzCreate(vzCmd, basePath, name string, img *image.Image, cores, memory int)
 		return m, err
 	}
 
-	args[0] = "set"
-	args[1] = m.Vz.CTID
-	args[2] = "--ram"
-	args[3] = strconv.Itoa(memory)
-	args[4] = "--cpus"
-	args[5] = strconv.Itoa(cores)
+	return m, nil
+}
 
-	cmd = exec.Command(vzCmd, args...)
+func VzStart(vzCmd string, m *Machine) error {
+	cmd := exec.Command(vzCmd, "start", m.Vz.CTID, "--wait")
 
-	out, err = cmd.CombinedOutput()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		if out != nil {
 			log.Println("OpenVZ:", string(out))
 		}
 
-		return m, err
+		return err
 	}
+
+	fmt.Printf("%s", string(out))
 
 	if len(m.Network.BridgeOn) > 0 {
 		err := NetCreateBridge("wir0")
 		if err != nil {
-			return m, err
+			return err
 		}
 
 		args := []string{"set", m.Vz.CTID, "--netif", "add", "eth0", "--save"}
@@ -72,30 +71,27 @@ func VzCreate(vzCmd, basePath, name string, img *image.Image, cores, memory int)
 				log.Println("OpenVZ:", string(out))
 			}
 
-			return m, err
+			return err
 		}
 
 		err = NetBridgeAddIf("wir0", fmt.Sprintf("veth%s.0", m.Vz.CTID))
 		if err != nil {
-			return m, err
+			return err
 		}
 
 	}
 
-	return m, nil
-}
+	/*args := []string{"set", m.Vz.CTID, "--ram", strconv.Itoa(m.Memory), "--cpus", strconv.Itoa(m.Cores)}
+	cmd = exec.Command(vzCmd, args...)
 
-func VzStart(vzCmd string, m *Machine) error {
-	cmd := exec.Command(vzCmd, "start", m.Vz.CTID)
-
-	out, err := cmd.CombinedOutput()
+	out, err = cmd.CombinedOutput()
 	if err != nil {
 		if out != nil {
 			log.Println("OpenVZ:", string(out))
 		}
 
 		return err
-	}
+	}*/
 
 	return nil
 }
