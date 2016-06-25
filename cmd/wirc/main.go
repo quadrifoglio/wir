@@ -3,23 +3,29 @@ package main
 import (
 	"fmt"
 	"os"
+	"runtime"
 
 	"github.com/alecthomas/kingpin"
 	"github.com/quadrifoglio/wir/client"
 )
 
 var (
-	cmdImages = kingpin.Command("images", "List images")
-	cmdImage  = kingpin.Command("image", "Image management")
+	cmdImages    = kingpin.Command("images", "List images")
+	cmdImagesRaw = cmdImages.Flag("raw", "Raw listing (no table)").Bool()
+
+	cmdImage = kingpin.Command("image", "Image management")
 
 	remoteAddr = kingpin.Flag("remote-addr", "IP address of the remote server").Default("127.0.0.1").String()
 	remotePort = kingpin.Flag("remote-port", "Port of the remote server").Default("1997").Int()
 	remoteUser = kingpin.Flag("remote-user", "Username to use in SSH-related actions").Default("root").String()
 
-	imageCreate     = cmdImage.Command("create", "Create an image from the specified source")
-	imageCreateType = imageCreate.Flag("type", "Image type (qemu, docker, openvz)").Short('t').Default("qemu").String()
-	imageCreateName = imageCreate.Arg("name", "Image name").Required().String()
-	imageCreateSrc  = imageCreate.Arg("source", "Image source (scheme://[user@][host]/path)").Required().String()
+	imageCreate        = cmdImage.Command("create", "Create an image from the specified source")
+	imageCreateType    = imageCreate.Flag("type", "Image type (qemu, lxc, openvz)").Short('t').Default("qemu").String()
+	imageCreateArch    = imageCreate.Flag("arch", "Image architecture (386, amd64, arm)").Short('a').Default(runtime.GOARCH).String()
+	imageCreateDistro  = imageCreate.Flag("distro", "Image distribution name (debian, ubuntu, ...)").Short('d').Default("").String()
+	imageCreateRelease = imageCreate.Flag("release", "Image's distro release").Short('r').Default("").String()
+	imageCreateName    = imageCreate.Arg("name", "Image name").Required().String()
+	imageCreateSrc     = imageCreate.Arg("source", "Image source (scheme://[user@][host]/path)").Required().String()
 
 	imageShow     = cmdImage.Command("show", "Show image details")
 	imageShowName = imageShow.Arg("name", "Image name").Required().String()
@@ -27,8 +33,10 @@ var (
 	imageDelete     = cmdImage.Command("delete", "Delete an image")
 	imageDeleteName = imageDelete.Arg("name", "Image name").Required().String()
 
-	cmdMachines = kingpin.Command("machines", "List machines")
-	cmdMachine  = kingpin.Command("machine", "Machine management")
+	cmdMachines    = kingpin.Command("machines", "List machines")
+	cmdMachinesRaw = cmdMachines.Flag("raw", "Raw listing (no table)").Bool()
+
+	cmdMachine = kingpin.Command("machine", "Machine management")
 
 	machineCreate        = cmdMachine.Command("create", "Create a new machine based on an existing image")
 	machineCreateName    = machineCreate.Flag("name", "Name of the machine (will be generated if not specified)").Short('n').String()
@@ -65,10 +73,18 @@ func main() {
 
 	switch s {
 	case "images":
-		listImages(remote)
+		listImages(remote, *cmdImagesRaw)
 		break
 	case "image create":
-		createImage(remote, *imageCreateName, *imageCreateType, *imageCreateSrc)
+		createImage(
+			remote,
+			*imageCreateName,
+			*imageCreateType,
+			*imageCreateSrc,
+			*imageCreateArch,
+			*imageCreateDistro,
+			*imageCreateRelease,
+		)
 		break
 	case "image show":
 		showImage(remote, *imageShowName)
@@ -77,11 +93,17 @@ func main() {
 		deleteImage(remote, *imageDeleteName)
 		break
 	case "machines":
-		listMachines(remote)
+		listMachines(remote, *cmdMachinesRaw)
 		break
 	case "machine create":
-		net := machineNet{*machineCreateNetBrIf}
-		createMachine(remote, *machineCreateName, *machineCreateImage, *machineCreateCores, *machineCreateMem, net)
+		createMachine(
+			remote,
+			*machineCreateName,
+			*machineCreateImage,
+			*machineCreateCores,
+			*machineCreateMem,
+			machineNet{*machineCreateNetBrIf},
+		)
 		break
 	case "machine show":
 		showMachine(remote, *machineShowName)

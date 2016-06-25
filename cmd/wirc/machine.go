@@ -15,20 +15,28 @@ type machineNet struct {
 	BrIf string
 }
 
-func listMachines(target client.Remote) {
+func listMachines(target client.Remote, raw bool) {
 	ms, err := client.ListMachines(target)
 	if err != nil {
 		fatal(err)
 	}
 
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Index", "Name", "Type", "Image", "State"})
+	if len(ms) > 0 {
+		if raw {
+			for _, m := range ms {
+				fmt.Println(strconv.Itoa(int(m.Index)), m.Name, image.TypeToString(m.Type), m.Image, machine.StateToString(m.State))
+			}
+		} else {
+			table := tablewriter.NewWriter(os.Stdout)
+			table.SetHeader([]string{"Index", "Name", "Type", "Image", "State"})
 
-	for _, m := range ms {
-		table.Append([]string{strconv.Itoa(int(m.Index)), m.Name, image.TypeToString(m.Type), m.Image, machine.StateToString(m.State)})
+			for _, m := range ms {
+				table.Append([]string{strconv.Itoa(int(m.Index)), m.Name, image.TypeToString(m.Type), m.Image, machine.StateToString(m.State)})
+			}
+
+			table.Render()
+		}
 	}
-
-	table.Render()
 }
 
 func createMachine(target client.Remote, name, img string, cpus, mem int, net machineNet) {

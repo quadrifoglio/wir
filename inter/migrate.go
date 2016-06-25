@@ -12,7 +12,14 @@ import (
 func MigrateQemu(basePath string, m machine.Machine, i image.Image, src, dst client.Remote) error {
 	_, err := client.GetImage(dst, m.Image)
 	if err != nil {
-		r := client.ImageRequest{i.Name, i.Type, fmt.Sprintf("scp://%s/%s", src.Addr, i.Source)}
+		r := client.ImageRequest{
+			i.Name,
+			i.Type,
+			fmt.Sprintf("scp://%s/%s", src.Addr, i.Source),
+			i.Arch,
+			i.Distro,
+			i.Release,
+		}
 
 		_, err = client.CreateImage(dst, r)
 		if err != nil {

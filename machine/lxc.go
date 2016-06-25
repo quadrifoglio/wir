@@ -38,17 +38,12 @@ func LxcCreate(basePath, name string, img *image.Image, cores, memory int) (Mach
 		return m, err
 	}
 
-	err = c.SetMemoryLimit(lxc.ByteSize(memory) * lxc.MB)
-	if err != nil {
-		return m, err
-	}
-
 	// TODO: Uncomment
 	var opts lxc.TemplateOptions
 	opts.Template = img.Source
-	/*opts.Distro = img.Name
-	opts.Release = "latest"
-	opts.Arch = "amd64"*/
+	opts.Distro = img.Distro
+	opts.Release = img.Release
+	opts.Arch = img.Arch
 	opts.FlushCache = false
 	opts.DisableGPGValidation = false
 
@@ -87,6 +82,11 @@ func LxcStart(basePath string, m *Machine) error {
 		if err := c.SetConfigItem("lxc.network.link", "wir0"); err != nil {
 			return err
 		}
+	}
+
+	err = c.SetMemoryLimit(lxc.ByteSize(m.Memory) * lxc.MB)
+	if err != nil {
+		return err
 	}
 
 	err = c.Start()

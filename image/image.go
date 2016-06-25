@@ -12,6 +12,11 @@ type Image struct {
 	Name   string
 	Type   int
 	Source string
+
+	// Optional information
+	Arch    string
+	Distro  string
+	Release string
 }
 
 func TypeToString(t int) string {

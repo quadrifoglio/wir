@@ -1,12 +1,13 @@
 package image
 
-var (
-	LxcTemplates = []Image{
-		Image{"lxc-alpine", TypeLXC, "alpine"},
-		Image{"lxc-arch", TypeLXC, "arch"},
-		Image{"lxc-centos", TypeLXC, "centos"},
-		Image{"lxc-debian", TypeLXC, "debian"},
-		Image{"lxc-fedora", TypeLXC, "fedora"},
-		Image{"lxc-ubuntu", TypeLXC, "ubuntu"},
-	}
-)
+func LxcCreate(name, src string) (Image, error) {
+	var i Image
+
+	i.Name = name
+	i.Type = TypeLXC
+	i.Source = src
+
+	// TODO: Check existance of LXC template
+
+	return i, nil
+}

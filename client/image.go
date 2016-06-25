@@ -11,6 +11,11 @@ type ImageRequest struct {
 	Name   string
 	Type   int
 	Source string
+
+	// Optional information
+	Arch    string
+	Distro  string
+	Release string
 }
 
 func ListImages(target Remote) ([]image.Image, error) {

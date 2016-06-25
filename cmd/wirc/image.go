@@ -10,29 +10,40 @@ import (
 	"github.com/quadrifoglio/wir/image"
 )
 
-func listImages(target client.Remote) {
+func listImages(target client.Remote, raw bool) {
 	imgs, err := client.ListImages(target)
 	if err != nil {
 		fatal(err)
 	}
 
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Name", "Type", "Source"})
+	if len(imgs) > 0 {
+		if raw {
+			for _, i := range imgs {
+				fmt.Println(i.Name, image.TypeToString(i.Type), i.Source, i.Arch, i.Distro, i.Release)
+			}
+		} else {
+			table := tablewriter.NewWriter(os.Stdout)
+			table.SetHeader([]string{"Name", "Type", "Source", "Arch", "Distro", "Release"})
 
-	for _, i := range imgs {
-		table.Append([]string{i.Name, image.TypeToString(i.Type), i.Source})
+			for _, i := range imgs {
+				table.Append([]string{i.Name, image.TypeToString(i.Type), i.Source, i.Arch, i.Distro, i.Release})
+			}
+
+			table.Render()
+		}
 	}
-
-	table.Render()
 }
 
-func createImage(target client.Remote, name, t, source string) {
+func createImage(target client.Remote, name, t, source, arch, distro, release string) {
 	var req client.ImageRequest
 	req.Name = name
 	req.Type = image.StringToType(t)
 	req.Source = source
+	req.Arch = arch
+	req.Distro = distro
+	req.Release = release
 
-	if !strings.Contains(source, "//") {
+	if !strings.Contains(source, "//") && req.Type != image.TypeLXC {
 		req.Source = "file://" + source
 	}
 

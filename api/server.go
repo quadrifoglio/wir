@@ -3,11 +3,12 @@ package api
 import (
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/gorilla/mux"
 
 	"github.com/quadrifoglio/wir/errors"
-	"github.com/quadrifoglio/wir/image"
 	"github.com/quadrifoglio/wir/machine"
 )
 
@@ -20,10 +21,10 @@ type Config struct {
 	Port    int
 
 	EnableKVM bool
-	Ebtables string `json:"EbtablesCommand"`
-	QemuImg  string `json:"QemuImgCommand"`
-	Qemu     string `json:"QemuCommand"`
-	Vzctl    string `json:"VzctlCommand"`
+	Ebtables  string `json:"EbtablesCommand"`
+	QemuImg   string `json:"QemuImgCommand"`
+	Qemu      string `json:"QemuCommand"`
+	Vzctl     string `json:"VzctlCommand"`
 
 	DatabaseFile string
 	ImagePath    string
@@ -49,26 +50,15 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(i).Send(w, r)
 }
 
-func addLxcImages() error {
-	for _, i := range image.LxcTemplates {
-		err := DBStoreImage(&i)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func Start(conf Config) error {
 	Conf = conf
 
-	err := DBOpen(Conf.DatabaseFile)
+	err := os.MkdirAll(filepath.Dir(Conf.DatabaseFile), 0777)
 	if err != nil {
 		return err
 	}
 
-	err = addLxcImages()
+	err = DBOpen(Conf.DatabaseFile)
 	if err != nil {
 		return err
 	}
