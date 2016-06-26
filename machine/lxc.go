@@ -1,7 +1,9 @@
 package machine
 
 import (
+	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/quadrifoglio/wir/image"
@@ -27,28 +29,37 @@ func LxcCreate(basePath, name string, img *image.Image, cores, memory int) (Mach
 		return m, err
 	}
 
-	c, err := lxc.NewContainer(name, path)
-	if err != nil {
-		return m, err
-	}
+	tarball := fmt.Sprintf("%s/%s.tar.gz", path, name)
+	if _, err := os.Stat(tarball); os.IsNotExist(err) {
+		c, err := lxc.NewContainer(name, path)
+		if err != nil {
+			return m, err
+		}
 
-	c.SetVerbosity(lxc.Verbose)
+		c.SetVerbosity(lxc.Verbose)
 
-	if err := c.SetLogFile(path + "/" + m.Name + "/log.txt"); err != nil {
-		return m, err
-	}
+		if err := c.SetLogFile(path + "/" + m.Name + "/log.txt"); err != nil {
+			return m, err
+		}
 
-	// TODO: Uncomment
-	var opts lxc.TemplateOptions
-	opts.Template = img.Source
-	opts.Distro = img.Distro
-	opts.Release = img.Release
-	opts.Arch = img.Arch
-	opts.FlushCache = false
-	opts.DisableGPGValidation = false
+		var opts lxc.TemplateOptions
+		opts.Template = img.Source
+		opts.Distro = img.Distro
+		opts.Release = img.Release
+		opts.Arch = img.Arch
+		opts.FlushCache = false
+		opts.DisableGPGValidation = false
 
-	if err := c.Create(opts); err != nil {
-		return m, err
+		if err := c.Create(opts); err != nil {
+			return m, err
+		}
+	} else {
+		cmd := exec.Command("tar", "--numeric-owner", "-xzvf", tarball, "-C", path)
+
+		err := cmd.Run()
+		if err != nil {
+			return m, fmt.Errorf("tar: %s", err)
+		}
 	}
 
 	return m, nil
@@ -84,15 +95,15 @@ func LxcStart(basePath string, m *Machine) error {
 		}
 	}
 
-	err = c.SetMemoryLimit(lxc.ByteSize(m.Memory) * lxc.MB)
-	if err != nil {
-		return err
-	}
-
 	err = c.Start()
 	if err != nil {
 		return err
 	}
+
+	/*err = c.SetMemoryLimit(lxc.ByteSize(m.Memory) * lxc.MB)
+	if err != nil {
+		return err
+	}*/
 
 	return nil
 }

@@ -312,6 +312,9 @@ func handleMachineMigrate(w http.ResponseWriter, r *http.Request) {
 	case image.TypeQemu:
 		err = inter.MigrateQemu(Conf.MachinePath, m, i, client.Remote{Conf.Address, "root", Conf.Port}, req.Target)
 		break
+	case image.TypeLXC:
+		err = inter.MigrateLxc(Conf.MachinePath, m, i, client.Remote{Conf.Address, "root", Conf.Port}, req.Target)
+		break
 	default:
 		ErrorResponse(errors.InvalidImageType)
 		return

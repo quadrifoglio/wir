@@ -9,11 +9,11 @@ import (
 )
 
 func RemoteMkdir(dst client.Remote, dstDir string) error {
-	cmd := exec.Command("ssh", fmt.Sprintf("%s@%s", dst.SSHUser, dst), "mkdir -p "+dstDir)
+	cmd := exec.Command("ssh", fmt.Sprintf("%s@%s", dst.SSHUser, dst.Addr), "mkdir -p "+dstDir)
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Printf("RemoteMkdir: %s", string(out))
+		log.Println("RemoteMkdir:", string(out))
 		return err
 	}
 
@@ -26,7 +26,7 @@ func SCP(src string, dst client.Remote, dstFile string) error {
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Printf("SCP: %s", string(out))
+		log.Println("SCP:", string(out))
 		return err
 	}
 

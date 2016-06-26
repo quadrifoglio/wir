@@ -2,6 +2,7 @@ package inter
 
 import (
 	"fmt"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/quadrifoglio/wir/client"
@@ -9,9 +10,13 @@ import (
 	"github.com/quadrifoglio/wir/machine"
 )
 
-func MigrateQemu(basePath string, m machine.Machine, i image.Image, src, dst client.Remote) error {
-	_, err := client.GetImage(dst, m.Image)
-	if err != nil {
+func MigrateImage(i image.Image, src, dst client.Remote) error {
+	_, err := client.GetImage(dst, i.Name)
+	if err == nil {
+		return nil
+	}
+
+	if i.Type == image.TypeQemu {
 		r := client.ImageRequest{
 			i.Name,
 			i.Type,
@@ -25,6 +30,29 @@ func MigrateQemu(basePath string, m machine.Machine, i image.Image, src, dst cli
 		if err != nil {
 			return fmt.Errorf("Remote image: %s", err)
 		}
+	} else if i.Type == image.TypeLXC {
+		r := client.ImageRequest{
+			i.Name,
+			i.Type,
+			i.Source,
+			i.Arch,
+			i.Distro,
+			i.Release,
+		}
+
+		_, err = client.CreateImage(dst, r)
+		if err != nil {
+			return fmt.Errorf("Remote image: %s", err)
+		}
+	}
+
+	return nil
+}
+
+func MigrateQemu(basePath string, m machine.Machine, i image.Image, src, dst client.Remote) error {
+	err := MigrateImage(i, src, dst)
+	if err != nil {
+		return err
 	}
 
 	conf, err := client.GetConfig(dst)
@@ -46,6 +74,48 @@ func MigrateQemu(basePath string, m machine.Machine, i image.Image, src, dst cli
 	}
 
 	r := client.MachineRequest{m.Name, i.Name, m.Cores, m.Memory, m.Network}
+
+	_, err = client.CreateMachine(dst, r)
+	if err != nil {
+		return fmt.Errorf("Remote machine: %s", err)
+	}
+
+	return nil
+}
+
+func MigrateLxc(basePath string, m machine.Machine, i image.Image, src, dst client.Remote) error {
+	basePath = basePath + "lxc"
+
+	err := MigrateImage(i, src, dst)
+	if err != nil {
+		return err
+	}
+
+	conf, err := client.GetConfig(dst)
+	if err != nil {
+		return fmt.Errorf("Remote configuration: %s", err)
+	}
+
+	tarball := fmt.Sprintf("%s/%s.tar.gz", basePath, m.Name)
+	dstPath := conf.MachinePath + "lxc/" + m.Name
+	cmd := exec.Command("tar", "--numeric-owner", "-czvf", tarball, "-C", basePath, m.Name)
+
+	err = cmd.Run()
+	if err != nil {
+		return fmt.Errorf("tar: %s", err)
+	}
+
+	err = RemoteMkdir(dst, filepath.Dir(dstPath))
+	if err != nil {
+		return fmt.Errorf("MkdirRemote: %s", err)
+	}
+
+	err = SCP(tarball, dst, dstPath+".tar.gz")
+	if err != nil {
+		return fmt.Errorf("SCP to remote: %s", err)
+	}
+
+	r := client.MachineRequest{m.Name, m.Image, m.Cores, m.Memory, m.Network}
 
 	_, err = client.CreateMachine(dst, r)
 	if err != nil {
