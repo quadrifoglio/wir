@@ -28,22 +28,22 @@
 				</nav>
 			</header>
 
-			<section class="login row">
+			<section id="login" class="login row">
 				<div class="entry column whole">
 					<h2>Authentication</h2>
 
-					<form>
-						<input type="text" name="remote-addr" placeholder="Remote address"><br>
-						<input type="number" name="remote-port" placeholder="Port"><br>
-						<input type="text" name="username" placeholder="Username"><br>
-						<input type="password" name="password" placeholder="Password"><br>
+					<form id="login-form" action="#">
+						<input type="text" id="login-addr" placeholder="Remote address"><br>
+						<input type="number" id="login-port" placeholder="Port"><br>
+						<input type="text" id="login-username" placeholder="Username"><br>
+						<input type="password" id="login-password" placeholder="Password"><br>
 
-						<button class="btn btn-blue">Login</button>
+						<button class="btn btn-blue" v-on:click="login">Login</button>
 					</form>
 				</div>
 			</section>
 
-			<section class="add-image row hidden">
+			<section id="add-image" class="add-image row hidden">
 				<div class="entry column whole">
 					<h2>Create a new image</h2>
 
@@ -61,7 +61,7 @@
 				</div>
 			</section>
 
-			<section class="add-machine row hidden">
+			<section id="add-machine" class="add-machine row hidden">
 				<div class="entry column whole">
 					<h2>Create a new machine</h2>
 
@@ -83,25 +83,25 @@
 				</div>
 			</section>
 
-			<section class="remote row hidden">
+			<section id="remote" class="remote row hidden">
 				<h2>Remote informations</h2>
 
 				<div class="entry column whole">
-					<h3>Connected to: 127.0.0.1 port 1997</h3>
-					<p>CPU: 12%, RAM: 1.6 GiB / 16 GiB</p>
-					<p>Available disk space: 1.6 TiB</p>
-					<p>Supported backends: kvm, lxc</p>
+					<h3>Connected to: {{ remote.addr }} port {{ remote.port }}</h3>
+					<p>CPU: {{ remote.cpu }}%, RAM: {{ remote.ramUsed }} GiB / {{ remote.ramTotal }} GiB</p>
+					<p>Available disk space: {{ remote.diskFree }} GiB</p>
+					<p>Supported backends: {{ remote.backends }}</p>
 				</div>
 			</section>
 
-			<section class="images row hidden">
+			<section id="images" class="images row hidden">
 				<h2>Images</h2>
 
-				<div class="entry image column whole">
+				<div class="entry image column whole" v-for="image in images">
 					<div class="row">
 						<div class="column four-fifths">
-							<h3>qemu-alpine - alpine linux 3.3 - amd64</h3>
-							<p>type: qemu</p>
+							<h3>{{ image.name }} - {{ image.distro }} {{ image.release }} - {{ image.arch }}</h3>
+							<p>type: {{ image.type }}</p>
 						</div>
 
 						<div class="entry-ctrls column one-fifth">
@@ -113,14 +113,14 @@
 				<button class="entry-add btn btn-blue">Add new image</button>
 			</section>
 
-			<section class="machines row hidden">
+			<section id="machines" class="machines row hidden">
 				<h2>Machines</h2>
 
-				<div class="entry machine column whole">
+				<div class="entry machine column whole" v-for="machine in machines">
 					<div class="row">
 						<div class="column three-fifths">
-							<h3>87f5hg65e4e3 - qemu-alpine - running</h3>
-							<p>cpu: 54% - memory: 42% - disk: 4.6 GiB / 45 GiB</p>
+							<h3>{{ machine.name }} - {{ machine.image }} - {{ machine.state }}</h3>
+							<p>CPU: {{ machine.stats.cpu }}% - RAM: {{ machine.stats.ramUsed }} GiB / {{ machine.stats.ramTotal }} GiB - Disk: {{ machine.stats.diskUsed }} GiB / {{ machine.stats.diskTotal }} GiB</p>
 						</div>
 
 						<div class="entry-ctrls column two-fifths">
@@ -133,5 +133,9 @@
 				<button class="entry-add btn btn-blue">Add new machine</button>
 			</section>
 		</div>
+
+		<script type="text/javascript" src="js/jquery-3.0.0.min.js"></script>
+		<script type="text/javascript" src="js/vue.js"></script>
+		<script type="text/javascript" src="js/app.js"></script>
 	</body>
 </html>
