@@ -2,7 +2,7 @@
 
 Self-hosted virtualization platform.
 
-![screenshot][misc/screenshot.png]
+![screenshot](misc/screenshot.png)
 
 ## Features
 
