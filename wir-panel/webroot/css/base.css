@@ -1,0 +1,93 @@
+@font-face {
+	font-family: "Montserrat";
+	font-weight: normal;
+	src: url("../fonts/Montserrat-Regular.otf");
+}
+
+@font-face {
+	font-family: "Montserrat";
+	font-weight: 300;
+	src: url("../fonts/Montserrat-Light.otf");
+}
+
+* {
+	box-sizing: border-box;
+	-moz-box-sizing: border-box;
+
+	color: #2C3E50;
+}
+
+html, body, p {
+	margin: 0;
+	padding: 0;
+}
+
+body {
+}
+
+h1, h2, h3, h4 {
+	margin: 0;
+	padding: 0;
+
+	color: #3498db;
+	font-family: "Montserrat", sans-serif;
+	font-weight: 300;
+}
+
+h1 {
+	font-size: 38px;
+}
+
+h2 {
+	font-size: 28px;
+}
+
+a {
+	color: black;
+}
+
+form {
+	width: inherit;
+}
+
+input, select {
+	width: inherit;
+
+	margin: 10px auto;
+	padding: 8px 21px;
+	border: 1px solid #EBEBEB;
+	border-radius: 5px;
+	background: white;
+}
+
+.hidden {
+	display: none;
+}
+
+.btn {
+	display: inline-block;
+	height: 42px;
+
+	background-color: white;
+	border: 1px solid #ebebeb;
+	padding: 8px 32px;
+
+	color: black;
+	font-size: 16px;
+	text-align: center;
+	text-decoration: none;
+}
+
+.btn-blue {
+	border: none;
+	background-color: #2980B9;
+
+	color: white;
+}
+
+.btn-red {
+	border: none;
+	background-color: #E74C3C;
+
+	color: white;
+}

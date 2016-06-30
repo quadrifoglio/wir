@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Administration</title>
+
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1">
+
+		<link type="text/css" rel="stylesheet" href="css/pills.min.css">
+		<link type="text/css" rel="stylesheet" href="css/font-awesome.min.css">
+		<link type="text/css" rel="stylesheet" href="css/base.css">
+		<link type="text/css" rel="stylesheet" href="css/main.css">
+	</head>
+
+	<body>
+		<div id="app">
+			<header class="header row">
+				<div class="header-logo column two-thirds">
+					<h1>
+						<i style="color: inherit" class="fa fa-server" aria-hidden="true"></i>
+						Web Virtualisation Console
+					</h1>
+				</div>
+
+				<nav class="header-nav column one-third">
+					<a class="header-nav-item" href="#"><i class="fa fa-cog" aria-hidden="true"></i></a>
+					<a class="header-nav-item" href="#"><i class="fa fa-sign-out" aria-hidden="true"></i></a>
+				</nav>
+			</header>
+
+			<section class="login row">
+				<div class="entry column whole">
+					<h2>Authentication</h2>
+
+					<form>
+						<input type="text" name="remote-addr" placeholder="Remote address"><br>
+						<input type="number" name="remote-port" placeholder="Port"><br>
+						<input type="text" name="username" placeholder="Username"><br>
+						<input type="password" name="password" placeholder="Password"><br>
+
+						<button class="btn btn-blue">Login</button>
+					</form>
+				</div>
+			</section>
+
+			<section class="add-image row hidden">
+				<div class="entry column whole">
+					<h2>Create a new image</h2>
+
+					<form>
+						<input type="text" name="name" placeholder="Image name"><br>
+						<select name="type">
+							<option value="kvm">KVM</option><br>
+							<option value="lxc">LXC</option><br>
+						</select><br>
+						<input type="text" name="source" placeholder="Image source (http, scp, file)"><br>
+
+						<button class="btn btn-blue">Create</button>
+						<button class="btn">Cancel</button>
+					</form>
+				</div>
+			</section>
+
+			<section class="add-machine row hidden">
+				<div class="entry column whole">
+					<h2>Create a new machine</h2>
+
+					<form>
+						<input type="text" name="name" placeholder="Machine name"><br>
+						<select name="image">
+							<option value="">qemu-alpine</option><br>
+							<option value="">lxc-debian</option><br>
+						</select><br>
+						<input type="number" name="cores" placeholder="CPU Cores"><br>
+						<input type="number" name="memory" placeholder="RAM Limit"><br>
+						<select name="networking">
+							<option value="bridge">Bridged networking</option><br>
+						</select><br>
+
+						<button class="btn btn-blue">Create</button>
+						<button class="btn">Cancel</button>
+					</form>
+				</div>
+			</section>
+
+			<section class="remote row hidden">
+				<h2>Remote informations</h2>
+
+				<div class="entry column whole">
+					<h3>Connected to: 127.0.0.1 port 1997</h3>
+					<p>CPU: 12%, RAM: 1.6 GiB / 16 GiB</p>
+					<p>Available disk space: 1.6 TiB</p>
+					<p>Supported backends: kvm, lxc</p>
+				</div>
+			</section>
+
+			<section class="images row hidden">
+				<h2>Images</h2>
+
+				<div class="entry image column whole">
+					<div class="row">
+						<div class="column four-fifths">
+							<h3>qemu-alpine - alpine linux 3.3 - amd64</h3>
+							<p>type: qemu</p>
+						</div>
+
+						<div class="entry-ctrls column one-fifth">
+							<button class="entry-ctrl btn btn-red">Delete</button>
+						</div>
+					</div>
+				</div>
+
+				<button class="entry-add btn btn-blue">Add new image</button>
+			</section>
+
+			<section class="machines row hidden">
+				<h2>Machines</h2>
+
+				<div class="entry machine column whole">
+					<div class="row">
+						<div class="column three-fifths">
+							<h3>87f5hg65e4e3 - qemu-alpine - running</h3>
+							<p>cpu: 54% - memory: 42% - disk: 4.6 GiB / 45 GiB</p>
+						</div>
+
+						<div class="entry-ctrls column two-fifths">
+							<button class="entry-ctrl btn btn-red">Stop</button>
+							<button class="entry-ctrl btn btn-blue">Info</button>
+						</div>
+					</div>
+				</div>
+
+				<button class="entry-add btn btn-blue">Add new machine</button>
+			</section>
+		</div>
+	</body>
+</html>
