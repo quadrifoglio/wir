@@ -1,14 +1,23 @@
 # wir
 
-HTTP virtualization node control system
+Self-hosted virtualization platform.
 
-The purpose is to provide a simple HTTP JSON API to manage virtual machines on a host.
+![screenshot][misc/screenshot.png]
 
-It will first support the QEMU/MKV hypervisor, but the goal is to support a few more.
+## Features
+
+* Create, and manage virtual machines easily
+* Single HTTP/JSON API for all the backends
+* Web & command line clients
+
+## Backends
+
+* qemu/kvm
+* lxc (using liblxc-dev)
+* openvz (vzctl)
 
 ## Requirements
 
 * Go
 * bridge-utils
-* qemu-kvm
-* openvz
+* At lease one of the supported backends
