@@ -19,14 +19,14 @@ func listImages(target client.Remote, raw bool) {
 	if len(imgs) > 0 {
 		if raw {
 			for _, i := range imgs {
-				fmt.Println(i.Name, image.TypeToString(i.Type), i.Source, i.Arch, i.Distro, i.Release)
+				fmt.Println(i.Name, i.Type, i.Source, i.Arch, i.Distro, i.Release)
 			}
 		} else {
 			table := tablewriter.NewWriter(os.Stdout)
 			table.SetHeader([]string{"Name", "Type", "Source", "Arch", "Distro", "Release"})
 
 			for _, i := range imgs {
-				table.Append([]string{i.Name, image.TypeToString(i.Type), i.Source, i.Arch, i.Distro, i.Release})
+				table.Append([]string{i.Name, i.Type, i.Source, i.Arch, i.Distro, i.Release})
 			}
 
 			table.Render()
@@ -37,7 +37,7 @@ func listImages(target client.Remote, raw bool) {
 func createImage(target client.Remote, name, t, source, arch, distro, release string) {
 	var req client.ImageRequest
 	req.Name = name
-	req.Type = image.StringToType(t)
+	req.Type = t
 	req.Source = source
 	req.Arch = arch
 	req.Distro = distro
@@ -60,7 +60,7 @@ func showImage(target client.Remote, name string) {
 	}
 
 	fmt.Println("Name:", img.Name)
-	fmt.Println("Type:", image.TypeToString(img.Type))
+	fmt.Println("Type:", img.Type)
 	fmt.Println("Source:", img.Source)
 }
 

@@ -1,50 +1,19 @@
 package image
 
 const (
-	TypeUnknown = 0
-	TypeQemu    = 1
-	TypeDocker  = 2
-	TypeVz      = 3
-	TypeLXC     = 4
+	TypeUnknown = "unknown"
+	TypeQemu    = "qemu"
+	TypeVz      = "openvz"
+	TypeLXC     = "lxc"
 )
 
 type Image struct {
 	Name   string
-	Type   int
+	Type   string
 	Source string
 
 	// Optional information
 	Arch    string
 	Distro  string
 	Release string
-}
-
-func TypeToString(t int) string {
-	switch t {
-	case TypeQemu:
-		return "qemu"
-	case TypeDocker:
-		return "docker"
-	case TypeVz:
-		return "openvz"
-	case TypeLXC:
-		return "lxc"
-	default:
-		return "unknown"
-	}
-}
-
-func StringToType(t string) int {
-	switch t {
-	case "qemu":
-		return TypeQemu
-	case "docker":
-		return TypeDocker
-	case "openvz":
-		return TypeVz
-	case "lxc":
-		return TypeLXC
-	default:
-		return TypeUnknown
-	}
 }

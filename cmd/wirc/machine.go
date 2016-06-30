@@ -7,7 +7,6 @@ import (
 
 	"github.com/olekukonko/tablewriter"
 	"github.com/quadrifoglio/wir/client"
-	"github.com/quadrifoglio/wir/image"
 	"github.com/quadrifoglio/wir/machine"
 )
 
@@ -24,14 +23,14 @@ func listMachines(target client.Remote, raw bool) {
 	if len(ms) > 0 {
 		if raw {
 			for _, m := range ms {
-				fmt.Println(strconv.Itoa(int(m.Index)), m.Name, image.TypeToString(m.Type), m.Image, machine.StateToString(m.State))
+				fmt.Println(strconv.Itoa(int(m.Index)), m.Name, m.Type, m.Image, machine.StateToString(m.State))
 			}
 		} else {
 			table := tablewriter.NewWriter(os.Stdout)
 			table.SetHeader([]string{"Index", "Name", "Type", "Image", "State"})
 
 			for _, m := range ms {
-				table.Append([]string{strconv.Itoa(int(m.Index)), m.Name, image.TypeToString(m.Type), m.Image, machine.StateToString(m.State)})
+				table.Append([]string{strconv.Itoa(int(m.Index)), m.Name, m.Type, m.Image, machine.StateToString(m.State)})
 			}
 
 			table.Render()
@@ -63,7 +62,7 @@ func showMachine(target client.Remote, name string) {
 
 	fmt.Println("Index:", m.Index)
 	fmt.Println("Name:", m.Name)
-	fmt.Println("Type:", image.TypeToString(m.Type))
+	fmt.Println("Type:", m.Type)
 	fmt.Println("Image:", m.Image)
 	fmt.Println("State:", machine.StateToString(m.State))
 	fmt.Println("Cores:", m.Cores)

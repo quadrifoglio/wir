@@ -4,12 +4,13 @@
 
 (function(){
 
+var LoginInfo = null;
+
 function login(e) {
 	e.preventDefault();
 
-	this.loginInfo = {
-		addr: $("#login-addr").val(),
-		port: $("#login-port").val(),
+	LoginInfo = {
+		url: "http://" + $("#login-addr").val() + ":" + $("#login-port").val(),
 		user: $("#login-username").val(),
 		pass: $("#login-password").val()
 	};
@@ -18,6 +19,47 @@ function login(e) {
 	$("#remote").removeClass("hidden");
 	$("#images").removeClass("hidden");
 	$("#machines").removeClass("hidden");
+
+	init(this);
+}
+
+function init(self) {
+	$.ajax({method: "GET", url: LoginInfo.url + "/images", success: function(res) {
+		var imgs = null;
+
+		if(imgs = JSON.parse(res)) {
+			imgs.Content.forEach(function(i) {
+				if(!i.Distro) i.Distro = "unknown os";
+				if(!i.Arch) i.Arch = "unknown architecture";
+			});
+			self.$data.images = imgs.Content;
+		}
+		else {
+			console.log("error");
+		}
+	}, error: function(res) {
+		console.log("error");
+	}});
+
+	$.ajax({method: "GET", url: LoginInfo.url + "/machines", success: function(res) {
+		var machines = null;
+
+		if(machines = JSON.parse(res)) {
+			machines.Content.forEach(function(m) {
+				if(m.State == 1)
+					m.State = "running";
+				else
+					m.State = "stopped";
+			});
+
+			self.$data.machines = machines.Content;
+		}
+		else {
+			console.log("error");
+		}
+	}, error: function(res) {
+		console.log("error");
+	}});
 }
 
 var vm = new Vue({
@@ -34,53 +76,12 @@ var vm = new Vue({
 			backends: ["lxc", "qemu", "openvz"]
 		},
 
-		images: [
-			{
-				name: "qemu-alpine",
-				type: "qemu",
-				distro: "alpine linux",
-				arch: "amd64",
-				release: "3.3"
-			},
-			{
-				name: "lxc-alpine",
-				type: "lxc",
-				distro: "alpine linux",
-				arch: "amd64",
-				release: "3.3"
-			}
-		],
-
-		machines: [
-			{
-				name: "1fb8b95d1fe65c14",
-				image: "qemu-alpine",
-				state: "running",
-				stats: {
-					cpu: 42,
-					ramUsed: 0.86,
-					ramTotal: 2,
-					diskUsed: 4.6,
-					diskTotal: 45
-				}
-			},
-			{
-				name: "582838c01be65c14",
-				image: "lxc-alpine",
-				state: "running",
-				stats: {
-					cpu: 8,
-					ramUsed: 0.16,
-					ramTotal: 2,
-					diskUsed: 1.1,
-					diskTotal: 20
-				}
-			}
-		]
+		images: [],
+		machines: []
 	},
 
 	methods: {
-		login: login
+		login: login,
 	}
 });
 

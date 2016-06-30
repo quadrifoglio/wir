@@ -91,3 +91,10 @@ input, select {
 
 	color: white;
 }
+
+.btn-green {
+	border: none;
+	background-color: #4CAF50;
+
+	color: white;
+}

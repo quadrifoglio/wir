@@ -9,7 +9,7 @@ import (
 
 type ImageRequest struct {
 	Name   string
-	Type   int
+	Type   string
 	Source string
 
 	// Optional information

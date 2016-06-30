@@ -24,7 +24,7 @@ type BackendVz struct {
 type Machine struct {
 	Name    string
 	Index   uint64
-	Type    int
+	Type    string
 	Image   string
 	State   int
 	Cores   int

@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 
 	"github.com/quadrifoglio/wir/errors"
@@ -85,7 +86,7 @@ func Start(conf Config) error {
 	r.HandleFunc("/machines/{name}", handleMachineDelete).Methods("DELETE")
 
 	r.NotFoundHandler = http.HandlerFunc(handleNotFound)
-	http.Handle("/", r)
+	http.Handle("/", handlers.CORS()(r))
 
 	return http.ListenAndServe(fmt.Sprintf("%s:%d", Conf.Address, Conf.Port), nil)
 }

@@ -32,14 +32,12 @@
 				<div class="entry column whole">
 					<h2>Authentication</h2>
 
-					<form id="login-form" action="#">
-						<input type="text" id="login-addr" placeholder="Remote address"><br>
-						<input type="number" id="login-port" placeholder="Port"><br>
-						<input type="text" id="login-username" placeholder="Username"><br>
-						<input type="password" id="login-password" placeholder="Password"><br>
+					<input type="text" id="login-addr" placeholder="Remote address"><br>
+					<input type="number" id="login-port" placeholder="Port"><br>
+					<input type="text" id="login-username" placeholder="Username"><br>
+					<input type="password" id="login-password" placeholder="Password"><br>
 
-						<button class="btn btn-blue" v-on:click="login">Login</button>
-					</form>
+					<button class="btn btn-blue" v-on:click="login">Login</button>
 				</div>
 			</section>
 
@@ -100,8 +98,8 @@
 				<div class="entry image column whole" v-for="image in images">
 					<div class="row">
 						<div class="column four-fifths">
-							<h3>{{ image.name }} - {{ image.distro }} {{ image.release }} - {{ image.arch }}</h3>
-							<p>type: {{ image.type }}</p>
+							<h3>{{ image.Name }} - {{ image.Distro }} {{ image.Release }} - {{ image.Arch }}</h3>
+							<p>type: {{ image.Type }}</p>
 						</div>
 
 						<div class="entry-ctrls column one-fifth">
@@ -119,13 +117,16 @@
 				<div class="entry machine column whole" v-for="machine in machines">
 					<div class="row">
 						<div class="column three-fifths">
-							<h3>{{ machine.name }} - {{ machine.image }} - {{ machine.state }}</h3>
+							<h3>{{ machine.Name }} - {{ machine.Image }} - {{ machine.State }}</h3>
 							<p>CPU: {{ machine.stats.cpu }}% - RAM: {{ machine.stats.ramUsed }} GiB / {{ machine.stats.ramTotal }} GiB - Disk: {{ machine.stats.diskUsed }} GiB / {{ machine.stats.diskTotal }} GiB</p>
 						</div>
 
 						<div class="entry-ctrls column two-fifths">
-							<button class="entry-ctrl btn btn-red">Stop</button>
-							<button class="entry-ctrl btn btn-blue">Info</button>
+							<button v-on:click="startMachine" v-if="machine.State != 'running'" class="entry-ctrl btn btn-green">Start</button>
+							<button v-on:click="editMachine" v-if="machine.State != 'running'" class="entry-ctrl btn btn-blue">Edit</button>
+							<button v-on:click="stopMachine" v-if="machine.State != 'running'" class="entry-ctrl btn btn-red">Delete</button>
+
+							<button v-on:click="stopMachine" v-if="machine.State == 'running'" class="entry-ctrl btn btn-red">Stop</button>
 						</div>
 					</div>
 				</div>
