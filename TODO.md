@@ -2,3 +2,4 @@
 * lxc: fix templates options (distro, release, arch)
 * lxc: random failure on container creation
 * wir-panel: create/edit image and machine
+* api: return the correct amount of free ram (kernel's cached memory)

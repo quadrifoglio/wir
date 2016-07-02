@@ -24,6 +24,22 @@ function login(e) {
 }
 
 function init(self) {
+	$.ajax({method: "GET", url: LoginInfo.url + "/", success: function(res) {
+		var info = null;
+
+		if(info = JSON.parse(res)) {
+			self.$data.remote.cpu = info.Content.Stats.CPUUsage;
+			self.$data.remote.ramUsed = info.Content.Stats.RAMUsage;
+			self.$data.remote.ramTotal = info.Content.Stats.RAMTotal;
+			self.$data.remote.diskFree = info.Content.Stats.FreeSpace;
+		}
+		else {
+			console.log("error");
+		}
+	}, error: function(res) {
+		console.log("error");
+	}});
+
 	$.ajax({method: "GET", url: LoginInfo.url + "/images", success: function(res) {
 		var imgs = null;
 
@@ -67,11 +83,11 @@ var vm = new Vue({
 
 	data: {
 		remote: {
-			addr: "127.0.0.1",
-			port: 1997,
-			cpu: 42,
-			ramUsed: 1.2,
-			ramTotal: 16,
+			addr: "",
+			port: 0,
+			cpu: 0,
+			ramUsed: 0,
+			ramTotal: 0,
 			diskFree: 1642,
 			backends: ["lxc", "qemu", "openvz"]
 		},

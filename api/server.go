@@ -43,9 +43,10 @@ func handleNotFound(w http.ResponseWriter, r *http.Request) {
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
 	type stats struct {
-		CPUUsage int
-		RAMUsage uint64
-		RAMTotal uint64
+		CPUUsage  int
+		RAMUsage  uint64
+		RAMTotal  uint64
+		FreeSpace uint64
 	}
 
 	type info struct {
@@ -67,7 +68,13 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	i := info{"wir api", Version, Conf, stats{cpu, ru / 1048576, rt / 1048576}}
+	fs, err := utils.GetFreeSpace(Conf.MachinePath)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	i := info{"wir api", Version, Conf, stats{cpu, ru / 1048576, rt / 1048576, fs / 1073741824}} // RAM in MiB, Disk in GiB
 	SuccessResponse(i).Send(w, r)
 }
 

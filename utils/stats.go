@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -15,14 +16,14 @@ func GetCpuUsage() (int, error) {
 	for i := 0; i < 2; i++ {
 		file, err := os.Open("/proc/stat")
 		if err != nil {
-			return 0, err
+			return 0, fmt.Errorf("failed to get cpu stats: %s", err)
 		}
 
 		r := bufio.NewReader(file)
 		line, _, err := r.ReadLine()
 		if err != nil {
 			file.Close()
-			return 0, err
+			return 0, fmt.Errorf("failed to get cpu stats: %s", err)
 		}
 
 		file.Close()
@@ -33,7 +34,7 @@ func GetCpuUsage() (int, error) {
 		for j, v := range valuesStr {
 			vv, err := strconv.Atoi(v)
 			if err != nil {
-				return 0, err
+				return 0, fmt.Errorf("failed to get cpu stats: %s", err)
 			}
 
 			values[i][j] = vv
@@ -56,12 +57,23 @@ func GetCpuUsage() (int, error) {
 }
 
 func GetRamUsage() (uint64, uint64, error) {
-	s := syscall.Sysinfo_t{}
+	var s syscall.Sysinfo_t
 
 	err := syscall.Sysinfo(&s)
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, fmt.Errorf("failed to get ram stats: %s", err)
 	}
 
-	return (s.Totalram - s.Freeram), s.Totalram, nil
+	return (s.Totalram - (s.Freeram + s.Bufferram)), s.Totalram, nil
+}
+
+func GetFreeSpace(dir string) (uint64, error) {
+	var s syscall.Statfs_t
+
+	err := syscall.Statfs(dir, &s)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get free space: %s", err)
+	}
+
+	return s.Bavail * uint64(s.Bsize), nil
 }

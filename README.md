@@ -1,5 +1,7 @@
 # wir
 
+/!\ WORK IN PROGRESS /!\
+
 Self-hosted virtualization platform.
 
 ![screenshot](misc/screenshot.png)
