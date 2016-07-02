@@ -11,6 +11,7 @@ import (
 
 	"github.com/quadrifoglio/wir/errors"
 	"github.com/quadrifoglio/wir/machine"
+	"github.com/quadrifoglio/wir/utils"
 )
 
 const (
@@ -41,13 +42,32 @@ func handleNotFound(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
+	type stats struct {
+		CPUUsage int
+		RAMUsage uint64
+		RAMTotal uint64
+	}
+
 	type info struct {
 		Name          string
 		Version       string
 		Configuration Config
+		Stats         stats
 	}
 
-	i := info{"wir api", Version, Conf}
+	cpu, err := utils.GetCpuUsage()
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	ru, rt, err := utils.GetRamUsage()
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	i := info{"wir api", Version, Conf, stats{cpu, ru / 1048576, rt / 1048576}}
 	SuccessResponse(i).Send(w, r)
 }
 
