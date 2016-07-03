@@ -16,7 +16,7 @@
 	line-height: 55px;
 }
 
-.login, .add-image, .add-machine, .remote, .images, .machines {
+.errors, .login, .add-image, .add-machine, .remote, .images, .machines {
 	margin-top: 15px;
 }
 
@@ -36,4 +36,13 @@
 
 .entry-add {
 	margin-top: 10px;
+}
+
+.error {
+	border-color: #E74C3C;
+}
+
+.error > p {
+	font-size: 21px;
+	color: #E74C3C;
 }

@@ -28,6 +28,12 @@
 				</nav>
 			</header>
 
+			<section id="errors" class="errors row">
+				<div v-for="error in errors" class="entry error column whole">
+					<p>{{ error }}</p>
+				</div>
+			</section>
+
 			<section id="login" class="login row">
 				<div class="entry column whole">
 					<h2>Authentication</h2>
