@@ -1,5 +1,6 @@
 vm/
 var/
+etc/wird2.json
 
 *.swp
 *.swo

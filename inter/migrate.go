@@ -16,34 +16,18 @@ func MigrateImage(i image.Image, src, dst client.Remote) error {
 		return nil
 	}
 
-	if i.Type == image.TypeQemu {
-		r := client.ImageRequest{
-			i.Name,
-			i.Type,
-			fmt.Sprintf("scp://%s/%s", src.Addr, i.Source),
-			i.Arch,
-			i.Distro,
-			i.Release,
-		}
+	r := client.ImageRequest{
+		i.Name,
+		i.Type,
+		fmt.Sprintf("scp://%s/%s", src.Addr, i.Source),
+		i.Arch,
+		i.Distro,
+		i.Release,
+	}
 
-		_, err = client.CreateImage(dst, r)
-		if err != nil {
-			return fmt.Errorf("failed to create remote image: %s", err)
-		}
-	} else if i.Type == image.TypeLXC {
-		r := client.ImageRequest{
-			i.Name,
-			i.Type,
-			i.Source,
-			i.Arch,
-			i.Distro,
-			i.Release,
-		}
-
-		_, err = client.CreateImage(dst, r)
-		if err != nil {
-			return fmt.Errorf("failed to create remote image: %s", err)
-		}
+	_, err = client.CreateImage(dst, r)
+	if err != nil {
+		return fmt.Errorf("failed to create remote image: %s", err)
 	}
 
 	return nil
