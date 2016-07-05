@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -57,17 +58,41 @@ func GetCpuUsage() (int, error) {
 }
 
 func GetRamUsage() (uint64, uint64, error) {
-	var s syscall.Sysinfo_t
+	var mib uint64 = 1048576
 
-	err := syscall.Sysinfo(&s)
+	f, err := os.Open("/proc/meminfo")
 	if err != nil {
-		return 0, 0, fmt.Errorf("failed to get ram stats: %s", err)
+		return 0, 0, err
 	}
 
-	return (s.Totalram - (s.Freeram + s.Bufferram)), s.Totalram, nil
+	defer f.Close()
+
+	vals := make([]uint64, 5)
+
+	i := 0
+	s := bufio.NewScanner(f)
+	for s.Scan() {
+		if i > 4 {
+			break
+		}
+
+		re := regexp.MustCompile("[0-9]+")
+		v := re.FindAllString(s.Text(), -1)
+
+		if s, err := strconv.ParseUint(v[0], 10, 64); err == nil {
+			vals[i] = s * 1000
+		} else {
+			return 0, 0, fmt.Errorf("failed to parse /proc/meminfo: %s", err)
+		}
+
+		i++
+	}
+
+	return (vals[0] - (vals[1] + vals[3] + vals[4])) / mib, vals[0] / mib, nil
 }
 
 func GetFreeSpace(dir string) (uint64, error) {
+	var gib uint64 = 1073741824
 	var s syscall.Statfs_t
 
 	err := syscall.Statfs(dir, &s)
@@ -75,5 +100,5 @@ func GetFreeSpace(dir string) (uint64, error) {
 		return 0, fmt.Errorf("failed to get free space: %s", err)
 	}
 
-	return s.Bavail * uint64(s.Bsize), nil
+	return (s.Bavail * uint64(s.Bsize)) / gib, nil
 }

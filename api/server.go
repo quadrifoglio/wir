@@ -74,7 +74,7 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	i := info{"wir api", Version, Conf, stats{cpu, ru / 1048576, rt / 1048576, fs / 1073741824}} // RAM in MiB, Disk in GiB
+	i := info{"wir api", Version, Conf, stats{cpu, ru, rt, fs}}
 	SuccessResponse(i).Send(w, r)
 }
 
