@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -67,28 +66,46 @@ func GetRamUsage() (uint64, uint64, error) {
 
 	defer f.Close()
 
-	vals := make([]uint64, 5)
+	var c bool = true
+	var total uint64
+	var free uint64
+	var buffers uint64
+	var cached uint64
 
-	i := 0
 	s := bufio.NewScanner(f)
-	for s.Scan() {
-		if i > 4 {
+	for s.Scan() && c {
+		l := s.Text()
+		n := strings.Index(l, ":")
+		key := l[:n]
+		vstr := strings.Split(strings.Trim(l[n+1:], " "), " ")[0]
+
+		value, err := strconv.ParseUint(vstr, 10, 64)
+		if err != nil {
+			return 0, 0, fmt.Errorf("failed to parse /proc/meminfo: %s")
+		}
+
+		switch key {
+		case "MemTotal":
+			total = value * 1000
+			break
+		case "MemFree":
+			free = value * 1000
+			break
+		case "Buffers":
+			buffers = value * 1000
+			break
+		case "Cached":
+			cached = value * 1000
+			c = false
 			break
 		}
-
-		re := regexp.MustCompile("[0-9]+")
-		v := re.FindAllString(s.Text(), -1)
-
-		if s, err := strconv.ParseUint(v[0], 10, 64); err == nil {
-			vals[i] = s * 1000
-		} else {
-			return 0, 0, fmt.Errorf("failed to parse /proc/meminfo: %s", err)
-		}
-
-		i++
 	}
 
-	return (vals[0] - (vals[1] + vals[3] + vals[4])) / mib, vals[0] / mib, nil
+	if total == 0 || free == 0 || buffers == 0 || cached == 0 {
+		return 0, 0, fmt.Errorf("failed to parse /proc/meminfo: missing values")
+	}
+
+	return (total - (free + buffers + cached)) / mib, total / mib, nil
 }
 
 func GetFreeSpace(dir string) (uint64, error) {

@@ -59,7 +59,6 @@ func QemuStart(qemuCmd string, kvm bool, m *Machine, basePath string) error {
 	args[7] = fmt.Sprintf(":%d", m.Index)
 
 	if kvm {
-		fmt.Println("mdr")
 		args = append(args, "-enable-kvm")
 	}
 
