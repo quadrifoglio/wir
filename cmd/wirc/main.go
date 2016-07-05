@@ -48,16 +48,20 @@ var (
 	machineCreateImage   = machineCreate.Arg("image", "Name of image to use").Required().String()
 
 	machineShow     = cmdMachine.Command("show", "Show machine details")
-	machineShowName = machineShow.Arg("id", "Machine name").Required().String()
+	machineShowName = machineShow.Arg("name", "Machine name").Required().String()
 
 	machineStart     = cmdMachine.Command("start", "Start machine")
-	machineStartName = machineStart.Arg("id", "Machine name").Required().String()
+	machineStartName = machineStart.Arg("name", "Machine name").Required().String()
 
 	machineStop     = cmdMachine.Command("stop", "Stop machine")
-	machineStopName = machineStop.Arg("id", "Machine name").Required().String()
+	machineStopName = machineStop.Arg("name", "Machine name").Required().String()
+
+	machineMigrate       = cmdMachine.Command("migrate", "Migrate machine")
+	machineMigrateName   = machineMigrate.Arg("name", "Machine name").Required().String()
+	machineMigrateTarget = machineMigrate.Arg("target", "Target node (user@ip:port)").Required().String()
 
 	machineDelete     = cmdMachine.Command("delete", "Delete a machine")
-	machineDeleteName = machineDelete.Arg("id", "Machine name").Required().String()
+	machineDeleteName = machineDelete.Arg("name", "Machine name").Required().String()
 )
 
 func fatal(err error) {
@@ -115,6 +119,9 @@ func main() {
 		break
 	case "machine stop":
 		stopMachine(remote, *machineStopName)
+		break
+	case "machine migrate":
+		migrateMachine(remote, *machineMigrateName, *machineMigrateTarget)
 		break
 	case "machine delete":
 		deleteMachine(remote, *machineDeleteName)

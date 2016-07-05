@@ -87,12 +87,12 @@ func Start(conf Config) error {
 		return err
 	}
 
-	err := os.MkdirAll(Conf.ImagePath, 0777)
+	err = os.MkdirAll(Conf.ImagePath, 0777)
 	if err != nil {
 		return err
 	}
 
-	err := os.MkdirAll(Conf.MachinePath, 0777)
+	err = os.MkdirAll(Conf.MachinePath, 0777)
 	if err != nil {
 		return err
 	}

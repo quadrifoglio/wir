@@ -30,7 +30,7 @@ func ListMachines(target Remote) ([]machine.Machine, error) {
 
 	err = json.Unmarshal(data, &r)
 	if err != nil {
-		return nil, fmt.Errorf("JSON: %s", err)
+		return nil, fmt.Errorf("json: %s", err)
 	}
 
 	return r.Content, apiError(r.ResponseBase)
@@ -46,7 +46,7 @@ func CreateMachine(target Remote, i MachineRequest) (machine.Machine, error) {
 
 	data, err := json.Marshal(i)
 	if err != nil {
-		return r.Content, fmt.Errorf("JSON: %s", err)
+		return r.Content, fmt.Errorf("json: %s", err)
 	}
 
 	data, err = apiRequest(target, "POST", "/machines", data)
@@ -56,7 +56,7 @@ func CreateMachine(target Remote, i MachineRequest) (machine.Machine, error) {
 
 	err = json.Unmarshal(data, &r)
 	if err != nil {
-		return r.Content, fmt.Errorf("JSON: %s", err)
+		return r.Content, fmt.Errorf("json: %s", err)
 	}
 
 	return r.Content, apiError(r.ResponseBase)
@@ -77,7 +77,7 @@ func GetMachine(target Remote, name string) (machine.Machine, error) {
 
 	err = json.Unmarshal(data, &r)
 	if err != nil {
-		return r.Content, fmt.Errorf("JSON: %s", err)
+		return r.Content, fmt.Errorf("json: %s", err)
 	}
 
 	return r.Content, apiError(r.ResponseBase)
@@ -98,7 +98,7 @@ func StartMachine(target Remote, name string) error {
 
 	err = json.Unmarshal(data, &r)
 	if err != nil {
-		return fmt.Errorf("JSON: %s", err)
+		return fmt.Errorf("json: %s", err)
 	}
 
 	return apiError(r.ResponseBase)
@@ -119,10 +119,35 @@ func StopMachine(target Remote, name string) error {
 
 	err = json.Unmarshal(data, &r)
 	if err != nil {
-		return fmt.Errorf("JSON: %s", err)
+		return fmt.Errorf("json: %s", err)
 	}
 
 	return apiError(r.ResponseBase)
+}
+
+func MigrateMachine(target Remote, name string, remote Remote) error {
+	var r ResponseBase
+
+	type request struct {
+		Target Remote
+	}
+
+	data, err := json.Marshal(request{remote})
+	if err != nil {
+		return fmt.Errorf("json: %s", err)
+	}
+
+	resp, err := apiRequest(target, "MIGRATE", "/machines/"+name, data)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(resp, &r)
+	if err != nil {
+		return fmt.Errorf("json: %s", err)
+	}
+
+	return apiError(r)
 }
 
 func DeleteMachine(target Remote, name string) error {
@@ -140,7 +165,7 @@ func DeleteMachine(target Remote, name string) error {
 
 	err = json.Unmarshal(data, &r)
 	if err != nil {
-		return fmt.Errorf("JSON: %s", err)
+		return fmt.Errorf("json: %s", err)
 	}
 
 	return apiError(r.ResponseBase)

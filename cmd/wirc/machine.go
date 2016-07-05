@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/olekukonko/tablewriter"
 	"github.com/quadrifoglio/wir/client"
@@ -75,6 +76,23 @@ func startMachine(target client.Remote, name string) {
 
 func stopMachine(target client.Remote, name string) {
 	err := client.StopMachine(target, name)
+	if err != nil {
+		fatal(err)
+	}
+}
+
+func migrateMachine(target client.Remote, name, remotestr string) {
+	s := strings.Split(remotestr, ":")
+	if len(s) <= 1 {
+		fatal(fmt.Errorf("target node must be ip:port (ex: 149.91.13.2:8964)"))
+	}
+
+	v, err := strconv.Atoi(s[1])
+	if err != nil {
+		fatal(fmt.Errorf("port must be an integer"))
+	}
+
+	err = client.MigrateMachine(target, name, client.Remote{s[0], target.SSHUser, v})
 	if err != nil {
 		fatal(err)
 	}
