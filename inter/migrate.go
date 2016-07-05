@@ -28,7 +28,7 @@ func MigrateImage(i image.Image, src, dst client.Remote) error {
 
 		_, err = client.CreateImage(dst, r)
 		if err != nil {
-			return fmt.Errorf("Remote image: %s", err)
+			return fmt.Errorf("failed to create remote image: %s", err)
 		}
 	} else if i.Type == image.TypeLXC {
 		r := client.ImageRequest{
@@ -42,7 +42,7 @@ func MigrateImage(i image.Image, src, dst client.Remote) error {
 
 		_, err = client.CreateImage(dst, r)
 		if err != nil {
-			return fmt.Errorf("Remote image: %s", err)
+			return fmt.Errorf("failed to create remote image: %s", err)
 		}
 	}
 
@@ -57,7 +57,7 @@ func MigrateQemu(basePath string, m machine.Machine, i image.Image, src, dst cli
 
 	conf, err := client.GetConfig(dst)
 	if err != nil {
-		return fmt.Errorf("Remote configuration: %s", err)
+		return fmt.Errorf("failed to get remote config: %s", err)
 	}
 
 	srcPath := basePath + "qemu/" + m.Name + ".qcow2"
@@ -65,19 +65,19 @@ func MigrateQemu(basePath string, m machine.Machine, i image.Image, src, dst cli
 
 	err = RemoteMkdir(dst, filepath.Dir(dstPath))
 	if err != nil {
-		return fmt.Errorf("MkdirRemote: %s", err)
+		return fmt.Errorf("falied to make remote dirs: %s", err)
 	}
 
 	err = SCP(srcPath, dst, dstPath)
 	if err != nil {
-		return fmt.Errorf("SCP to remote: %s", err)
+		return fmt.Errorf("failed to scp to remote: %s", err)
 	}
 
 	r := client.MachineRequest{m.Name, i.Name, m.Cores, m.Memory, m.Network}
 
 	_, err = client.CreateMachine(dst, r)
 	if err != nil {
-		return fmt.Errorf("Remote machine: %s", err)
+		return fmt.Errorf("failed to create remote machine: %s", err)
 	}
 
 	return nil

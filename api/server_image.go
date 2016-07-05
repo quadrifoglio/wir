@@ -34,7 +34,7 @@ func handleImageCreate(w http.ResponseWriter, r *http.Request) {
 		img, err = image.VzCreate(i.Name, i.Source, Conf.ImagePath)
 		break
 	case image.TypeLXC:
-		img, err = image.LxcCreate(i.Name, i.Source)
+		img, err = image.LxcCreate(i.Name, i.Source, Conf.ImagePath)
 		break
 	default:
 		err = errors.InvalidImageType

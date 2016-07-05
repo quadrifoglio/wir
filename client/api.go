@@ -37,7 +37,7 @@ func GetConfig(target Remote) (APIConfig, error) {
 
 	err = json.Unmarshal(data, &r)
 	if err != nil {
-		return APIConfig{}, fmt.Errorf("JSON: %s", err)
+		return APIConfig{}, fmt.Errorf("json: %s", err)
 	}
 
 	return r.Content.Configuration, apiError(r.ResponseBase)
@@ -48,19 +48,19 @@ func apiRequest(target Remote, method, url string, body []byte) ([]byte, error) 
 
 	req, err := http.NewRequest(method, fmt.Sprintf("http://%s:%d%s", target.Addr, target.APIPort, url), bytes.NewBuffer(body))
 	if err != nil {
-		return nil, fmt.Errorf("HTTP: %s", err)
+		return nil, fmt.Errorf("http: %s", err)
 	}
 
 	resp, err := c.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("HTTP: %s", err)
+		return nil, fmt.Errorf("http: %s", err)
 	}
 
 	defer resp.Body.Close()
 
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("I/O: %s", err)
+		return nil, fmt.Errorf("i/o: %s", err)
 	}
 
 	return data, nil
@@ -68,7 +68,7 @@ func apiRequest(target Remote, method, url string, body []byte) ([]byte, error) 
 
 func apiError(r ResponseBase) error {
 	if r.Status != 200 {
-		return fmt.Errorf("Error response from API: %s", r.Message)
+		return fmt.Errorf("error response from api: %s", r.Message)
 	}
 
 	return nil

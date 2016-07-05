@@ -7,7 +7,6 @@ import (
 
 	"github.com/olekukonko/tablewriter"
 	"github.com/quadrifoglio/wir/client"
-	"github.com/quadrifoglio/wir/image"
 )
 
 func listImages(target client.Remote, raw bool) {
@@ -43,7 +42,7 @@ func createImage(target client.Remote, name, t, source, arch, distro, release st
 	req.Distro = distro
 	req.Release = release
 
-	if !strings.Contains(source, "//") && req.Type != image.TypeLXC {
+	if !strings.Contains(source, "//") {
 		req.Source = "file://" + source
 	}
 

@@ -19,6 +19,8 @@ func FetchResource(url *url.URL, dst io.Writer) error {
 		return FetchScp(url.Host, url.User, url.Path, dst)
 	case "http":
 		return FetchHTTP(url.String(), dst)
+	case "https":
+		return FetchHTTP(url.String(), dst)
 	default:
 		return errors.UnsupportedProto
 	}

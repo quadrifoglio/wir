@@ -59,7 +59,7 @@ var (
 )
 
 func fatal(err error) {
-	fmt.Println("Fatal error:", err)
+	fmt.Println("fatal error:", err)
 	os.Exit(1)
 }
 
