@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/quadrifoglio/wir/image"
+	"github.com/quadrifoglio/wir/net"
 )
 
 func VzCreate(vzCmd, basePath, name string, i uint64, img *image.Image, cores, memory int) (Machine, error) {
@@ -67,11 +68,6 @@ func VzStart(vzCmd string, m *Machine) error {
 	}*/
 
 	if m.Network.Mode == NetworkModeBridge {
-		err := NetCreateBridge("wir0")
-		if err != nil {
-			return err
-		}
-
 		args := []string{"set", m.Vz.CTID, "--netif", "add", "eth0", "--save"}
 		cmd = exec.Command(vzCmd, args...)
 
@@ -84,7 +80,7 @@ func VzStart(vzCmd string, m *Machine) error {
 			return err
 		}
 
-		err = NetBridgeAddIf("wir0", fmt.Sprintf("veth%s.0", m.Vz.CTID))
+		err = net.BridgeAddIf("wir0", fmt.Sprintf("veth%s.0", m.Vz.CTID))
 		if err != nil {
 			return err
 		}

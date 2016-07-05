@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/quadrifoglio/wir/errors"
-	"github.com/quadrifoglio/wir/machine"
+	"github.com/quadrifoglio/wir/net"
 	"github.com/quadrifoglio/wir/utils"
 )
 
@@ -79,11 +79,6 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(i).Send(w, r)
 }
 
-func initNet() error {
-
-	return nil
-}
-
 func Start(conf Config) error {
 	Conf = conf
 
@@ -97,7 +92,7 @@ func Start(conf Config) error {
 		return err
 	}
 
-	err = machine.NetInit(Conf.Ebtables, Conf.BridgeIface)
+	err = net.Init(Conf.Ebtables, Conf.BridgeIface)
 	if err != nil {
 		return err
 	}

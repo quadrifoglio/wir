@@ -12,6 +12,7 @@ import (
 
 	"github.com/quadrifoglio/wir/errors"
 	"github.com/quadrifoglio/wir/image"
+	"github.com/quadrifoglio/wir/net"
 )
 
 func QemuCreate(imgCmd, basePath, name string, img *image.Image, cores, memory int) (Machine, error) {
@@ -63,19 +64,19 @@ func QemuStart(qemuCmd string, kvm bool, m *Machine, basePath string) error {
 	}
 
 	if m.Network.Mode == NetworkModeBridge {
-		tap, err := NetOpenTAP(m.IfName())
+		tap, err := net.OpenTAP(m.IfName())
 		if err != nil {
 			return fmt.Errorf("open tap: %s", err)
 		}
 
-		err = NetTAPPersist(tap, true)
+		err = net.TAPPersist(tap, true)
 		if err != nil {
 			return fmt.Errorf("tap persist: %s", err)
 		}
 
 		tap.Close()
 
-		err = NetBridgeAddIf("wir0", m.IfName())
+		err = net.BridgeAddIf("wir0", m.IfName())
 		if err != nil {
 			return err
 		}
@@ -186,12 +187,12 @@ func QemuStop(m *Machine) error {
 
 func QemuDelete(m *Machine) error {
 	if m.Network.Mode != NetworkModeNone {
-		tap, err := NetOpenTAP(m.IfName())
+		tap, err := net.OpenTAP(m.IfName())
 		if err != nil {
 			return fmt.Errorf("open tap: %s", err)
 		}
 
-		err = NetTAPPersist(tap, false)
+		err = net.TAPPersist(tap, false)
 		if err != nil {
 			return fmt.Errorf("tap persist: %s", err)
 		}
