@@ -10,10 +10,6 @@ import (
 	"github.com/quadrifoglio/wir/machine"
 )
 
-type machineNet struct {
-	BrIf string
-}
-
 func listMachines(target client.Remote, raw bool) {
 	ms, err := client.ListMachines(target)
 	if err != nil {
@@ -38,13 +34,13 @@ func listMachines(target client.Remote, raw bool) {
 	}
 }
 
-func createMachine(target client.Remote, name, img string, cpus, mem int, net machineNet) {
+func createMachine(target client.Remote, name, img string, cpus, mem int, net machine.NetworkMode) {
 	var req client.MachineRequest
 	req.Name = name
 	req.Image = img
 	req.Cores = cpus
 	req.Memory = mem
-	req.Network = machine.NetworkMode{net.BrIf}
+	req.Network = net
 
 	m, err := client.CreateMachine(target, req)
 	if err != nil {
@@ -67,6 +63,7 @@ func showMachine(target client.Remote, name string) {
 	fmt.Println("State:", machine.StateToString(m.State))
 	fmt.Println("Cores:", m.Cores)
 	fmt.Println("Memory:", m.Memory)
+	fmt.Println("Net:", m.Network.Mode)
 }
 
 func startMachine(target client.Remote, name string) {

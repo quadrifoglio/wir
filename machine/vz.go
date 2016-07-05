@@ -66,7 +66,7 @@ func VzStart(vzCmd string, m *Machine) error {
 		return m, err
 	}*/
 
-	if len(m.Network.BridgeOn) > 0 {
+	if m.Network.Mode == NetworkModeBridge {
 		err := NetCreateBridge("wir0")
 		if err != nil {
 			return err

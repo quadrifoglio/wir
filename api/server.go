@@ -19,8 +19,9 @@ const (
 )
 
 type Config struct {
-	Address string
-	Port    int
+	Address     string
+	Port        int
+	BridgeIface string
 
 	EnableKVM bool
 	Ebtables  string `json:"EbtablesCommand"`
@@ -78,6 +79,11 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(i).Send(w, r)
 }
 
+func initNet() error {
+
+	return nil
+}
+
 func Start(conf Config) error {
 	Conf = conf
 
@@ -91,7 +97,7 @@ func Start(conf Config) error {
 		return err
 	}
 
-	err = machine.NetInitEbtables(Conf.Ebtables)
+	err = machine.NetInit(Conf.Ebtables, Conf.BridgeIface)
 	if err != nil {
 		return err
 	}

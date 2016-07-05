@@ -62,30 +62,20 @@ func QemuStart(qemuCmd string, kvm bool, m *Machine, basePath string) error {
 		args = append(args, "-enable-kvm")
 	}
 
-	tap, err := NetOpenTAP(m.IfName())
-	if err != nil {
-		return fmt.Errorf("open tap: %s", err)
-	}
-
-	err = NetTAPPersist(tap, true)
-	if err != nil {
-		return fmt.Errorf("tap persist: %s", err)
-	}
-
-	tap.Close()
-
-	if len(m.Network.BridgeOn) > 0 {
-		err := NetCreateBridge("wir0")
+	if m.Network.Mode == NetworkModeBridge {
+		tap, err := NetOpenTAP(m.IfName())
 		if err != nil {
-			return err
+			return fmt.Errorf("open tap: %s", err)
 		}
+
+		err = NetTAPPersist(tap, true)
+		if err != nil {
+			return fmt.Errorf("tap persist: %s", err)
+		}
+
+		tap.Close()
 
 		err = NetBridgeAddIf("wir0", m.IfName())
-		if err != nil {
-			return err
-		}
-
-		err = NetBridgeAddIf("wir0", m.Network.BridgeOn)
 		if err != nil {
 			return err
 		}
@@ -106,7 +96,7 @@ func QemuStart(qemuCmd string, kvm bool, m *Machine, basePath string) error {
 	go func() {
 		in := bufio.NewScanner(stdout)
 		for in.Scan() {
-			log.Printf("Qemu machine %s: %s\n", m.Name, in.Text())
+			log.Printf("error in qemu machine %s: %s\n", m.Name, in.Text())
 		}
 	}()
 
@@ -118,7 +108,7 @@ func QemuStart(qemuCmd string, kvm bool, m *Machine, basePath string) error {
 	go func() {
 		in := bufio.NewScanner(stderr)
 		for in.Scan() {
-			log.Printf("Qemu machine %s: %s\n", m.Name, in.Text())
+			log.Printf("error in qemu machine %s: %s\n", m.Name, in.Text())
 		}
 	}()
 
@@ -139,7 +129,7 @@ func QemuStart(qemuCmd string, kvm bool, m *Machine, basePath string) error {
 			errs = "exit status 0"
 		}
 
-		log.Printf("Qemu machine %s: process exited: %s", m.Name, errs)
+		log.Printf("qemu machine %s: process exited: %s", m.Name, errs)
 		errc <- true
 	}()
 
@@ -195,7 +185,7 @@ func QemuStop(m *Machine) error {
 }
 
 func QemuDelete(m *Machine) error {
-	if len(m.Network.BridgeOn) != 0 {
+	if m.Network.Mode != NetworkModeNone {
 		tap, err := NetOpenTAP(m.IfName())
 		if err != nil {
 			return fmt.Errorf("open tap: %s", err)

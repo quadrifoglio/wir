@@ -7,10 +7,13 @@ import (
 const (
 	StateDown = 0
 	StateUp   = 1
+
+	NetworkModeNone   = ""
+	NetworkModeBridge = "bridge"
 )
 
 type NetworkMode struct {
-	BridgeOn string `json:",omitempty"`
+	Mode string
 }
 
 type BackendQemu struct {

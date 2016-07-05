@@ -1,6 +1,7 @@
 {
 	"Address": "127.0.0.1",
 	"Port": 1997,
+	"BridgeIface": "eth0",
 
 	"EnableKVM": true,
 	"EbtablesCommand": "/sbin/ebtables",

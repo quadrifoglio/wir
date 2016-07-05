@@ -7,6 +7,8 @@ import (
 
 	"github.com/alecthomas/kingpin"
 	"github.com/quadrifoglio/wir/client"
+
+	"github.com/quadrifoglio/wir/machine"
 )
 
 var (
@@ -42,7 +44,7 @@ var (
 	machineCreateName    = machineCreate.Flag("name", "Name of the machine (will be generated if not specified)").Short('n').String()
 	machineCreateCores   = machineCreate.Flag("cpus", "Number of CPU cores to use").Short('c').Default("1").Int()
 	machineCreateMem     = machineCreate.Flag("memory", "Amount of memory to use").Short('m').Default("512").Int()
-	machineCreateNetBrIf = machineCreate.Flag("bridge-if", "Network interface to use (in case of bridge networking)").Short('b').String()
+	machineCreateNetMode = machineCreate.Flag("net", "Network setup to use (bridge)").String()
 	machineCreateImage   = machineCreate.Arg("image", "Name of image to use").Required().String()
 
 	machineShow     = cmdMachine.Command("show", "Show machine details")
@@ -102,7 +104,7 @@ func main() {
 			*machineCreateImage,
 			*machineCreateCores,
 			*machineCreateMem,
-			machineNet{*machineCreateNetBrIf},
+			machine.NetworkMode{*machineCreateNetMode},
 		)
 		break
 	case "machine show":

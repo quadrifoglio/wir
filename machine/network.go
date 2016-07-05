@@ -22,6 +22,40 @@ type ifreq struct {
 	osef  [0x16]byte
 }
 
+func NetInit(ebtables, bridgeIf string) error {
+	err := NetCreateBridge("wir0")
+	if err != nil {
+		return err
+	}
+
+	err = NetBridgeAddIf("wir0", bridgeIf)
+	if err != nil {
+		return err
+	}
+
+	cmd := exec.Command(ebtables, "-L", "WIR")
+
+	err = cmd.Run()
+	if err != nil {
+		cmd = exec.Command(ebtables, "-N", "WIR", "-P", "DROP")
+
+		err := cmd.Run()
+		if err != nil {
+			return fmt.Errorf("ebtables: creating WIR chain: %s", err)
+		}
+
+		cmd = exec.Command(ebtables, "-A", "FORWARD", "-p", "ip", "-i", "v+", "-j", "WIR")
+
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			fmt.Printf(string(out))
+			return fmt.Errorf("ebtables: adding forwarding rule to WIR chain: %s", err)
+		}
+	}
+
+	return nil
+}
+
 func NetOpenTAP(name string) (*os.File, error) {
 	f, err := os.OpenFile("/dev/net/tun", os.O_RDWR, 0)
 	if err != nil {
@@ -40,30 +74,6 @@ func NetOpenTAP(name string) (*os.File, error) {
 	}
 
 	return f, nil
-}
-
-func NetInitEbtables(cmds string) error {
-	cmd := exec.Command(cmds, "-L", "WIR")
-
-	err := cmd.Run()
-	if err != nil {
-		cmd = exec.Command(cmds, "-N", "WIR", "-P", "DROP")
-
-		err := cmd.Run()
-		if err != nil {
-			return fmt.Errorf("Creating WIR chain: %s", err)
-		}
-
-		cmd = exec.Command(cmds, "-A", "FORWARD", "-p", "ip", "-i", "v+", "-j", "WIR")
-
-		out, err := cmd.CombinedOutput()
-		if err != nil {
-			fmt.Printf(string(out))
-			return fmt.Errorf("Adding forwarding rule to WIR chain: %s", err)
-		}
-	}
-
-	return nil
 }
 
 func NetGrantTraffic(cmds, mac, ip string) error {

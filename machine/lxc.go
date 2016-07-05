@@ -78,12 +78,7 @@ func LxcStart(basePath string, m *Machine) error {
 
 	c.SetVerbosity(lxc.Verbose)
 
-	if len(m.Network.BridgeOn) > 0 {
-		err := NetCreateBridge("wir0")
-		if err != nil {
-			return err
-		}
-
+	if m.Network.Mode == NetworkModeBridge {
 		if err := c.SetConfigItem("lxc.network.type", "veth"); err != nil {
 			return err
 		}
