@@ -104,7 +104,7 @@ func main() {
 			*machineCreateImage,
 			*machineCreateCores,
 			*machineCreateMem,
-			machine.NetworkMode{*machineCreateNetMode},
+			machine.NetworkSetup{*machineCreateNetMode},
 		)
 		break
 	case "machine show":

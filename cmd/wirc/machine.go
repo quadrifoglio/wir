@@ -34,7 +34,7 @@ func listMachines(target client.Remote, raw bool) {
 	}
 }
 
-func createMachine(target client.Remote, name, img string, cpus, mem int, net machine.NetworkMode) {
+func createMachine(target client.Remote, name, img string, cpus, mem int, net machine.NetworkSetup) {
 	var req client.MachineRequest
 	req.Name = name
 	req.Image = img

@@ -12,7 +12,7 @@ const (
 	NetworkModeBridge = "bridge"
 )
 
-type NetworkMode struct {
+type NetworkSetup struct {
 	Mode string
 }
 
@@ -32,7 +32,7 @@ type Machine struct {
 	State   int
 	Cores   int
 	Memory  int
-	Network NetworkMode `json:",omitempty"`
+	Network NetworkSetup `json:",omitempty"`
 
 	Qemu BackendQemu
 	Vz   BackendVz

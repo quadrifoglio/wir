@@ -12,7 +12,7 @@ type MachineRequest struct {
 	Image   string
 	Cores   int
 	Memory  int
-	Network machine.NetworkMode
+	Network machine.NetworkSetup
 }
 
 func ListMachines(target Remote) ([]machine.Machine, error) {
