@@ -5,8 +5,10 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 
 	"github.com/quadrifoglio/wir/image"
+	"github.com/quadrifoglio/wir/utils"
 	"gopkg.in/lxc/go-lxc.v2"
 )
 
@@ -124,6 +126,53 @@ func LxcCheck(basePath string, m *Machine) error {
 	}
 
 	return nil
+}
+
+func LxcStats(basePath string, m *Machine) (Stats, error) {
+	var stats Stats
+
+	path, err := filepath.Abs(basePath + "lxc/")
+	if err != nil {
+		return stats, err
+	}
+
+	c, err := lxc.NewContainer(m.Name, path)
+	if err != nil {
+		return stats, err
+	}
+
+	c1, err := c.CPUStats()
+	if err != nil {
+		return stats, err
+	}
+
+	c1time := c1["user"] /* + c1["system"]*/
+
+	s1, err := utils.GetCpuUsage()
+	if err != nil {
+		return stats, err
+	}
+
+	time.Sleep(50 * time.Millisecond)
+
+	c2, err := c.CPUStats()
+	if err != nil {
+		return stats, err
+	}
+
+	c2time := c2["user"] /* + c2["system"]*/
+
+	s2, err := utils.GetCpuUsage()
+	if err != nil {
+		return stats, err
+	}
+
+	prevTotal := int64(s1.Idle) + c1time
+	total := int64(s2.Idle) + c2time
+
+	stats.CPU = float32((total-prevTotal)-(int64(s2.Idle)-int64(s1.Idle))) / float32(total-prevTotal) * 100
+
+	return stats, nil
 }
 
 func LxcStop(basePath string, m *Machine) error {

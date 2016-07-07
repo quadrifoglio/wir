@@ -44,7 +44,7 @@ func handleNotFound(w http.ResponseWriter, r *http.Request) {
 
 func handleIndex(w http.ResponseWriter, r *http.Request) {
 	type stats struct {
-		CPUUsage  int
+		CPUUsage  float32
 		RAMUsage  uint64
 		RAMTotal  uint64
 		FreeSpace uint64
@@ -57,7 +57,7 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 		Stats         stats
 	}
 
-	cpu, err := utils.GetCpuUsage()
+	cpu, err := utils.GetCpuUsagePercentage()
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
@@ -119,6 +119,7 @@ func Start(conf Config) error {
 	r.HandleFunc("/machines", handleMachineList).Methods("GET")
 	r.HandleFunc("/machines/{name}", handleMachineGet).Methods("GET")
 	r.HandleFunc("/machines/{name}", handleMachineStart).Methods("START")
+	r.HandleFunc("/machines/{name}", handleMachineStats).Methods("STATS")
 	r.HandleFunc("/machines/{name}", handleMachineStop).Methods("STOP")
 	r.HandleFunc("/machines/{name}", handleMachineMigrate).Methods("MIGRATE")
 	r.HandleFunc("/machines/{name}", handleMachineDelete).Methods("DELETE")

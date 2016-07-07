@@ -24,6 +24,12 @@ type BackendVz struct {
 	CTID string
 }
 
+type Stats struct {
+	CPU     float32
+	RAMUsed uint64
+	RAMFree uint64
+}
+
 type Machine struct {
 	Name    string
 	Index   uint64

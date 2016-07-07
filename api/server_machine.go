@@ -197,6 +197,38 @@ func handleMachineStart(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(nil).Send(w, r)
 }
 
+func handleMachineStats(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	name := vars["name"]
+
+	m, err := DBGetMachine(name)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	var stats machine.Stats
+
+	switch m.Type {
+	case image.TypeQemu:
+		//machine.QemuCheck(&m)
+		break
+	case image.TypeVz:
+		//machine.VzCheck(Conf.Vzctl, &m)
+		break
+	case image.TypeLXC:
+		stats, err = machine.LxcStats(Conf.MachinePath, &m)
+		break
+	}
+
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	SuccessResponse(stats).Send(w, r)
+}
+
 func handleMachineStop(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]

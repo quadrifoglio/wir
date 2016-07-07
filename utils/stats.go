@@ -1,3 +1,4 @@
+// +build cgo
 package utils
 
 import (
@@ -10,50 +11,71 @@ import (
 	"time"
 )
 
-func GetCpuUsage() (int, error) {
-	values := make([][]int, 2)
+/*
+#include <unistd.h>
+*/
+import "C"
 
-	for i := 0; i < 2; i++ {
-		file, err := os.Open("/proc/stat")
-		if err != nil {
-			return 0, fmt.Errorf("failed to get cpu stats: %s", err)
-		}
+type CpuUsage struct {
+	Idle    int
+	NonIdle int
+}
 
-		r := bufio.NewReader(file)
-		line, _, err := r.ReadLine()
-		if err != nil {
-			file.Close()
-			return 0, fmt.Errorf("failed to get cpu stats: %s", err)
-		}
+func GetClockTicks() int {
+	return int(C.sysconf(C._SC_CLK_TCK))
+}
 
-		file.Close()
+func GetCpuUsage() (CpuUsage, error) {
+	var usage CpuUsage
 
-		valuesStr := strings.Split(string(line[5:]), " ")
-		values[i] = make([]int, len(valuesStr))
-
-		for j, v := range valuesStr {
-			vv, err := strconv.Atoi(v)
-			if err != nil {
-				return 0, fmt.Errorf("failed to get cpu stats: %s", err)
-			}
-
-			values[i][j] = vv
-		}
-
-		time.Sleep(50 * time.Millisecond)
+	file, err := os.Open("/proc/stat")
+	if err != nil {
+		return usage, fmt.Errorf("failed to get cpu stats: %s", err)
 	}
 
-	prevIdle := values[0][3] + values[0][4]
-	idle := values[1][3] + values[1][4]
+	defer file.Close()
 
-	prevNonIdle := values[0][0] + values[0][1] + values[0][2] + values[0][5] + values[0][6] + values[0][7]
-	nonIdle := values[1][0] + values[1][1] + values[1][2] + values[1][5] + values[1][6] + values[1][7]
+	r := bufio.NewReader(file)
+	line, _, err := r.ReadLine()
+	if err != nil {
+		return usage, fmt.Errorf("failed to get cpu stats: %s", err)
+	}
 
-	prevTotal := prevIdle + prevNonIdle
-	total := idle + nonIdle
+	valuesStr := strings.Split(string(line[5:]), " ")
+	values := make([]int, len(valuesStr))
 
-	percentage := float32((total-prevTotal)-(idle-prevIdle)) / float32(total-prevTotal) * 100
-	return int(percentage), nil
+	for i, v := range valuesStr {
+		vv, err := strconv.Atoi(v)
+		if err != nil {
+			return usage, fmt.Errorf("failed to get cpu stats: %s", err)
+		}
+
+		values[i] = vv
+	}
+
+	usage.Idle = values[3] + values[4]
+	usage.NonIdle = values[0] + values[1] + values[2] + values[5] + values[6] + values[7]
+
+	return usage, nil
+}
+
+func GetCpuUsagePercentage() (float32, error) {
+	u1, err := GetCpuUsage()
+	if err != nil {
+		return 0, err
+	}
+
+	time.Sleep(50 * time.Millisecond)
+
+	u2, err := GetCpuUsage()
+	if err != nil {
+		return 0, err
+	}
+
+	prevTotal := u1.Idle + u1.NonIdle
+	total := u2.Idle + u2.NonIdle
+
+	return float32((total-prevTotal)-(u2.Idle-u1.Idle)) / float32(total-prevTotal) * 100, nil
 }
 
 func GetRamUsage() (uint64, uint64, error) {
