@@ -19,6 +19,7 @@ import "C"
 type CpuUsage struct {
 	Idle    int
 	NonIdle int
+	Total   int
 }
 
 func GetClockTicks() int {
@@ -51,6 +52,7 @@ func GetCpuUsage() (CpuUsage, error) {
 		}
 
 		values[i] = vv
+		usage.Total += vv
 	}
 
 	usage.Idle = values[3] + values[4]
@@ -72,10 +74,36 @@ func GetCpuUsagePercentage() (float32, error) {
 		return 0, err
 	}
 
-	prevTotal := u1.Idle + u1.NonIdle
-	total := u2.Idle + u2.NonIdle
+	return float32((u2.Total-u1.Total)-(u2.Idle-u1.Idle)) / float32(u2.Total-u1.Total) * 100, nil
+}
 
-	return float32((total-prevTotal)-(u2.Idle-u1.Idle)) / float32(total-prevTotal) * 100, nil
+func GetProcessCpuStats(pid int) (int, int, error) {
+	file, err := os.Open(fmt.Sprintf("/proc/%d/stat", pid))
+	if err != nil {
+		return 0, 0, fmt.Errorf("failed to get cpu stats: %s", err)
+	}
+
+	defer file.Close()
+
+	r := bufio.NewReader(file)
+	line, _, err := r.ReadLine()
+	if err != nil {
+		return 0, 0, fmt.Errorf("failed to get cpu stats: %s", err)
+	}
+
+	values := strings.Split(string(line), " ")
+
+	utime, err := strconv.Atoi(values[13])
+	if err != nil {
+		return 0, 0, err
+	}
+
+	stime, err := strconv.Atoi(values[14])
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return utime, stime, nil
 }
 
 func GetRamUsage() (uint64, uint64, error) {

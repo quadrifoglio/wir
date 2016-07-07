@@ -146,7 +146,7 @@ func LxcStats(basePath string, m *Machine) (Stats, error) {
 		return stats, err
 	}
 
-	c1time := c1["user"] /* + c1["system"]*/
+	c1time := c1["user"] + c1["system"]
 
 	s1, err := utils.GetCpuUsage()
 	if err != nil {
@@ -160,17 +160,22 @@ func LxcStats(basePath string, m *Machine) (Stats, error) {
 		return stats, err
 	}
 
-	c2time := c2["user"] /* + c2["system"]*/
+	c2time := c2["user"] + c2["system"]
 
 	s2, err := utils.GetCpuUsage()
 	if err != nil {
 		return stats, err
 	}
 
-	prevTotal := int64(s1.Idle) + c1time
-	total := int64(s2.Idle) + c2time
+	stats.CPU = (float32(c2time-c1time) / float32(s2.Total-s1.Total)) * 100
 
-	stats.CPU = float32((total-prevTotal)-(int64(s2.Idle)-int64(s1.Idle))) / float32(total-prevTotal) * 100
+	mem, err := c.MemoryUsage()
+	if err != nil {
+		return stats, err
+	}
+
+	stats.RAMUsed = uint64(mem * lxc.MB)
+	stats.RAMFree = uint64(m.Memory) - stats.RAMUsed
 
 	return stats, nil
 }

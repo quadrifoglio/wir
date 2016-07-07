@@ -211,10 +211,10 @@ func handleMachineStats(w http.ResponseWriter, r *http.Request) {
 
 	switch m.Type {
 	case image.TypeQemu:
-		//machine.QemuCheck(&m)
+		stats, err = machine.QemuStats(&m)
 		break
 	case image.TypeVz:
-		//machine.VzCheck(Conf.Vzctl, &m)
+		//stats, err = machine.VzStats(Conf.MachinePath, &m)
 		break
 	case image.TypeLXC:
 		stats, err = machine.LxcStats(Conf.MachinePath, &m)

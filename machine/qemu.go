@@ -7,12 +7,14 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"time"
 
 	"github.com/quadrifoglio/wir/errors"
 	"github.com/quadrifoglio/wir/image"
 	"github.com/quadrifoglio/wir/net"
+	"github.com/quadrifoglio/wir/utils"
 )
 
 func QemuCreate(imgCmd, basePath, name string, img *image.Image, cores, memory int) (Machine, error) {
@@ -165,6 +167,41 @@ func QemuCheck(m *Machine) {
 
 	m.State = StateDown
 	m.Qemu.PID = 0
+}
+
+func QemuStats(m *Machine) (Stats, error) {
+	var stats Stats
+
+	utime1, stime1, err := utils.GetProcessCpuStats(m.Qemu.PID)
+	if err != nil {
+		return stats, err
+	}
+
+	mtime1 := utime1 + stime1
+
+	s1, err := utils.GetCpuUsage()
+	if err != nil {
+		return stats, err
+	}
+
+	time.Sleep(100 * time.Millisecond)
+
+	utime2, stime2, err := utils.GetProcessCpuStats(m.Qemu.PID)
+	if err != nil {
+		return stats, err
+	}
+
+	mtime2 := utime2 + stime2
+
+	s2, err := utils.GetCpuUsage()
+	if err != nil {
+		return stats, err
+	}
+
+	// TODO: Increase precision: determine on which core(s) qemu is running
+	stats.CPU = (float32(mtime2-mtime1) / float32(s2.Total-s1.Total)) * 100 * float32(runtime.NumCPU()) / float32(m.Cores)
+
+	return stats, nil
 }
 
 func QemuStop(m *Machine) error {
