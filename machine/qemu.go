@@ -86,7 +86,7 @@ func QemuStart(qemuCmd string, kvm bool, m *Machine, basePath string) error {
 		args = append(args, "-netdev")
 		args = append(args, fmt.Sprintf("tap,id=net0,ifname=%s,script=no", m.IfName()))
 		args = append(args, "-device")
-		args = append(args, "driver=virtio-net,netdev=net0")
+		args = append(args, fmt.Sprintf("driver=virtio-net,netdev=net0,mac=%s", m.Network.MAC))
 	}
 
 	cmd := exec.Command(qemuCmd, args...)
