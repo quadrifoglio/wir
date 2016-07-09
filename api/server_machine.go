@@ -66,19 +66,27 @@ func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
 
 	mm.Network = m.Network
 
-	if len(m.Network.Mode) > 0 && len(mm.Network.MAC) == 0 {
-		mm.Network.MAC, err = net.GenerateMAC()
+	if len(mm.Network.Mode) > 0 {
+		if len(mm.Network.MAC) == 0 {
+			mm.Network.MAC, err = net.GenerateMAC()
+			if err != nil {
+				ErrorResponse(err).Send(w, r)
+				return
+			}
+		}
+
+		err = net.GrantBasic(Conf.Ebtables, mm.Network.MAC)
 		if err != nil {
 			ErrorResponse(err).Send(w, r)
 			return
 		}
-	}
 
-	if len(m.Network.Mode) > 0 && len(mm.Network.IP) > 0 {
-		err := net.GrantTraffic(Conf.Ebtables, mm.Network.MAC, mm.Network.IP)
-		if err != nil {
-			ErrorResponse(err).Send(w, r)
-			return
+		if len(m.Network.Mode) > 0 && len(mm.Network.IP) > 0 {
+			err := net.GrantTraffic(Conf.Ebtables, mm.Network.MAC, mm.Network.IP)
+			if err != nil {
+				ErrorResponse(err).Send(w, r)
+				return
+			}
 		}
 	}
 
@@ -117,16 +125,12 @@ func handleMachineUpdate(w http.ResponseWriter, r *http.Request) {
 		m.Memory = nm.Memory
 	}
 
-	if nm.Network.Mode != m.Network.Mode {
+	if len(nm.Network.Mode) > 0 && nm.Network.Mode != m.Network.Mode {
 		m.Network.Mode = nm.Network.Mode
 	}
 
-	if nm.Network.MAC != m.Network.MAC {
-		err := net.ResetTrafficRules(Conf.Ebtables, m.Network.MAC)
-		if err != nil {
-			ErrorResponse(err).Send(w, r)
-			return
-		}
+	if len(nm.Network.MAC) > 0 && nm.Network.MAC != m.Network.MAC {
+		net.ResetTrafficRules(Conf.Ebtables, m.Network.MAC)
 
 		m.Network.MAC = nm.Network.MAC
 		err = net.GrantTraffic(Conf.Ebtables, m.Network.MAC, m.Network.IP)
@@ -136,20 +140,25 @@ func handleMachineUpdate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if nm.Network.IP != m.Network.IP {
-		err := net.ResetTrafficRules(Conf.Ebtables, m.Network.MAC)
-		if err != nil {
-			ErrorResponse(err).Send(w, r)
-			return
-		}
+	if len(nm.Network.IP) > 0 && nm.Network.IP != m.Network.IP {
+		net.ResetTrafficRules(Conf.Ebtables, m.Network.MAC)
 
 		m.Network.IP = nm.Network.IP
+
 		err = net.GrantTraffic(Conf.Ebtables, m.Network.MAC, m.Network.IP)
 		if err != nil {
 			ErrorResponse(err).Send(w, r)
 			return
 		}
 	}
+
+	err = DBStoreMachine(&m)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	SuccessResponse(nil).Send(w, r)
 }
 
 func handleMachineList(w http.ResponseWriter, r *http.Request) {

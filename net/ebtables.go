@@ -40,12 +40,23 @@ func InitEbtables(ebtables string) error {
 	return nil
 }
 
+func GrantBasic(cmds, mac string) error {
+	cmd := exec.Command(cmds, "-A", "WIR", "-p", "ip", "--ip-src", "0.0.0.0", "-s", mac, "-j", "ACCEPT")
+
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf("granting traffic (0.0.0.0): %s", err)
+	}
+
+	return nil
+}
+
 func GrantTraffic(cmds, mac, ip string) error {
 	cmd := exec.Command(cmds, "-A", "WIR", "-p", "ip", "--ip-src", ip, "-s", mac, "-j", "ACCEPT")
 
 	err := cmd.Run()
 	if err != nil {
-		return fmt.Errorf("Granting traffic: %s", err)
+		return fmt.Errorf("granting traffic: %s", err)
 	}
 
 	return nil
@@ -56,7 +67,7 @@ func DenyTraffic(cmds, mac, ip string) error {
 
 	err := cmd.Run()
 	if err != nil {
-		return fmt.Errorf("Denying traffic: %s", err)
+		return fmt.Errorf("denying traffic: %s", err)
 	}
 
 	return nil
@@ -67,8 +78,8 @@ func ResetTrafficRules(cmds, mac string) error {
 
 	err := cmd.Run()
 	if err != nil {
-		return fmt.Errorf("Denying traffic: %s", err)
+		return fmt.Errorf("resetting ebtables rules for %s: %s", mac, err)
 	}
 
-	return nil
+	return GrantBasic(cmds, mac)
 }

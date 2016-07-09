@@ -117,6 +117,7 @@ func Start(conf Config) error {
 
 	r.HandleFunc("/machines", handleMachineCreate).Methods("POST")
 	r.HandleFunc("/machines", handleMachineList).Methods("GET")
+	r.HandleFunc("/machines/{name}", handleMachineUpdate).Methods("POST")
 	r.HandleFunc("/machines/{name}", handleMachineGet).Methods("GET")
 	r.HandleFunc("/machines/{name}", handleMachineStart).Methods("START")
 	r.HandleFunc("/machines/{name}", handleMachineStats).Methods("STATS")
