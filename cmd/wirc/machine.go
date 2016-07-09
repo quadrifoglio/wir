@@ -24,10 +24,10 @@ func listMachines(target client.Remote, raw bool) {
 			}
 		} else {
 			table := tablewriter.NewWriter(os.Stdout)
-			table.SetHeader([]string{"Index", "Name", "Type", "Image", "State"})
+			table.SetHeader([]string{"Index", "Name", "Type", "Image", "State", "MAC", "IP"})
 
 			for _, m := range ms {
-				table.Append([]string{strconv.Itoa(int(m.Index)), m.Name, m.Type, m.Image, machine.StateToString(m.State)})
+				table.Append([]string{strconv.Itoa(int(m.Index)), m.Name, m.Type, m.Image, machine.StateToString(m.State), m.Network.MAC, m.Network.IP})
 			}
 
 			table.Render()
@@ -65,6 +65,8 @@ func showMachine(target client.Remote, name string) {
 	fmt.Println("Cores:", m.Cores)
 	fmt.Println("Memory:", m.Memory)
 	fmt.Println("Net:", m.Network.Mode)
+	fmt.Println("MAC:", m.Network.MAC)
+	fmt.Println("IP:", m.Network.IP)
 }
 
 func startMachine(target client.Remote, name string) {

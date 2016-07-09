@@ -14,6 +14,8 @@ const (
 
 type NetworkSetup struct {
 	Mode string
+	MAC  string
+	IP   string
 }
 
 type BackendQemu struct {

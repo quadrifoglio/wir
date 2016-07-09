@@ -45,6 +45,8 @@ var (
 	machineCreateCores   = machineCreate.Flag("cpus", "Number of CPU cores to use").Short('c').Default("1").Int()
 	machineCreateMem     = machineCreate.Flag("memory", "Amount of memory to use").Short('m').Default("512").Int()
 	machineCreateNetMode = machineCreate.Flag("net", "Network setup to use (bridge)").String()
+	machineCreateNetMAC  = machineCreate.Flag("mac", "MAC address to use").String()
+	machineCreateNetIP   = machineCreate.Flag("ip", "IP address to use").String()
 	machineCreateImage   = machineCreate.Arg("image", "Name of image to use").Required().String()
 
 	machineShow     = cmdMachine.Command("show", "Show machine details")
@@ -108,7 +110,7 @@ func main() {
 			*machineCreateImage,
 			*machineCreateCores,
 			*machineCreateMem,
-			machine.NetworkSetup{*machineCreateNetMode},
+			machine.NetworkSetup{*machineCreateNetMode, *machineCreateNetMAC, *machineCreateNetIP},
 		)
 		break
 	case "machine show":
