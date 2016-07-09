@@ -24,7 +24,7 @@ func Init(ebtables, bridgeIf string) error {
 	return nil
 }
 
-func GenerateMAC() (string, error) {
+func GenerateMAC(nodeId byte) (string, error) {
 	buf := make([]byte, 3)
 
 	_, err := rand.Read(buf)
@@ -32,6 +32,6 @@ func GenerateMAC() (string, error) {
 		return "", err
 	}
 
-	str := fmt.Sprintf("52:54:00:%02x:%02x:%02x", buf[0], buf[1], buf[2])
+	str := fmt.Sprintf("52:54:%02x:%02x:%02x:%02x", nodeId, buf[0], buf[1], buf[2])
 	return str, nil
 }

@@ -72,14 +72,3 @@ func DenyTraffic(cmds, mac, ip string) error {
 
 	return nil
 }
-
-func ResetTrafficRules(cmds, mac string) error {
-	cmd := exec.Command(cmds, "-D", "WIR", "-p", "ip", "-s", mac, "-j", "ACCEPT")
-
-	err := cmd.Run()
-	if err != nil {
-		return fmt.Errorf("resetting ebtables rules for %s: %s", mac, err)
-	}
-
-	return GrantBasic(cmds, mac)
-}

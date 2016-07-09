@@ -1,4 +1,5 @@
 {
+	"NodeID": 1,
 	"Address": "127.0.0.1",
 	"Port": 1997,
 	"BridgeIface": "eth0",

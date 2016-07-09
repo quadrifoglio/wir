@@ -25,7 +25,7 @@ func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(m.Name) == 0 {
-		m.Name = utils.UniqueID()
+		m.Name = utils.UniqueID(Conf.NodeID)
 	}
 
 	if !DBMachineNameFree(m.Name) {
@@ -68,7 +68,7 @@ func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
 
 	if len(mm.Network.Mode) > 0 {
 		if len(mm.Network.MAC) == 0 {
-			mm.Network.MAC, err = net.GenerateMAC()
+			mm.Network.MAC, err = net.GenerateMAC(Conf.NodeID)
 			if err != nil {
 				ErrorResponse(err).Send(w, r)
 				return
@@ -130,7 +130,7 @@ func handleMachineUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(nm.Network.MAC) > 0 && nm.Network.MAC != m.Network.MAC {
-		net.ResetTrafficRules(Conf.Ebtables, m.Network.MAC)
+		net.DenyTraffic(Conf.Ebtables, m.Network.MAC, m.Network.IP) // Not handling errors: can fail if no ip was previously registered
 
 		m.Network.MAC = nm.Network.MAC
 		err = net.GrantTraffic(Conf.Ebtables, m.Network.MAC, m.Network.IP)
@@ -141,7 +141,7 @@ func handleMachineUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(nm.Network.IP) > 0 && nm.Network.IP != m.Network.IP {
-		net.ResetTrafficRules(Conf.Ebtables, m.Network.MAC)
+		net.DenyTraffic(Conf.Ebtables, m.Network.MAC, m.Network.IP)
 
 		m.Network.IP = nm.Network.IP
 

@@ -19,6 +19,7 @@ const (
 )
 
 type Config struct {
+	NodeID      byte // (0-255)
 	Address     string
 	Port        int
 	BridgeIface string
