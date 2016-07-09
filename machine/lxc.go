@@ -81,6 +81,9 @@ func LxcStart(basePath string, m *Machine) error {
 	c.SetVerbosity(lxc.Verbose)
 
 	if m.Network.Mode == NetworkModeBridge {
+		if err := c.SetConfigItem("lxc.network.hwaddr", m.Network.MAC); err != nil {
+			return err
+		}
 		if err := c.SetConfigItem("lxc.network.type", "veth"); err != nil {
 			return err
 		}
