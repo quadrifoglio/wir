@@ -69,6 +69,18 @@ func showMachine(target client.Remote, name string) {
 	fmt.Println("IP:", m.Network.IP)
 }
 
+func updateMachine(target client.Remote, name string, cpus, mem int, net machine.NetworkSetup) {
+	var req client.MachineRequest
+	req.Cores = cpus
+	req.Memory = mem
+	req.Network = net
+
+	err := client.UpdateMachine(target, name, req)
+	if err != nil {
+		fatal(err)
+	}
+}
+
 func startMachine(target client.Remote, name string) {
 	err := client.StartMachine(target, name)
 	if err != nil {

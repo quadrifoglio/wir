@@ -83,6 +83,27 @@ func GetMachine(target Remote, name string) (machine.Machine, error) {
 	return r.Content, apiError(r.ResponseBase)
 }
 
+func UpdateMachine(target Remote, name string, i MachineRequest) error {
+	var r ResponseBase
+
+	data, err := json.Marshal(i)
+	if err != nil {
+		return fmt.Errorf("json: %s", err)
+	}
+
+	data, err = apiRequest(target, "POST", "/machines/"+name, data)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(data, &r)
+	if err != nil {
+		return fmt.Errorf("json: %s", err)
+	}
+
+	return apiError(r)
+}
+
 func StartMachine(target Remote, name string) error {
 	type Response struct {
 		ResponseBase

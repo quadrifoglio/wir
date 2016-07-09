@@ -44,13 +44,21 @@ var (
 	machineCreateName    = machineCreate.Flag("name", "Name of the machine (will be generated if not specified)").Short('n').String()
 	machineCreateCores   = machineCreate.Flag("cpus", "Number of CPU cores to use").Short('c').Default("1").Int()
 	machineCreateMem     = machineCreate.Flag("memory", "Amount of memory to use").Short('m').Default("512").Int()
-	machineCreateNetMode = machineCreate.Flag("net", "Network setup to use (bridge)").String()
+	machineCreateNetMode = machineCreate.Flag("net", "Network setup to use (bridge by default)").String()
 	machineCreateNetMAC  = machineCreate.Flag("mac", "MAC address to use").String()
 	machineCreateNetIP   = machineCreate.Flag("ip", "IP address to use").String()
 	machineCreateImage   = machineCreate.Arg("image", "Name of image to use").Required().String()
 
 	machineShow     = cmdMachine.Command("show", "Show machine details")
 	machineShowName = machineShow.Arg("name", "Machine name").Required().String()
+
+	machineUpdate        = cmdMachine.Command("update", "Update a machine")
+	machineUpdateCores   = machineUpdate.Flag("cpus", "Number of CPU cores to use").Short('c').Int()
+	machineUpdateMem     = machineUpdate.Flag("memory", "Amount of memory to use").Short('m').Int()
+	machineUpdateNetMode = machineUpdate.Flag("net", "Network setup to use").String()
+	machineUpdateNetMAC  = machineUpdate.Flag("mac", "MAC address to use").String()
+	machineUpdateNetIP   = machineUpdate.Flag("ip", "IP address to use").String()
+	machineUpdateName    = machineUpdate.Arg("name", "Name of the machine to update").Required().String()
 
 	machineStart     = cmdMachine.Command("start", "Start machine")
 	machineStartName = machineStart.Arg("name", "Machine name").Required().String()
@@ -115,6 +123,15 @@ func main() {
 		break
 	case "machine show":
 		showMachine(remote, *machineShowName)
+		break
+	case "machine update":
+		updateMachine(
+			remote,
+			*machineUpdateName,
+			*machineUpdateCores,
+			*machineUpdateMem,
+			machine.NetworkSetup{*machineUpdateNetMode, *machineUpdateNetMAC, *machineUpdateNetIP},
+		)
 		break
 	case "machine start":
 		startMachine(remote, *machineStartName)
