@@ -3,7 +3,6 @@ package net
 import (
 	"crypto/rand"
 	"fmt"
-	"strings"
 )
 
 func Init(ebtables, bridgeIf string) error {
@@ -26,15 +25,13 @@ func Init(ebtables, bridgeIf string) error {
 }
 
 func GenerateMAC() (string, error) {
-	buf := make([]byte, 6)
+	buf := make([]byte, 3)
 
 	_, err := rand.Read(buf)
 	if err != nil {
 		return "", err
 	}
 
-	buf[0] |= 2
-	str := fmt.Sprintf("%02x:%02x:%02x:%02x:%02x:%02x", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5])
-
-	return strings.ToUpper(str), nil
+	str := fmt.Sprintf("52:54:00:%02x:%02x:%02x", buf[0], buf[1], buf[2])
+	return str, nil
 }
