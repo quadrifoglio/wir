@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sort"
 
@@ -171,9 +172,14 @@ func handleMachineLinuxSysprep(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = DBGetImage(m.Image)
+	img, err := DBGetImage(m.Image)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	if img.MainPartition == 0 {
+		ErrorResponse(fmt.Errorf("image does not have a specified main partition. can not sysprep.")).Send(w, r)
 		return
 	}
 
@@ -187,7 +193,7 @@ func handleMachineLinuxSysprep(w http.ResponseWriter, r *http.Request) {
 
 	switch m.Type {
 	case image.TypeQemu:
-		err = machine.QemuLinuxSysprep(Conf.MachinePath, Conf.QemuNbd, &m, sp.Hostname, sp.RootPasswd)
+		err = machine.QemuLinuxSysprep(Conf.MachinePath, Conf.QemuNbd, &m, img.MainPartition, sp.Hostname, sp.RootPasswd)
 		break
 	case image.TypeVz:
 		//err = machine.VzLinuxSysprep()

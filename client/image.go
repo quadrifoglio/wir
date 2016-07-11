@@ -8,9 +8,10 @@ import (
 )
 
 type ImageRequest struct {
-	Name   string
-	Type   string
-	Source string
+	Name          string
+	Type          string
+	Source        string
+	MainPartition int
 
 	// Optional information
 	Arch    string

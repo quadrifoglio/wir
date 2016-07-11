@@ -21,13 +21,14 @@ var (
 	remotePort = kingpin.Flag("remote-port", "Port of the remote server").Default("1997").Int()
 	remoteUser = kingpin.Flag("remote-user", "Username to use in SSH-related actions").Default("root").String()
 
-	imageCreate        = cmdImage.Command("create", "Create an image from the specified source")
-	imageCreateType    = imageCreate.Flag("type", "Image type (qemu, lxc, openvz)").Short('t').Default("qemu").String()
-	imageCreateArch    = imageCreate.Flag("arch", "Image architecture (386, amd64, arm)").Short('a').Default(runtime.GOARCH).String()
-	imageCreateDistro  = imageCreate.Flag("distro", "Image distribution name (debian, ubuntu, ...)").Short('d').Default("").String()
-	imageCreateRelease = imageCreate.Flag("release", "Image's distro release").Short('r').Default("").String()
-	imageCreateName    = imageCreate.Arg("name", "Image name").Required().String()
-	imageCreateSrc     = imageCreate.Arg("source", "Image source (scheme://[user@][host]/path)").Required().String()
+	imageCreate         = cmdImage.Command("create", "Create an image from the specified source")
+	imageCreateType     = imageCreate.Flag("type", "Image type (qemu, lxc, openvz)").Short('t').Default("qemu").String()
+	imageCreateMainPart = imageCreate.Flag("main-partition", "Main partition number").Default("0").Int()
+	imageCreateArch     = imageCreate.Flag("arch", "Image architecture (386, amd64, arm)").Short('a').Default(runtime.GOARCH).String()
+	imageCreateDistro   = imageCreate.Flag("distro", "Image distribution name (debian, ubuntu, ...)").Short('d').Default("").String()
+	imageCreateRelease  = imageCreate.Flag("release", "Image's distro release").Short('r').Default("").String()
+	imageCreateName     = imageCreate.Arg("name", "Image name").Required().String()
+	imageCreateSrc      = imageCreate.Arg("source", "Image source (scheme://[user@][host]/path)").Required().String()
 
 	imageShow     = cmdImage.Command("show", "Show image details")
 	imageShowName = imageShow.Arg("name", "Image name").Required().String()
@@ -97,6 +98,7 @@ func main() {
 			*imageCreateName,
 			*imageCreateType,
 			*imageCreateSrc,
+			*imageCreateMainPart,
 			*imageCreateArch,
 			*imageCreateDistro,
 			*imageCreateRelease,

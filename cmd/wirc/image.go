@@ -33,11 +33,12 @@ func listImages(target client.Remote, raw bool) {
 	}
 }
 
-func createImage(target client.Remote, name, t, source, arch, distro, release string) {
+func createImage(target client.Remote, name, t, source string, mainPart int, arch, distro, release string) {
 	var req client.ImageRequest
 	req.Name = name
 	req.Type = t
 	req.Source = source
+	req.MainPartition = mainPart
 	req.Arch = arch
 	req.Distro = distro
 	req.Release = release

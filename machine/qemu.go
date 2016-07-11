@@ -3,12 +3,14 @@ package machine
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/quadrifoglio/wir/errors"
@@ -150,7 +152,7 @@ func QemuStart(qemuCmd string, kvm bool, m *Machine, basePath string) error {
 	return nil
 }
 
-func QemuLinuxSysprep(basePath, qemuNbd string, m *Machine, hostname, root string) error {
+func QemuLinuxSysprep(basePath, qemuNbd string, m *Machine, mainPart int, hostname, root string) error {
 	// TODO: Find a way to use an available NBD device (/dev/nbdX)
 	cmd := exec.Command(qemuNbd, "-c", "/dev/nbd0", basePath+"qemu/"+m.Name+".qcow2")
 
@@ -169,14 +171,13 @@ func QemuLinuxSysprep(basePath, qemuNbd string, m *Machine, hostname, root strin
 	}
 
 	path := "/tmp/wir/machines/" + m.Name
-	partNum := 3 // TODO: Find the actual main partition's number
 
 	err = os.MkdirAll(path, 0777)
 	if err != nil {
 		return fmt.Errorf("mkdir: %s", err)
 	}
 
-	cmd = exec.Command("mount", fmt.Sprintf("/dev/nbd0p%d", partNum), path)
+	cmd = exec.Command("mount", fmt.Sprintf("/dev/nbd0p%d", mainPart), path)
 
 	err = cmd.Run()
 	if err != nil {
@@ -193,7 +194,7 @@ func QemuLinuxSysprep(basePath, qemuNbd string, m *Machine, hostname, root strin
 	fmt.Fprintf(hostnameFile, hostname)
 	hostnameFile.Close()
 
-	// TODO: Set root password & rmove ssh keys
+	// TODO: remove ssh keys
 
 	return nil
 }

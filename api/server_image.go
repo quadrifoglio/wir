@@ -41,6 +41,7 @@ func handleImageCreate(w http.ResponseWriter, r *http.Request) {
 		break
 	}
 
+	img.MainPartition = i.MainPartition
 	img.Arch = i.Arch
 	img.Distro = i.Distro
 	img.Release = i.Release

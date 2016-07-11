@@ -20,6 +20,7 @@ func MigrateImage(i image.Image, src, dst client.Remote) error {
 		i.Name,
 		i.Type,
 		fmt.Sprintf("scp://%s/%s", src.Addr, i.Source),
+		i.MainPartition,
 		i.Arch,
 		i.Distro,
 		i.Release,
