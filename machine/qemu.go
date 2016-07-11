@@ -150,9 +150,50 @@ func QemuStart(qemuCmd string, kvm bool, m *Machine, basePath string) error {
 	return nil
 }
 
-func QemuLinuxSysprep(qemuNbd string, m *Machine, hostname, root string) error {
-	// TODO: Mount machine's hard drive, set parameters
-	// TODO: Rmove ssh keys
+func QemuLinuxSysprep(basePath, qemuNbd string, m *Machine, hostname, root string) error {
+	// TODO: Find a way to use an available NBD device (/dev/nbdX)
+	cmd := exec.Command(qemuNbd, "-c", "/dev/nbd0", basePath+"qemu/"+m.Name+".qcow2")
+
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf("qemu-nbd: %s", err)
+	}
+
+	defer exec.Command(qemuNbd, "-d", "/dev/nbd0").Run()
+
+	cmd = exec.Command("partx", "-a", "/dev/nbd0")
+
+	err = cmd.Run()
+	if err != nil {
+		return fmt.Errorf("partx: %s", err)
+	}
+
+	path := "/tmp/wir/machines/" + m.Name
+	partNum := 3 // TODO: Find the actual main partition's number
+
+	err = os.MkdirAll(path, 0777)
+	if err != nil {
+		return fmt.Errorf("mkdir: %s", err)
+	}
+
+	cmd = exec.Command("mount", fmt.Sprintf("/dev/nbd0p%d", partNum), path)
+
+	err = cmd.Run()
+	if err != nil {
+		return fmt.Errorf("mount: %s", err)
+	}
+
+	defer exec.Command("umount", path).Run()
+
+	hostnameFile, err := os.OpenFile(path+"/etc/hostname", os.O_WRONLY|os.O_TRUNC, 0777)
+	if err != nil {
+		return fmt.Errorf("open /etc/hostname: %s", err)
+	}
+
+	fmt.Fprintf(hostnameFile, hostname)
+	hostnameFile.Close()
+
+	// TODO: Set root password & rmove ssh keys
 
 	return nil
 }

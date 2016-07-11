@@ -171,6 +171,12 @@ func handleMachineLinuxSysprep(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_, err = DBGetImage(m.Image)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
 	var sp client.LinuxSysprep
 
 	err = json.NewDecoder(r.Body).Decode(&sp)
@@ -181,7 +187,7 @@ func handleMachineLinuxSysprep(w http.ResponseWriter, r *http.Request) {
 
 	switch m.Type {
 	case image.TypeQemu:
-		err = machine.QemuLinuxSysprep(Conf.QemuNbd, &m, sp.Hostname, sp.RootPasswd)
+		err = machine.QemuLinuxSysprep(Conf.MachinePath, Conf.QemuNbd, &m, sp.Hostname, sp.RootPasswd)
 		break
 	case image.TypeVz:
 		//err = machine.VzLinuxSysprep()
