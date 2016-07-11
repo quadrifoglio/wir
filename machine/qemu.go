@@ -150,6 +150,13 @@ func QemuStart(qemuCmd string, kvm bool, m *Machine, basePath string) error {
 	return nil
 }
 
+func QemuLinuxSysprep(qemuNbd string, m *Machine, hostname, root string) error {
+	// TODO: Mount machine's hard drive, set parameters
+	// TODO: Rmove ssh keys
+
+	return nil
+}
+
 func QemuCheck(m *Machine) {
 	out, err := exec.Command("kill", "-s", "0", strconv.Itoa(m.Qemu.PID)).CombinedOutput()
 	if m.Qemu.PID == 0 || err != nil {

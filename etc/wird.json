@@ -7,6 +7,7 @@
 	"EnableKVM": true,
 	"EbtablesCommand": "/sbin/ebtables",
 	"QemuImgCommand": "/usr/bin/qemu-img",
+	"QemuNbdCommand": "/usr/bin/qemu-nbd",
 	"QemuCommand": "/usr/bin/qemu-system-x86_64",
 	"VzctlCommand": "/usr/sbin/vzctl",
 

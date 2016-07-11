@@ -15,6 +15,11 @@ type MachineRequest struct {
 	Network machine.NetworkSetup
 }
 
+type LinuxSysprep struct {
+	Hostname   string
+	RootPasswd string
+}
+
 func ListMachines(target Remote) ([]machine.Machine, error) {
 	type Response struct {
 		ResponseBase

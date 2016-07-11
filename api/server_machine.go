@@ -161,6 +161,44 @@ func handleMachineUpdate(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(nil).Send(w, r)
 }
 
+func handleMachineLinuxSysprep(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	name := vars["name"]
+
+	m, err := DBGetMachine(name)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	var sp client.LinuxSysprep
+
+	err = json.NewDecoder(r.Body).Decode(&sp)
+	if err != nil {
+		ErrorResponse(errors.BadRequest).Send(w, r)
+		return
+	}
+
+	switch m.Type {
+	case image.TypeQemu:
+		err = machine.QemuLinuxSysprep(Conf.QemuNbd, &m, sp.Hostname, sp.RootPasswd)
+		break
+	case image.TypeVz:
+		//err = machine.VzLinuxSysprep()
+		break
+	case image.TypeLXC:
+		//err = machine.LxcLinuxSysprep()
+		break
+	}
+
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	SuccessResponse(nil).Send(w, r)
+}
+
 func handleMachineList(w http.ResponseWriter, r *http.Request) {
 	ms, err := DBListMachines()
 	if err != nil {

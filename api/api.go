@@ -27,6 +27,7 @@ type Config struct {
 	EnableKVM bool
 	Ebtables  string `json:"EbtablesCommand"`
 	QemuImg   string `json:"QemuImgCommand"`
+	QemuNbd   string `json:"QemuNbdCommand"`
 	Qemu      string `json:"QemuCommand"`
 	Vzctl     string `json:"VzctlCommand"`
 
@@ -119,6 +120,7 @@ func Start(conf Config) error {
 	r.HandleFunc("/machines", handleMachineCreate).Methods("POST")
 	r.HandleFunc("/machines", handleMachineList).Methods("GET")
 	r.HandleFunc("/machines/{name}", handleMachineUpdate).Methods("POST")
+	r.HandleFunc("/machines/{name}", handleMachineLinuxSysprep).Methods("SYSPREP")
 	r.HandleFunc("/machines/{name}", handleMachineGet).Methods("GET")
 	r.HandleFunc("/machines/{name}", handleMachineStart).Methods("START")
 	r.HandleFunc("/machines/{name}", handleMachineStats).Methods("STATS")
