@@ -13,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/amoghe/go-crypt"
+
 	"github.com/quadrifoglio/wir/errors"
 	"github.com/quadrifoglio/wir/image"
 	"github.com/quadrifoglio/wir/net"
@@ -193,6 +195,47 @@ func QemuLinuxSysprep(basePath, qemuNbd string, m *Machine, mainPart int, hostna
 
 	fmt.Fprintf(hostnameFile, hostname)
 	hostnameFile.Close()
+
+	shadowFile, err := os.OpenFile(path+"/etc/shadow", os.O_RDWR, 0640)
+	if err != nil {
+		return fmt.Errorf("open /etc/shadow: %s", err)
+	}
+
+	defer shadowFile.Close()
+
+	data, err := ioutil.ReadAll(shadowFile)
+	if err != nil {
+		return fmt.Errorf("/etc/shadow: can not read entire file: %s", err)
+	}
+
+	n := strings.Index(string(data), ":")
+	if n == -1 {
+		return fmt.Errorf("/etc/shadow: invalid file (no ':' char)")
+	}
+
+	nn := strings.Index(string(data[n+1:]), ":")
+	if n == -1 {
+		return fmt.Errorf("/etc/shadow: invalid file (no second ':' char)")
+	}
+
+	n = n + nn + 1
+
+	// TODO: Random salt
+	str, err := crypt.Crypt(root, "$6$HoN0Q1DH$")
+	if err != nil {
+		return fmt.Errorf("can not crypt password: %s", err)
+	}
+
+	str = "root:" + str
+
+	mdr := make([]byte, len(str))
+	copy(mdr, str)
+	mdr = append(mdr, data[n:]...)
+
+	_, err = shadowFile.WriteAt(mdr, 0)
+	if err != nil {
+		return fmt.Errorf("can not write to /etc/shadow: %s", err)
+	}
 
 	// TODO: remove ssh keys
 
