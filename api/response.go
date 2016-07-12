@@ -14,6 +14,10 @@ type Response struct {
 	Content interface{} `json:",omitempty"`
 }
 
+func PrepareResponse(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%s %s from %s - %s\n", r.Method, r.URL.String(), r.RemoteAddr, "Started")
+}
+
 func SuccessResponse(c interface{}) Response {
 	return Response{200, "Success", c}
 }

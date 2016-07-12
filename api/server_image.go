@@ -11,6 +11,8 @@ import (
 )
 
 func handleImageCreate(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
 	var i client.ImageRequest
 
 	err := json.NewDecoder(r.Body).Decode(&i)
@@ -61,6 +63,8 @@ func handleImageCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleImageList(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
 	imgs, err := DBListImages()
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
@@ -71,6 +75,8 @@ func handleImageList(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleImageGet(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
 	vars := mux.Vars(r)
 	name := vars["name"]
 
@@ -84,6 +90,8 @@ func handleImageGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleImageDelete(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
 	vars := mux.Vars(r)
 	name := vars["name"]
 

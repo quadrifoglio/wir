@@ -17,6 +17,8 @@ import (
 )
 
 func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
 	var m client.MachineRequest
 
 	err := json.NewDecoder(r.Body).Decode(&m)
@@ -101,6 +103,8 @@ func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleMachineUpdate(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
 	vars := mux.Vars(r)
 	name := vars["name"]
 
@@ -163,6 +167,8 @@ func handleMachineUpdate(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleMachineLinuxSysprep(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
 	vars := mux.Vars(r)
 	name := vars["name"]
 
@@ -212,6 +218,8 @@ func handleMachineLinuxSysprep(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleMachineList(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
 	ms, err := DBListMachines()
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
@@ -248,6 +256,8 @@ func handleMachineList(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleMachineGet(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
 	vars := mux.Vars(r)
 	name := vars["name"]
 
@@ -279,6 +289,8 @@ func handleMachineGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleMachineStart(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
 	vars := mux.Vars(r)
 	name := vars["name"]
 
@@ -335,6 +347,8 @@ func handleMachineStart(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleMachineStats(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
 	vars := mux.Vars(r)
 	name := vars["name"]
 
@@ -367,6 +381,8 @@ func handleMachineStats(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleMachineStop(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
 	vars := mux.Vars(r)
 	name := vars["name"]
 
@@ -433,6 +449,8 @@ func handleMachineStop(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleMachineMigrate(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
 	type Request struct {
 		Target client.Remote
 	}
@@ -498,6 +516,8 @@ func handleMachineMigrate(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleMachineDelete(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
 	vars := mux.Vars(r)
 	name := vars["name"]
 
