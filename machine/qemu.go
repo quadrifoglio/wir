@@ -226,20 +226,20 @@ func QemuLinuxSysprep(basePath, qemuNbd string, m *Machine, mainPart int, hostna
 	}
 
 	n = n + nn + 1
+	salt := utils.UniqueID(0)
 
-	// TODO: Random salt
-	str, err := crypt.Crypt(root, "$6$HoN0Q1DH$")
+	str, err := crypt.Crypt(root, fmt.Sprintf("$6$%s$", string(salt[:8])))
 	if err != nil {
 		return fmt.Errorf("can not crypt password: %s", err)
 	}
 
 	str = "root:" + str
 
-	mdr := make([]byte, len(str))
-	copy(mdr, str)
-	mdr = append(mdr, data[n:]...)
+	newData := make([]byte, len(str))
+	copy(newData, str)
+	newData = append(newData, data[n:]...)
 
-	_, err = shadowFile.WriteAt(mdr, 0)
+	_, err = shadowFile.WriteAt(newData, 0)
 	if err != nil {
 		return fmt.Errorf("can not write to /etc/shadow: %s", err)
 	}
