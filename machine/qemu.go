@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/amoghe/go-crypt"
@@ -19,6 +20,10 @@ import (
 	"github.com/quadrifoglio/wir/image"
 	"github.com/quadrifoglio/wir/net"
 	"github.com/quadrifoglio/wir/utils"
+)
+
+var (
+	sysprepMutex sync.Mutex
 )
 
 func QemuCreate(imgCmd, basePath, name string, img *image.Image, cores, memory int) (Machine, error) {
@@ -155,7 +160,9 @@ func QemuStart(qemuCmd string, kvm bool, m *Machine, basePath string) error {
 }
 
 func QemuLinuxSysprep(basePath, qemuNbd string, m *Machine, mainPart int, hostname, root string) error {
-	// TODO: Find a way to use an available NBD device (/dev/nbdX)
+	sysprepMutex.Lock()
+	defer sysprepMutex.Unlock()
+
 	cmd := exec.Command(qemuNbd, "-c", "/dev/nbd0", basePath+"qemu/"+m.Name+".qcow2")
 
 	err := cmd.Run()
