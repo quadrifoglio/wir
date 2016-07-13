@@ -125,6 +125,11 @@ func LxcLinuxSysprep(basePath string, m *Machine, hostname, root string) error {
 		return err
 	}
 
+	err = utils.ChangeRootPassword(fmt.Sprintf("%s/%s/rootfs/etc/shadow", path, m.Name), root)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

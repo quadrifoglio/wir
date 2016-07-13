@@ -184,7 +184,7 @@ func handleMachineLinuxSysprep(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if img.MainPartition == 0 {
+	if img.Type == image.TypeQemu && img.MainPartition == 0 {
 		ErrorResponse(fmt.Errorf("image does not have a specified main partition. can not sysprep.")).Send(w, r)
 		return
 	}

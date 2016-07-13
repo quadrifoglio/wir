@@ -3,18 +3,14 @@ package machine
 import (
 	"bufio"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
-
-	"github.com/amoghe/go-crypt"
 
 	"github.com/quadrifoglio/wir/errors"
 	"github.com/quadrifoglio/wir/image"
@@ -181,41 +177,12 @@ func QemuLinuxSysprep(basePath, qemuNbd string, m *Machine, mainPart int, hostna
 
 	defer utils.Unmount(path)
 
-	err = utils.RewriteFile(hostnameFile, []byte(hostname))
+	err = utils.ChangeHostname(hostnameFile, hostname)
 	if err != nil {
 		return err
 	}
 
-	data, err := ioutil.ReadFile(shadowFile)
-	if err != nil {
-		return fmt.Errorf("/etc/shadow: can not read entire file: %s", err)
-	}
-
-	n := strings.Index(string(data), ":")
-	if n == -1 {
-		return fmt.Errorf("/etc/shadow: invalid file (no ':' char)")
-	}
-
-	nn := strings.Index(string(data[n+1:]), ":")
-	if n == -1 {
-		return fmt.Errorf("/etc/shadow: invalid file (no second ':' char)")
-	}
-
-	n = n + nn + 1
-	salt := utils.UniqueID(0)
-
-	str, err := crypt.Crypt(root, fmt.Sprintf("$6$%s$", string(salt[:8])))
-	if err != nil {
-		return fmt.Errorf("can not crypt password: %s", err)
-	}
-
-	str = "root:" + str
-
-	newData := make([]byte, len(str))
-	copy(newData, str)
-	newData = append(newData, data[n:]...)
-
-	err = utils.RewriteFile(shadowFile, newData)
+	err = utils.ChangeRootPassword(shadowFile, root)
 	if err != nil {
 		return err
 	}

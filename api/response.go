@@ -15,7 +15,7 @@ type Response struct {
 }
 
 func PrepareResponse(w http.ResponseWriter, r *http.Request) {
-	log.Printf("%s %s from %s - %s\n", r.Method, r.URL.String(), r.RemoteAddr, "Started")
+	log.Printf("%s %s from %s - %s\n", r.Method, r.URL.String(), r.RemoteAddr, "Received")
 }
 
 func SuccessResponse(c interface{}) Response {
