@@ -108,6 +108,26 @@ func LxcStart(basePath string, m *Machine) error {
 	return nil
 }
 
+func LxcLinuxSysprep(basePath string, m *Machine, hostname, root string) error {
+	path, err := filepath.Abs(basePath + "lxc/")
+	if err != nil {
+		return err
+	}
+
+	c, err := lxc.NewContainer(m.Name, path)
+	if err != nil {
+		return err
+	}
+
+	c.SetVerbosity(lxc.Verbose)
+
+	if err := c.SetConfigItem("lxc.utsname", hostname); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func LxcCheck(basePath string, m *Machine) error {
 	path, err := filepath.Abs(basePath + "lxc/")
 	if err != nil {

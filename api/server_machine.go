@@ -205,7 +205,7 @@ func handleMachineLinuxSysprep(w http.ResponseWriter, r *http.Request) {
 		//err = machine.VzLinuxSysprep()
 		break
 	case image.TypeLXC:
-		//err = machine.LxcLinuxSysprep()
+		err = machine.LxcLinuxSysprep(Conf.MachinePath, &m, sp.Hostname, sp.RootPasswd)
 		break
 	}
 

@@ -163,54 +163,30 @@ func QemuLinuxSysprep(basePath, qemuNbd string, m *Machine, mainPart int, hostna
 	sysprepMutex.Lock()
 	defer sysprepMutex.Unlock()
 
-	cmd := exec.Command(qemuNbd, "-c", "/dev/nbd0", basePath+"qemu/"+m.Name+".qcow2")
-
-	err := cmd.Run()
-	if err != nil {
-		return fmt.Errorf("qemu-nbd: %s", err)
-	}
-
-	defer exec.Command(qemuNbd, "-d", "/dev/nbd0").Run()
-
-	cmd = exec.Command("partx", "-a", "/dev/nbd0")
-
-	err = cmd.Run()
-	if err != nil {
-		return fmt.Errorf("partx: %s", err)
-	}
-
 	path := "/tmp/wir/machines/" + m.Name
+	hostnameFile := path + "/etc/hostname"
+	shadowFile := path + "/etc/shadow"
 
-	err = os.MkdirAll(path, 0777)
+	err := utils.NBDConnectQcow2(qemuNbd, "/dev/nbd0", basePath+"qemu/"+m.Name+".qcow2")
 	if err != nil {
-		return fmt.Errorf("mkdir: %s", err)
+		return err
 	}
 
-	cmd = exec.Command("mount", fmt.Sprintf("/dev/nbd0p%d", mainPart), path)
+	defer utils.NBDDisconnectQcow2(qemuNbd, "/dev/nbd0")
 
-	err = cmd.Run()
+	err = utils.Mount(fmt.Sprintf("/dev/nbd0p%d", mainPart), path)
 	if err != nil {
-		return fmt.Errorf("mount: %s", err)
+		return err
 	}
 
-	defer exec.Command("umount", path).Run()
+	defer utils.Unmount(path)
 
-	hostnameFile, err := os.OpenFile(path+"/etc/hostname", os.O_WRONLY|os.O_TRUNC, 0777)
+	err = utils.RewriteFile(hostnameFile, []byte(hostname))
 	if err != nil {
-		return fmt.Errorf("open /etc/hostname: %s", err)
+		return err
 	}
 
-	fmt.Fprintf(hostnameFile, hostname)
-	hostnameFile.Close()
-
-	shadowFile, err := os.OpenFile(path+"/etc/shadow", os.O_RDWR, 0640)
-	if err != nil {
-		return fmt.Errorf("open /etc/shadow: %s", err)
-	}
-
-	defer shadowFile.Close()
-
-	data, err := ioutil.ReadAll(shadowFile)
+	data, err := ioutil.ReadFile(shadowFile)
 	if err != nil {
 		return fmt.Errorf("/etc/shadow: can not read entire file: %s", err)
 	}
@@ -239,9 +215,9 @@ func QemuLinuxSysprep(basePath, qemuNbd string, m *Machine, mainPart int, hostna
 	copy(newData, str)
 	newData = append(newData, data[n:]...)
 
-	_, err = shadowFile.WriteAt(newData, 0)
+	err = utils.RewriteFile(shadowFile, newData)
 	if err != nil {
-		return fmt.Errorf("can not write to /etc/shadow: %s", err)
+		return err
 	}
 
 	// TODO: remove ssh keys
