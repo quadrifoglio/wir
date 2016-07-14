@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/quadrifoglio/wir/client"
+	"github.com/quadrifoglio/wir/config"
 	"github.com/quadrifoglio/wir/image"
 	"github.com/quadrifoglio/wir/machine"
 )
@@ -34,7 +35,7 @@ func MigrateImage(i image.Image, src, dst client.Remote) error {
 	return nil
 }
 
-func MigrateQemu(basePath string, m machine.Machine, i image.Image, src, dst client.Remote) error {
+func MigrateQemu(m machine.Machine, i image.Image, src, dst client.Remote) error {
 	err := MigrateImage(i, src, dst)
 	if err != nil {
 		return err
@@ -45,7 +46,7 @@ func MigrateQemu(basePath string, m machine.Machine, i image.Image, src, dst cli
 		return fmt.Errorf("failed to get remote config: %s", err)
 	}
 
-	srcPath := basePath + "qemu/" + m.Name + ".qcow2"
+	srcPath := config.API.MachinePath + "qemu/" + m.Name + ".qcow2"
 	dstPath := conf.MachinePath + "qemu/" + m.Name + ".qcow2"
 
 	err = RemoteMkdir(dst, filepath.Dir(dstPath))
@@ -68,9 +69,7 @@ func MigrateQemu(basePath string, m machine.Machine, i image.Image, src, dst cli
 	return nil
 }
 
-func MigrateLxc(basePath string, m machine.Machine, i image.Image, src, dst client.Remote) error {
-	basePath = basePath + "lxc"
-
+func MigrateLxc(m machine.Machine, i image.Image, src, dst client.Remote) error {
 	err := MigrateImage(i, src, dst)
 	if err != nil {
 		return err
@@ -81,9 +80,9 @@ func MigrateLxc(basePath string, m machine.Machine, i image.Image, src, dst clie
 		return fmt.Errorf("Remote configuration: %s", err)
 	}
 
-	tarball := fmt.Sprintf("%s/%s.tar.gz", basePath, m.Name)
+	tarball := fmt.Sprintf("%s/%s.tar.gz", m.Name)
 	dstPath := conf.MachinePath + "lxc/" + m.Name
-	cmd := exec.Command("tar", "--numeric-owner", "-czvf", tarball, "-C", basePath, m.Name)
+	cmd := exec.Command("tar", "--numeric-owner", "-czvf", tarball, "-C", m.Name)
 
 	err = cmd.Run()
 	if err != nil {
@@ -110,13 +109,13 @@ func MigrateLxc(basePath string, m machine.Machine, i image.Image, src, dst clie
 	return nil
 }
 
-func LiveMigrateLxc(basePath string, m machine.Machine, src, dst client.Remote) error {
-	err := machine.LxcCheckpoint(basePath, &m)
+func LiveMigrateLxc(m machine.Machine, src, dst client.Remote) error {
+	err := machine.LxcCheckpoint(&m)
 	if err != nil {
 		return err
 	}
 
-	err = machine.LxcStop(basePath, &m)
+	err = machine.LxcStop(&m)
 	if err != nil {
 		return err
 	}

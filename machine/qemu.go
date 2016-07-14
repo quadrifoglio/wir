@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/quadrifoglio/wir/config"
 	"github.com/quadrifoglio/wir/errors"
 	"github.com/quadrifoglio/wir/image"
 	"github.com/quadrifoglio/wir/net"
@@ -21,7 +22,7 @@ var (
 	sysprepMutex sync.Mutex
 )
 
-func QemuCreate(imgCmd, basePath, name string, img *image.Image, cores, memory int) (Machine, error) {
+func QemuCreate(name string, img *image.Image, cores, memory int) (Machine, error) {
 	var m Machine
 	m.Name = name
 	m.Type = img.Type
@@ -29,7 +30,7 @@ func QemuCreate(imgCmd, basePath, name string, img *image.Image, cores, memory i
 	m.Cores = cores
 	m.Memory = memory
 
-	path := basePath + "qemu/" + name + ".qcow2"
+	path := config.API.MachinePath + "qemu/" + name + ".qcow2"
 
 	err := os.MkdirAll(filepath.Dir(path), 0777)
 	if err != nil {
@@ -39,9 +40,9 @@ func QemuCreate(imgCmd, basePath, name string, img *image.Image, cores, memory i
 	var cmd *exec.Cmd
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		cmd = exec.Command(imgCmd, "create", "-b", img.Source, "-f", "qcow2", path)
+		cmd = exec.Command(config.API.QemuImg, "create", "-b", img.Source, "-f", "qcow2", path)
 	} else {
-		cmd = exec.Command(imgCmd, "rebase", "-b", img.Source, path)
+		cmd = exec.Command(config.API.QemuImg, "rebase", "-b", img.Source, path)
 	}
 
 	err = cmd.Run()
@@ -52,7 +53,7 @@ func QemuCreate(imgCmd, basePath, name string, img *image.Image, cores, memory i
 	return m, nil
 }
 
-func QemuStart(qemuCmd string, kvm bool, m *Machine, basePath string) error {
+func QemuStart(m *Machine, basePath string) error {
 	m.State = StateDown
 
 	args := make([]string, 8)
@@ -65,7 +66,7 @@ func QemuStart(qemuCmd string, kvm bool, m *Machine, basePath string) error {
 	args[6] = "-vnc"
 	args[7] = fmt.Sprintf(":%d", m.Index)
 
-	if kvm {
+	if config.API.EnableKVM {
 		args = append(args, "-enable-kvm")
 	}
 
@@ -93,7 +94,7 @@ func QemuStart(qemuCmd string, kvm bool, m *Machine, basePath string) error {
 		args = append(args, fmt.Sprintf("driver=virtio-net,netdev=net0,mac=%s", m.Network.MAC))
 	}
 
-	cmd := exec.Command(qemuCmd, args...)
+	cmd := exec.Command(config.API.Qemu, args...)
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -154,7 +155,7 @@ func QemuStart(qemuCmd string, kvm bool, m *Machine, basePath string) error {
 	return nil
 }
 
-func QemuLinuxSysprep(basePath, qemuNbd string, m *Machine, mainPart int, hostname, root string) error {
+func QemuLinuxSysprep(m *Machine, mainPart int, hostname, root string) error {
 	sysprepMutex.Lock()
 	defer sysprepMutex.Unlock()
 
@@ -162,12 +163,12 @@ func QemuLinuxSysprep(basePath, qemuNbd string, m *Machine, mainPart int, hostna
 	hostnameFile := path + "/etc/hostname"
 	shadowFile := path + "/etc/shadow"
 
-	err := utils.NBDConnectQcow2(qemuNbd, "/dev/nbd0", basePath+"qemu/"+m.Name+".qcow2")
+	err := utils.NBDConnectQcow2(config.API.QemuNbd, "/dev/nbd0", config.API.MachinePath+"qemu/"+m.Name+".qcow2")
 	if err != nil {
 		return err
 	}
 
-	defer utils.NBDDisconnectQcow2(qemuNbd, "/dev/nbd0")
+	defer utils.NBDDisconnectQcow2(config.API.QemuNbd, "/dev/nbd0")
 
 	err = utils.Mount(fmt.Sprintf("/dev/nbd0p%d", mainPart), path)
 	if err != nil {

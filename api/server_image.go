@@ -5,7 +5,9 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+
 	"github.com/quadrifoglio/wir/client"
+	"github.com/quadrifoglio/wir/config"
 	"github.com/quadrifoglio/wir/errors"
 	"github.com/quadrifoglio/wir/image"
 )
@@ -30,13 +32,13 @@ func handleImageCreate(w http.ResponseWriter, r *http.Request) {
 
 	switch i.Type {
 	case image.TypeQemu:
-		img, err = image.QemuCreate(i.Name, i.Source, Conf.ImagePath)
+		img, err = image.QemuCreate(i.Name, i.Source, config.API.ImagePath)
 		break
 	case image.TypeVz:
-		img, err = image.VzCreate(i.Name, i.Source, Conf.ImagePath)
+		img, err = image.VzCreate(i.Name, i.Source, config.API.ImagePath)
 		break
 	case image.TypeLXC:
-		img, err = image.LxcCreate(i.Name, i.Source, Conf.ImagePath)
+		img, err = image.LxcCreate(i.Name, i.Source, config.API.ImagePath)
 		break
 	default:
 		err = errors.InvalidImageType

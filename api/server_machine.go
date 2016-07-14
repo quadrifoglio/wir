@@ -7,7 +7,9 @@ import (
 	"sort"
 
 	"github.com/gorilla/mux"
+
 	"github.com/quadrifoglio/wir/client"
+	"github.com/quadrifoglio/wir/config"
 	"github.com/quadrifoglio/wir/errors"
 	"github.com/quadrifoglio/wir/image"
 	"github.com/quadrifoglio/wir/inter"
@@ -28,7 +30,7 @@ func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(m.Name) == 0 {
-		m.Name = utils.UniqueID(Conf.NodeID)
+		m.Name = utils.UniqueID(config.API.NodeID)
 	}
 
 	if !DBMachineNameFree(m.Name) {
@@ -46,16 +48,16 @@ func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
 
 	switch img.Type {
 	case image.TypeQemu:
-		mm, err = machine.QemuCreate(Conf.QemuImg, Conf.MachinePath, m.Name, &img, m.Cores, m.Memory)
+		mm, err = machine.QemuCreate(m.Name, &img, m.Cores, m.Memory)
 		break
 	case image.TypeVz:
 		i, err := DBFreeMachineIndex()
 		if err == nil {
-			mm, err = machine.VzCreate(Conf.Vzctl, Conf.MachinePath, m.Name, i, &img, m.Cores, m.Memory)
+			mm, err = machine.VzCreate(m.Name, i, &img, m.Cores, m.Memory)
 		}
 		break
 	case image.TypeLXC:
-		mm, err = machine.LxcCreate(Conf.MachinePath, m.Name, &img, m.Cores, m.Memory)
+		mm, err = machine.LxcCreate(m.Name, &img, m.Cores, m.Memory)
 		break
 	default:
 		err = errors.InvalidImageType
@@ -71,21 +73,21 @@ func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
 
 	if len(mm.Network.Mode) > 0 {
 		if len(mm.Network.MAC) == 0 {
-			mm.Network.MAC, err = net.GenerateMAC(Conf.NodeID)
+			mm.Network.MAC, err = net.GenerateMAC(config.API.NodeID)
 			if err != nil {
 				ErrorResponse(err).Send(w, r)
 				return
 			}
 		}
 
-		err = net.GrantBasic(Conf.Ebtables, mm.Network.MAC)
+		err = net.GrantBasic(config.API.Ebtables, mm.Network.MAC)
 		if err != nil {
 			ErrorResponse(err).Send(w, r)
 			return
 		}
 
 		if len(m.Network.Mode) > 0 && len(mm.Network.IP) > 0 {
-			err := net.GrantTraffic(Conf.Ebtables, mm.Network.MAC, mm.Network.IP)
+			err := net.GrantTraffic(config.API.Ebtables, mm.Network.MAC, mm.Network.IP)
 			if err != nil {
 				ErrorResponse(err).Send(w, r)
 				return
@@ -135,10 +137,10 @@ func handleMachineUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(nm.Network.MAC) > 0 && nm.Network.MAC != m.Network.MAC {
-		net.DenyTraffic(Conf.Ebtables, m.Network.MAC, m.Network.IP) // Not handling errors: can fail if no ip was previously registered
+		net.DenyTraffic(config.API.Ebtables, m.Network.MAC, m.Network.IP) // Not handling errors: can fail if no ip was previously registered
 
 		m.Network.MAC = nm.Network.MAC
-		err = net.GrantTraffic(Conf.Ebtables, m.Network.MAC, m.Network.IP)
+		err = net.GrantTraffic(config.API.Ebtables, m.Network.MAC, m.Network.IP)
 		if err != nil {
 			ErrorResponse(err).Send(w, r)
 			return
@@ -146,11 +148,11 @@ func handleMachineUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(nm.Network.IP) > 0 && nm.Network.IP != m.Network.IP {
-		net.DenyTraffic(Conf.Ebtables, m.Network.MAC, m.Network.IP)
+		net.DenyTraffic(config.API.Ebtables, m.Network.MAC, m.Network.IP)
 
 		m.Network.IP = nm.Network.IP
 
-		err = net.GrantTraffic(Conf.Ebtables, m.Network.MAC, m.Network.IP)
+		err = net.GrantTraffic(config.API.Ebtables, m.Network.MAC, m.Network.IP)
 		if err != nil {
 			ErrorResponse(err).Send(w, r)
 			return
@@ -199,13 +201,13 @@ func handleMachineLinuxSysprep(w http.ResponseWriter, r *http.Request) {
 
 	switch m.Type {
 	case image.TypeQemu:
-		err = machine.QemuLinuxSysprep(Conf.MachinePath, Conf.QemuNbd, &m, img.MainPartition, sp.Hostname, sp.RootPasswd)
+		err = machine.QemuLinuxSysprep(&m, img.MainPartition, sp.Hostname, sp.RootPasswd)
 		break
 	case image.TypeVz:
 		//err = machine.VzLinuxSysprep()
 		break
 	case image.TypeLXC:
-		err = machine.LxcLinuxSysprep(Conf.MachinePath, &m, sp.Hostname, sp.RootPasswd)
+		err = machine.LxcLinuxSysprep(&m, sp.Hostname, sp.RootPasswd)
 		break
 	}
 
@@ -236,10 +238,10 @@ func handleMachineList(w http.ResponseWriter, r *http.Request) {
 			machine.QemuCheck(&ms[i])
 			break
 		case image.TypeVz:
-			machine.VzCheck(Conf.Vzctl, &ms[i])
+			machine.VzCheck(&ms[i])
 			break
 		case image.TypeLXC:
-			machine.LxcCheck(Conf.MachinePath, &ms[i])
+			machine.LxcCheck(&ms[i])
 			break
 		}
 
@@ -272,10 +274,10 @@ func handleMachineGet(w http.ResponseWriter, r *http.Request) {
 		machine.QemuCheck(&m)
 		break
 	case image.TypeVz:
-		machine.VzCheck(Conf.Vzctl, &m)
+		machine.VzCheck(&m)
 		break
 	case image.TypeLXC:
-		machine.LxcCheck(Conf.MachinePath, &m)
+		machine.LxcCheck(&m)
 		break
 	}
 
@@ -305,10 +307,10 @@ func handleMachineStart(w http.ResponseWriter, r *http.Request) {
 		machine.QemuCheck(&m)
 		break
 	case image.TypeVz:
-		machine.VzCheck(Conf.Vzctl, &m)
+		machine.VzCheck(&m)
 		break
 	case image.TypeLXC:
-		machine.LxcCheck(Conf.MachinePath, &m)
+		machine.LxcCheck(&m)
 		break
 	}
 
@@ -319,13 +321,13 @@ func handleMachineStart(w http.ResponseWriter, r *http.Request) {
 
 	switch m.Type {
 	case image.TypeQemu:
-		err = machine.QemuStart(Conf.Qemu, Conf.EnableKVM, &m, Conf.MachinePath)
+		err = machine.QemuStart(&m, config.API.MachinePath)
 		break
 	case image.TypeVz:
-		err = machine.VzStart(Conf.Vzctl, &m)
+		err = machine.VzStart(&m)
 		break
 	case image.TypeLXC:
-		err = machine.LxcStart(Conf.MachinePath, &m)
+		err = machine.LxcStart(&m)
 		break
 	default:
 		ErrorResponse(errors.InvalidImageType)
@@ -365,10 +367,10 @@ func handleMachineStats(w http.ResponseWriter, r *http.Request) {
 		stats, err = machine.QemuStats(&m)
 		break
 	case image.TypeVz:
-		//stats, err = machine.VzStats(Conf.MachinePath, &m)
+		//stats, err = machine.VzStats(&m)
 		break
 	case image.TypeLXC:
-		stats, err = machine.LxcStats(Conf.MachinePath, &m)
+		stats, err = machine.LxcStats(&m)
 		break
 	}
 
@@ -397,10 +399,10 @@ func handleMachineStop(w http.ResponseWriter, r *http.Request) {
 		machine.QemuCheck(&m)
 		break
 	case image.TypeVz:
-		machine.VzCheck(Conf.Vzctl, &m)
+		machine.VzCheck(&m)
 		break
 	case image.TypeLXC:
-		machine.LxcCheck(Conf.MachinePath, &m)
+		machine.LxcCheck(&m)
 		break
 	default:
 		ErrorResponse(errors.InvalidImageType)
@@ -421,14 +423,14 @@ func handleMachineStop(w http.ResponseWriter, r *http.Request) {
 		}
 		break
 	case image.TypeVz:
-		err = machine.VzStop(Conf.Vzctl, &m)
+		err = machine.VzStop(&m)
 		if err != nil {
 			ErrorResponse(err).Send(w, r)
 			return
 		}
 		break
 	case image.TypeLXC:
-		err = machine.LxcStop(Conf.MachinePath, &m)
+		err = machine.LxcStop(&m)
 		if err != nil {
 			ErrorResponse(err).Send(w, r)
 			return
@@ -484,10 +486,10 @@ func handleMachineMigrate(w http.ResponseWriter, r *http.Request) {
 		machine.QemuCheck(&m)
 		break
 	case image.TypeVz:
-		machine.VzCheck(Conf.Vzctl, &m)
+		machine.VzCheck(&m)
 		break
 	case image.TypeLXC:
-		machine.LxcCheck(Conf.MachinePath, &m)
+		machine.LxcCheck(&m)
 		break
 	}
 
@@ -498,13 +500,13 @@ func handleMachineMigrate(w http.ResponseWriter, r *http.Request) {
 
 	switch m.Type {
 	case image.TypeQemu:
-		err = inter.MigrateQemu(Conf.MachinePath, m, i, client.Remote{Conf.Address, "root", Conf.Port}, req.Target)
+		err = inter.MigrateQemu(m, i, client.Remote{config.API.Address, "root", config.API.Port}, req.Target)
 		break
 	case image.TypeLXC:
 		if req.Live {
-			err = inter.LiveMigrateLxc(Conf.MachinePath, m, client.Remote{Conf.Address, "root", Conf.Port}, req.Target)
+			err = inter.LiveMigrateLxc(m, client.Remote{config.API.Address, "root", config.API.Port}, req.Target)
 		} else {
-			err = inter.MigrateLxc(Conf.MachinePath, m, i, client.Remote{Conf.Address, "root", Conf.Port}, req.Target)
+			err = inter.MigrateLxc(m, i, client.Remote{config.API.Address, "root", config.API.Port}, req.Target)
 		}
 		break
 	default:
@@ -537,10 +539,10 @@ func handleMachineDelete(w http.ResponseWriter, r *http.Request) {
 		machine.QemuCheck(&m)
 		break
 	case image.TypeVz:
-		machine.VzCheck(Conf.Vzctl, &m)
+		machine.VzCheck(&m)
 		break
 	case image.TypeLXC:
-		machine.LxcCheck(Conf.MachinePath, &m)
+		machine.LxcCheck(&m)
 		break
 	default:
 		ErrorResponse(errors.InvalidImageType)
@@ -557,10 +559,10 @@ func handleMachineDelete(w http.ResponseWriter, r *http.Request) {
 		err = machine.QemuDelete(&m)
 		break
 	case image.TypeVz:
-		err = machine.VzDelete(Conf.Vzctl, &m)
+		err = machine.VzDelete(&m)
 		break
 	case image.TypeLXC:
-		err = machine.LxcDelete(Conf.MachinePath, &m)
+		err = machine.LxcDelete(&m)
 		break
 	}
 

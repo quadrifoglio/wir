@@ -4,15 +4,16 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"time"
 
+	"gopkg.in/lxc/go-lxc.v2"
+
+	"github.com/quadrifoglio/wir/config"
 	"github.com/quadrifoglio/wir/image"
 	"github.com/quadrifoglio/wir/utils"
-	"gopkg.in/lxc/go-lxc.v2"
 )
 
-func LxcCreate(basePath, name string, img *image.Image, cores, memory int) (Machine, error) {
+func LxcCreate(name string, img *image.Image, cores, memory int) (Machine, error) {
 	var m Machine
 	m.Name = name
 	m.Type = img.Type
@@ -21,12 +22,9 @@ func LxcCreate(basePath, name string, img *image.Image, cores, memory int) (Mach
 	m.Memory = memory
 	m.State = StateDown
 
-	path, err := filepath.Abs(basePath + "lxc/")
-	if err != nil {
-		return m, err
-	}
+	path := config.API.MachinePath + "lxc"
 
-	err = os.MkdirAll(path, 0777)
+	err := os.MkdirAll(path, 0777)
 	if err != nil {
 		return m, err
 	}
@@ -44,7 +42,7 @@ func LxcCreate(basePath, name string, img *image.Image, cores, memory int) (Mach
 	} else if _, err := os.Stat(checkpoint); !os.IsNotExist(err) {
 		// TODO: Uncompress checkpoint tarball
 
-		err := LxcRestore(path, &m)
+		err := LxcRestore(&m)
 		if err != nil {
 			return m, err
 		}
@@ -77,11 +75,8 @@ func LxcCreate(basePath, name string, img *image.Image, cores, memory int) (Mach
 	return m, nil
 }
 
-func LxcStart(basePath string, m *Machine) error {
-	path, err := filepath.Abs(basePath + "lxc/")
-	if err != nil {
-		return err
-	}
+func LxcStart(m *Machine) error {
+	path := config.API.MachinePath + "lxc"
 
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {
@@ -118,11 +113,8 @@ func LxcStart(basePath string, m *Machine) error {
 	return nil
 }
 
-func LxcLinuxSysprep(basePath string, m *Machine, hostname, root string) error {
-	path, err := filepath.Abs(basePath + "lxc/")
-	if err != nil {
-		return err
-	}
+func LxcLinuxSysprep(m *Machine, hostname, root string) error {
+	path := config.API.MachinePath + "lxc"
 
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {
@@ -143,11 +135,8 @@ func LxcLinuxSysprep(basePath string, m *Machine, hostname, root string) error {
 	return nil
 }
 
-func LxcCheck(basePath string, m *Machine) error {
-	path, err := filepath.Abs(basePath + "lxc/")
-	if err != nil {
-		return err
-	}
+func LxcCheck(m *Machine) error {
+	path := config.API.MachinePath + "lxc"
 
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {
@@ -166,13 +155,10 @@ func LxcCheck(basePath string, m *Machine) error {
 	return nil
 }
 
-func LxcStats(basePath string, m *Machine) (Stats, error) {
+func LxcStats(m *Machine) (Stats, error) {
 	var stats Stats
 
-	path, err := filepath.Abs(basePath + "lxc/")
-	if err != nil {
-		return stats, err
-	}
+	path := config.API.MachinePath + "lxc"
 
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {
@@ -218,11 +204,8 @@ func LxcStats(basePath string, m *Machine) (Stats, error) {
 	return stats, nil
 }
 
-func LxcCheckpoint(basePath string, m *Machine) error {
-	path, err := filepath.Abs(basePath + "lxc/")
-	if err != nil {
-		return err
-	}
+func LxcCheckpoint(m *Machine) error {
+	path := config.API.MachinePath + "lxc"
 
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {
@@ -253,11 +236,8 @@ func LxcCheckpoint(basePath string, m *Machine) error {
 	return nil
 }
 
-func LxcRestore(basePath string, m *Machine) error {
-	path, err := filepath.Abs(basePath + "lxc/")
-	if err != nil {
-		return err
-	}
+func LxcRestore(m *Machine) error {
+	path := config.API.MachinePath + "lxc"
 
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {
@@ -280,11 +260,8 @@ func LxcRestore(basePath string, m *Machine) error {
 	return nil
 }
 
-func LxcStop(basePath string, m *Machine) error {
-	path, err := filepath.Abs(basePath + "lxc/")
-	if err != nil {
-		return err
-	}
+func LxcStop(m *Machine) error {
+	path := config.API.MachinePath + "lxc"
 
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {
@@ -301,11 +278,8 @@ func LxcStop(basePath string, m *Machine) error {
 	return nil
 }
 
-func LxcDelete(basePath string, m *Machine) error {
-	path, err := filepath.Abs(basePath + "lxc/")
-	if err != nil {
-		return err
-	}
+func LxcDelete(m *Machine) error {
+	path := config.API.MachinePath + "lxc"
 
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {

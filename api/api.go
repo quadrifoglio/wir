@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 
+	"github.com/quadrifoglio/wir/config"
 	"github.com/quadrifoglio/wir/errors"
 	"github.com/quadrifoglio/wir/net"
 	"github.com/quadrifoglio/wir/utils"
@@ -16,28 +17,6 @@ import (
 
 const (
 	Version = "0.0.1"
-)
-
-type Config struct {
-	NodeID      byte // (0-255)
-	Address     string
-	Port        int
-	BridgeIface string
-
-	EnableKVM bool
-	Ebtables  string `json:"EbtablesCommand"`
-	QemuImg   string `json:"QemuImgCommand"`
-	QemuNbd   string `json:"QemuNbdCommand"`
-	Qemu      string `json:"QemuCommand"`
-	Vzctl     string `json:"VzctlCommand"`
-
-	DatabaseFile string
-	ImagePath    string
-	MachinePath  string
-}
-
-var (
-	Conf Config
 )
 
 func handleNotFound(w http.ResponseWriter, r *http.Request) {
@@ -55,7 +34,7 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 	type info struct {
 		Name          string
 		Version       string
-		Configuration Config
+		Configuration config.APIConfig
 		Stats         stats
 	}
 
@@ -71,40 +50,38 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fs, err := utils.GetFreeSpace(Conf.MachinePath)
+	fs, err := utils.GetFreeSpace(config.API.MachinePath)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
 	}
 
-	i := info{"wir api", Version, Conf, stats{cpu, ru, rt, fs}}
+	i := info{"wir api", Version, config.API, stats{cpu, ru, rt, fs}}
 	SuccessResponse(i).Send(w, r)
 }
 
-func Start(conf Config) error {
-	Conf = conf
-
-	err := os.MkdirAll(filepath.Dir(Conf.DatabaseFile), 0777)
+func Start() error {
+	err := os.MkdirAll(filepath.Dir(config.API.DatabaseFile), 0777)
 	if err != nil {
 		return err
 	}
 
-	err = os.MkdirAll(Conf.ImagePath, 0777)
+	err = os.MkdirAll(config.API.ImagePath, 0777)
 	if err != nil {
 		return err
 	}
 
-	err = os.MkdirAll(Conf.MachinePath, 0777)
+	err = os.MkdirAll(config.API.MachinePath, 0777)
 	if err != nil {
 		return err
 	}
 
-	err = DBOpen(Conf.DatabaseFile)
+	err = DBOpen(config.API.DatabaseFile)
 	if err != nil {
 		return err
 	}
 
-	err = net.Init(Conf.Ebtables, Conf.BridgeIface)
+	err = net.Init(config.API.Ebtables, config.API.BridgeIface)
 	if err != nil {
 		return err
 	}
@@ -131,5 +108,5 @@ func Start(conf Config) error {
 	r.NotFoundHandler = http.HandlerFunc(handleNotFound)
 	http.Handle("/", handlers.CORS()(r))
 
-	return http.ListenAndServe(fmt.Sprintf("%s:%d", Conf.Address, Conf.Port), nil)
+	return http.ListenAndServe(fmt.Sprintf("%s:%d", config.API.Address, config.API.Port), nil)
 }
