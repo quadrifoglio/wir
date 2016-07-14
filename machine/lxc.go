@@ -32,7 +32,23 @@ func LxcCreate(basePath, name string, img *image.Image, cores, memory int) (Mach
 	}
 
 	tarball := fmt.Sprintf("%s/%s.tar.gz", path, name)
-	if _, err := os.Stat(tarball); os.IsNotExist(err) {
+	checkpoint := fmt.Sprintf("%s/%s.checkpoint.tar.gz", path, name)
+
+	if _, err := os.Stat(tarball); !os.IsNotExist(err) {
+		cmd := exec.Command("tar", "--numeric-owner", "-xzvf", tarball, "-C", path)
+
+		err := cmd.Run()
+		if err != nil {
+			return m, fmt.Errorf("tar: %s", err)
+		}
+	} else if _, err := os.Stat(checkpoint); !os.IsNotExist(err) {
+		// TODO: Uncompress checkpoint tarball
+
+		err := LxcRestore(path, &m)
+		if err != nil {
+			return m, err
+		}
+	} else {
 		c, err := lxc.NewContainer(name, path)
 		if err != nil {
 			return m, err
@@ -55,13 +71,7 @@ func LxcCreate(basePath, name string, img *image.Image, cores, memory int) (Mach
 		if err := c.Create(opts); err != nil {
 			return m, err
 		}
-	} else {
-		cmd := exec.Command("tar", "--numeric-owner", "-xzvf", tarball, "-C", path)
 
-		err := cmd.Run()
-		if err != nil {
-			return m, fmt.Errorf("tar: %s", err)
-		}
 	}
 
 	return m, nil
@@ -206,6 +216,68 @@ func LxcStats(basePath string, m *Machine) (Stats, error) {
 	stats.RAMFree = uint64(m.Memory) - stats.RAMUsed
 
 	return stats, nil
+}
+
+func LxcCheckpoint(basePath string, m *Machine) error {
+	path, err := filepath.Abs(basePath + "lxc/")
+	if err != nil {
+		return err
+	}
+
+	c, err := lxc.NewContainer(m.Name, path)
+	if err != nil {
+		return err
+	}
+
+	c.SetVerbosity(lxc.Verbose)
+
+	path = fmt.Sprintf("%s/%s/checkpoint", path, m.Name)
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		err := os.MkdirAll(path, 0777)
+		if err != nil {
+			return err
+		}
+	} else {
+		err := utils.ClearFolder(path)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = c.Checkpoint(lxc.CheckpointOptions{path, false, true})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func LxcRestore(basePath string, m *Machine) error {
+	path, err := filepath.Abs(basePath + "lxc/")
+	if err != nil {
+		return err
+	}
+
+	c, err := lxc.NewContainer(m.Name, path)
+	if err != nil {
+		return err
+	}
+
+	c.SetVerbosity(lxc.Verbose)
+
+	path = fmt.Sprintf("%s/%s/checkpoint", path, m.Name)
+
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		err = c.Restore(lxc.RestoreOptions{path, true})
+		if err != nil {
+			return err
+		}
+	} else {
+		return fmt.Errorf("restore: no checkpoint")
+	}
+
+	return nil
 }
 
 func LxcStop(basePath string, m *Machine) error {

@@ -453,6 +453,7 @@ func handleMachineMigrate(w http.ResponseWriter, r *http.Request) {
 
 	type Request struct {
 		Target client.Remote
+		Live   bool
 	}
 
 	var req Request
@@ -490,7 +491,7 @@ func handleMachineMigrate(w http.ResponseWriter, r *http.Request) {
 		break
 	}
 
-	if m.State != machine.StateDown {
+	if !req.Live && m.State != machine.StateDown {
 		ErrorResponse(errors.InvalidMachineState).Send(w, r)
 		return
 	}
@@ -500,7 +501,11 @@ func handleMachineMigrate(w http.ResponseWriter, r *http.Request) {
 		err = inter.MigrateQemu(Conf.MachinePath, m, i, client.Remote{Conf.Address, "root", Conf.Port}, req.Target)
 		break
 	case image.TypeLXC:
-		err = inter.MigrateLxc(Conf.MachinePath, m, i, client.Remote{Conf.Address, "root", Conf.Port}, req.Target)
+		if req.Live {
+			err = inter.LiveMigrateLxc(Conf.MachinePath, m, client.Remote{Conf.Address, "root", Conf.Port}, req.Target)
+		} else {
+			err = inter.MigrateLxc(Conf.MachinePath, m, i, client.Remote{Conf.Address, "root", Conf.Port}, req.Target)
+		}
 		break
 	default:
 		ErrorResponse(errors.InvalidImageType)

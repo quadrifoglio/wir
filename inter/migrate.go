@@ -109,3 +109,19 @@ func MigrateLxc(basePath string, m machine.Machine, i image.Image, src, dst clie
 
 	return nil
 }
+
+func LiveMigrateLxc(basePath string, m machine.Machine, src, dst client.Remote) error {
+	err := machine.LxcCheckpoint(basePath, &m)
+	if err != nil {
+		return err
+	}
+
+	err = machine.LxcStop(basePath, &m)
+	if err != nil {
+		return err
+	}
+
+	// TODO: Tarball the checkpoint, ship it to dst via SCP, check success, delete container
+
+	return nil
+}

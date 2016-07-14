@@ -5,11 +5,35 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"syscall"
 
 	"github.com/amoghe/go-crypt"
 )
+
+func ClearFolder(dir string) error {
+	d, err := os.Open(dir)
+	if err != nil {
+		return err
+	}
+
+	defer d.Close()
+
+	names, err := d.Readdirnames(-1)
+	if err != nil {
+		return err
+	}
+
+	for _, name := range names {
+		err = os.RemoveAll(filepath.Join(dir, name))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 
 func NBDConnectQcow2(qemuNbd, dev, file string) error {
 	cmd := exec.Command(qemuNbd, "-c", dev, file)
