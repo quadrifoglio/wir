@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"sync"
 	"time"
@@ -240,8 +239,14 @@ func QemuStats(m *Machine) (Stats, error) {
 		return stats, err
 	}
 
-	// TODO: Increase precision: determine on which core(s) qemu is running
-	stats.CPU = (float32(mtime2-mtime1) / float32(s2.Total-s1.Total)) * 100 * float32(runtime.NumCPU()) / float32(m.Cores)
+	stats.CPU = (float32(mtime2-mtime1) / float32(s2.Total-s1.Total)) * 100
+
+	ram, err := utils.GetProcessRamUsage(m.Qemu.PID)
+	if err != nil {
+		return stats, err
+	}
+
+	stats.RAMUsed = ram
 
 	return stats, nil
 }

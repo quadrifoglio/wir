@@ -36,14 +36,14 @@ func NBDDisconnectQcow2(qemuNbd, dev string) error {
 func Mount(dev, path string) error {
 	err := os.MkdirAll(path, 0777)
 	if err != nil {
-		return fmt.Errorf("mount-tmp: mkdir: %s", err)
+		return fmt.Errorf("mount: mkdir: %s", err)
 	}
 
 	cmd := exec.Command("mount", dev, path)
 
 	err = cmd.Run()
 	if err != nil {
-		return fmt.Errorf("mount-tmp: mount: %s", err)
+		return fmt.Errorf("mount: mount: %s", err)
 	}
 
 	return nil

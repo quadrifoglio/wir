@@ -158,6 +158,36 @@ func GetRamUsage() (uint64, uint64, error) {
 	return (total - (free + buffers + cached)) / mib, total / mib, nil
 }
 
+func GetProcessRamUsage(pid int) (uint64, error) {
+	var result uint64
+
+	f, err := os.Open(fmt.Sprintf("/proc/%d/smaps", pid))
+	if err != nil {
+		return 0, err
+	}
+
+	defer f.Close()
+
+	s := bufio.NewScanner(f)
+	for s.Scan() {
+		l := s.Text()
+
+		if n := strings.Index(l, "Size:"); n != -1 {
+			str := strings.Split(strings.Trim(l[n+6:], " "), " ")[0]
+
+			mem, err := strconv.Atoi(str)
+			if err != nil {
+				return 0, err
+			}
+
+			result = uint64(mem / 1000)
+			break
+		}
+	}
+
+	return result, nil
+}
+
 func GetFreeSpace(dir string) (uint64, error) {
 	var gib uint64 = 1073741824
 	var s syscall.Statfs_t
