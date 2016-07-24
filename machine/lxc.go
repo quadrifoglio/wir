@@ -3,7 +3,6 @@ package machine
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"time"
 
 	"gopkg.in/lxc/go-lxc.v2"
@@ -22,61 +21,41 @@ func LxcCreate(name string, img *image.Image, cores, memory int) (Machine, error
 	m.Memory = memory
 	m.State = StateDown
 
-	path := config.API.MachinePath + "lxc"
+	path := fmt.Sprintf("%s/lxc", config.API.MachinePath)
 
 	err := os.MkdirAll(path, 0777)
 	if err != nil {
 		return m, err
 	}
 
-	tarball := fmt.Sprintf("%s/%s.tar.gz", path, name)
-	checkpoint := fmt.Sprintf("%s/%s.checkpoint.tar.gz", path, name)
+	c, err := lxc.NewContainer(name, path)
+	if err != nil {
+		return m, err
+	}
 
-	if _, err := os.Stat(tarball); !os.IsNotExist(err) {
-		cmd := exec.Command("tar", "--numeric-owner", "-xzvf", tarball, "-C", path)
+	c.SetVerbosity(lxc.Verbose)
 
-		err := cmd.Run()
-		if err != nil {
-			return m, fmt.Errorf("tar: %s", err)
-		}
-	} else if _, err := os.Stat(checkpoint); !os.IsNotExist(err) {
-		// TODO: Uncompress checkpoint tarball
+	if err := c.SetLogFile(path + "/" + m.Name + "/log.txt"); err != nil {
+		return m, err
+	}
 
-		err := LxcRestore(&m)
-		if err != nil {
-			return m, err
-		}
-	} else {
-		c, err := lxc.NewContainer(name, path)
-		if err != nil {
-			return m, err
-		}
+	var opts lxc.TemplateOptions
+	opts.Template = img.Source
+	opts.Distro = img.Distro
+	opts.Release = img.Release
+	opts.Arch = img.Arch
+	opts.FlushCache = false
+	opts.DisableGPGValidation = false
 
-		c.SetVerbosity(lxc.Verbose)
-
-		if err := c.SetLogFile(path + "/" + m.Name + "/log.txt"); err != nil {
-			return m, err
-		}
-
-		var opts lxc.TemplateOptions
-		opts.Template = img.Source
-		opts.Distro = img.Distro
-		opts.Release = img.Release
-		opts.Arch = img.Arch
-		opts.FlushCache = false
-		opts.DisableGPGValidation = false
-
-		if err := c.Create(opts); err != nil {
-			return m, err
-		}
-
+	if err := c.Create(opts); err != nil {
+		return m, err
 	}
 
 	return m, nil
 }
 
 func LxcStart(m *Machine) error {
-	path := config.API.MachinePath + "lxc"
+	path := fmt.Sprintf("%s/lxc", config.API.MachinePath)
 
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {
@@ -84,6 +63,11 @@ func LxcStart(m *Machine) error {
 	}
 
 	c.SetVerbosity(lxc.Verbose)
+
+	err = c.Start()
+	if err != nil {
+		return err
+	}
 
 	if m.Network.Mode == NetworkModeBridge {
 		if err := c.SetConfigItem("lxc.network.hwaddr", m.Network.MAC); err != nil {
@@ -100,11 +84,6 @@ func LxcStart(m *Machine) error {
 		}
 	}
 
-	err = c.Start()
-	if err != nil {
-		return err
-	}
-
 	/*err = c.SetMemoryLimit(lxc.ByteSize(m.Memory) * lxc.MB)
 	if err != nil {
 		return err
@@ -114,7 +93,7 @@ func LxcStart(m *Machine) error {
 }
 
 func LxcLinuxSysprep(m *Machine, hostname, root string) error {
-	path := config.API.MachinePath + "lxc"
+	path := fmt.Sprintf("%s/lxc", config.API.MachinePath)
 
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {
@@ -136,7 +115,7 @@ func LxcLinuxSysprep(m *Machine, hostname, root string) error {
 }
 
 func LxcCheck(m *Machine) error {
-	path := config.API.MachinePath + "lxc"
+	path := fmt.Sprintf("%s/lxc", config.API.MachinePath)
 
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {
@@ -158,7 +137,7 @@ func LxcCheck(m *Machine) error {
 func LxcStats(m *Machine) (Stats, error) {
 	var stats Stats
 
-	path := config.API.MachinePath + "lxc"
+	path := fmt.Sprintf("%s/lxc", config.API.MachinePath)
 
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {
@@ -205,7 +184,7 @@ func LxcStats(m *Machine) (Stats, error) {
 }
 
 func LxcCheckpoint(m *Machine) error {
-	path := config.API.MachinePath + "lxc"
+	path := fmt.Sprintf("%s/lxc", config.API.MachinePath)
 
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {
@@ -237,7 +216,7 @@ func LxcCheckpoint(m *Machine) error {
 }
 
 func LxcRestore(m *Machine) error {
-	path := config.API.MachinePath + "lxc"
+	path := fmt.Sprintf("%s/lxc", config.API.MachinePath)
 
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {
@@ -261,7 +240,7 @@ func LxcRestore(m *Machine) error {
 }
 
 func LxcStop(m *Machine) error {
-	path := config.API.MachinePath + "lxc"
+	path := fmt.Sprintf("%s/lxc", config.API.MachinePath)
 
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {
@@ -279,7 +258,7 @@ func LxcStop(m *Machine) error {
 }
 
 func LxcDelete(m *Machine) error {
-	path := config.API.MachinePath + "lxc"
+	path := fmt.Sprintf("%s/lxc", config.API.MachinePath)
 
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {

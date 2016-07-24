@@ -12,6 +12,6 @@
 	"VzctlCommand": "/usr/sbin/vzctl",
 
 	"DatabaseFile": "/var/lib/wir/wir.db",
-	"ImagePath": "/var/lib/wir/images/",
-	"MachinePath": "/var/lib/wir/machines/"
+	"ImagePath": "/var/lib/wir/images",
+	"MachinePath": "/var/lib/wir/machines"
 }

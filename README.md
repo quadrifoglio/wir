@@ -15,11 +15,12 @@ Self-hosted virtualization platform.
 ## Backends
 
 * qemu/kvm
-* lxc (using liblxc)
-* openvz (vzctl)
+* lxc
+* openvz
 
 ## Requirements
 
-* one of the supported backends
+* one of the supported backends (qemu-system, qemu-utils, lxc-dev, vzctl)
 * bridge-utils
+* ebtables
 * for qemu sysprep (optional): nbd kernel module, qemu-nbd, partx (util-linux)

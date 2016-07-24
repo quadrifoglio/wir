@@ -321,7 +321,7 @@ func handleMachineStart(w http.ResponseWriter, r *http.Request) {
 
 	switch m.Type {
 	case image.TypeQemu:
-		err = machine.QemuStart(&m, config.API.MachinePath)
+		err = machine.QemuStart(&m)
 		break
 	case image.TypeVz:
 		err = machine.VzStart(&m)
@@ -504,9 +504,9 @@ func handleMachineMigrate(w http.ResponseWriter, r *http.Request) {
 		break
 	case image.TypeLXC:
 		if req.Live {
-			err = inter.LiveMigrateLxc(m, client.Remote{config.API.Address, "root", config.API.Port}, req.Target)
+			//err = inter.LiveMigrateLxc(m, client.Remote{config.API.Address, "root", config.API.Port}, req.Target)
 		} else {
-			err = inter.MigrateLxc(m, i, client.Remote{config.API.Address, "root", config.API.Port}, req.Target)
+			//err = inter.MigrateLxc(m, i, client.Remote{config.API.Address, "root", config.API.Port}, req.Target)
 		}
 		break
 	default:

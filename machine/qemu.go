@@ -30,7 +30,7 @@ func QemuCreate(name string, img *image.Image, cores, memory int) (Machine, erro
 	m.Cores = cores
 	m.Memory = memory
 
-	path := config.API.MachinePath + "qemu/" + name + ".qcow2"
+	path := fmt.Sprintf("%s/qemu/%s.qcow2", config.API.MachinePath, name)
 
 	err := os.MkdirAll(filepath.Dir(path), 0777)
 	if err != nil {
@@ -53,7 +53,7 @@ func QemuCreate(name string, img *image.Image, cores, memory int) (Machine, erro
 	return m, nil
 }
 
-func QemuStart(m *Machine, basePath string) error {
+func QemuStart(m *Machine) error {
 	m.State = StateDown
 
 	args := make([]string, 8)
@@ -62,7 +62,7 @@ func QemuStart(m *Machine, basePath string) error {
 	args[2] = "-smp"
 	args[3] = strconv.Itoa(m.Cores)
 	args[4] = "-hda"
-	args[5] = basePath + "qemu/" + m.Name + ".qcow2"
+	args[5] = fmt.Sprintf("%s/qemu/%s.qcow2", config.API.MachinePath, m.Name)
 	args[6] = "-vnc"
 	args[7] = fmt.Sprintf(":%d", m.Index)
 
@@ -163,7 +163,7 @@ func QemuLinuxSysprep(m *Machine, mainPart int, hostname, root string) error {
 	hostnameFile := path + "/etc/hostname"
 	shadowFile := path + "/etc/shadow"
 
-	err := utils.NBDConnectQcow2(config.API.QemuNbd, "/dev/nbd0", config.API.MachinePath+"qemu/"+m.Name+".qcow2")
+	err := utils.NBDConnectQcow2(config.API.QemuNbd, "/dev/nbd0", fmt.Sprintf("%s/qemu/%s.qcow2", config.API.MachinePath, m.Name))
 	if err != nil {
 		return err
 	}

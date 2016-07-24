@@ -2,7 +2,6 @@ package inter
 
 import (
 	"fmt"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/quadrifoglio/wir/client"
@@ -46,8 +45,8 @@ func MigrateQemu(m machine.Machine, i image.Image, src, dst client.Remote) error
 		return fmt.Errorf("failed to get remote config: %s", err)
 	}
 
-	srcPath := config.API.MachinePath + "qemu/" + m.Name + ".qcow2"
-	dstPath := conf.MachinePath + "qemu/" + m.Name + ".qcow2"
+	srcPath := fmt.Sprintf("%s/qemu/%s.qcow2", config.API.MachinePath, m.Name)
+	dstPath := fmt.Sprintf("%s/qemu/%s.qcow2", conf.MachinePath, m.Name)
 
 	err = RemoteMkdir(dst, filepath.Dir(dstPath))
 	if err != nil {
@@ -65,62 +64,6 @@ func MigrateQemu(m machine.Machine, i image.Image, src, dst client.Remote) error
 	if err != nil {
 		return fmt.Errorf("failed to create remote machine: %s", err)
 	}
-
-	return nil
-}
-
-func MigrateLxc(m machine.Machine, i image.Image, src, dst client.Remote) error {
-	err := MigrateImage(i, src, dst)
-	if err != nil {
-		return err
-	}
-
-	conf, err := client.GetConfig(dst)
-	if err != nil {
-		return fmt.Errorf("Remote configuration: %s", err)
-	}
-
-	tarball := fmt.Sprintf("%s/%s.tar.gz", m.Name)
-	dstPath := conf.MachinePath + "lxc/" + m.Name
-	cmd := exec.Command("tar", "--numeric-owner", "-czvf", tarball, "-C", m.Name)
-
-	err = cmd.Run()
-	if err != nil {
-		return fmt.Errorf("tar: %s", err)
-	}
-
-	err = RemoteMkdir(dst, filepath.Dir(dstPath))
-	if err != nil {
-		return fmt.Errorf("MkdirRemote: %s", err)
-	}
-
-	err = SCP(tarball, dst, dstPath+".tar.gz")
-	if err != nil {
-		return fmt.Errorf("SCP to remote: %s", err)
-	}
-
-	r := client.MachineRequest{m.Name, m.Image, m.Cores, m.Memory, m.Network}
-
-	_, err = client.CreateMachine(dst, r)
-	if err != nil {
-		return fmt.Errorf("Remote machine: %s", err)
-	}
-
-	return nil
-}
-
-func LiveMigrateLxc(m machine.Machine, src, dst client.Remote) error {
-	err := machine.LxcCheckpoint(&m)
-	if err != nil {
-		return err
-	}
-
-	err = machine.LxcStop(&m)
-	if err != nil {
-		return err
-	}
-
-	// TODO: Tarball the checkpoint, ship it to dst via SCP, check success, delete container
 
 	return nil
 }

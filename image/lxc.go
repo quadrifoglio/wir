@@ -1,15 +1,17 @@
 package image
 
 import (
+	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
 
+	"github.com/quadrifoglio/wir/config"
 	"github.com/quadrifoglio/wir/errors"
 	"github.com/quadrifoglio/wir/utils"
 )
 
-func LxcCreate(name, src, basePath string) (Image, error) {
+func LxcCreate(name, src string) (Image, error) {
 	var i Image
 
 	url, err := url.Parse(src)
@@ -21,7 +23,7 @@ func LxcCreate(name, src, basePath string) (Image, error) {
 		return i, errors.UnsupportedProto
 	}
 
-	path := basePath + "lxc/" + name
+	path := fmt.Sprintf("%s/lxc/%s", config.API.ImagePath, name)
 
 	err = os.MkdirAll(filepath.Dir(path), 0777)
 	if err != nil {

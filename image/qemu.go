@@ -1,15 +1,17 @@
 package image
 
 import (
+	"fmt"
 	"net/url"
 	"os"
 	"path/filepath"
 
+	"github.com/quadrifoglio/wir/config"
 	"github.com/quadrifoglio/wir/errors"
 	"github.com/quadrifoglio/wir/utils"
 )
 
-func QemuCreate(name, src, basePath string) (Image, error) {
+func QemuCreate(name, src string) (Image, error) {
 	var i Image
 
 	url, err := url.Parse(src)
@@ -21,7 +23,7 @@ func QemuCreate(name, src, basePath string) (Image, error) {
 		return i, errors.UnsupportedProto
 	}
 
-	path := basePath + "qemu/" + name + ".qcow2"
+	path := fmt.Sprintf("%s/qemu/%s.qcow2", config.API.ImagePath, name)
 
 	err = os.MkdirAll(filepath.Dir(path), 0777)
 	if err != nil {
