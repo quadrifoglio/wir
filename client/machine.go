@@ -151,14 +151,15 @@ func StopMachine(target Remote, name string) error {
 	return apiError(r.ResponseBase)
 }
 
-func MigrateMachine(target Remote, name string, remote Remote) error {
+func MigrateMachine(target Remote, name string, remote Remote, live bool) error {
 	var r ResponseBase
 
 	type request struct {
 		Target Remote
+		Live   bool
 	}
 
-	data, err := json.Marshal(request{remote})
+	data, err := json.Marshal(request{remote, live})
 	if err != nil {
 		return fmt.Errorf("json: %s", err)
 	}

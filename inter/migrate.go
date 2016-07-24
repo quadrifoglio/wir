@@ -65,5 +65,19 @@ func MigrateQemu(m machine.Machine, i image.Image, src, dst client.Remote) error
 		return fmt.Errorf("failed to create remote machine: %s", err)
 	}
 
+	err = machine.QemuDelete(&m)
+	if err != nil {
+		return fmt.Errorf("failed to delete local machine: %s", err)
+	}
+
 	return nil
+}
+
+func LiveMigrateQemu(m machine.Machine, i image.Image, src, dst client.Remote) error {
+	err := machine.QemuCheckpoint(&m)
+	if err != nil {
+		return fmt.Errorf("failed to snapshot: %s", err)
+	}
+
+	return MigrateQemu(m, i, src, dst)
 }

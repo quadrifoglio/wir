@@ -69,6 +69,7 @@ var (
 
 	machineMigrate       = cmdMachine.Command("migrate", "Migrate machine")
 	machineMigrateName   = machineMigrate.Arg("name", "Machine name").Required().String()
+	machineMigrateLive   = machineMigrate.Flag("live", "Live migration").Bool()
 	machineMigrateTarget = machineMigrate.Arg("target", "Target node (user@ip:port)").Required().String()
 
 	machineDelete     = cmdMachine.Command("delete", "Delete a machine")
@@ -142,7 +143,7 @@ func main() {
 		stopMachine(remote, *machineStopName)
 		break
 	case "machine migrate":
-		migrateMachine(remote, *machineMigrateName, *machineMigrateTarget)
+		migrateMachine(remote, *machineMigrateName, *machineMigrateTarget, *machineMigrateLive)
 		break
 	case "machine delete":
 		deleteMachine(remote, *machineDeleteName)

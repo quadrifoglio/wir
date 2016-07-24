@@ -95,7 +95,7 @@ func stopMachine(target client.Remote, name string) {
 	}
 }
 
-func migrateMachine(target client.Remote, name, remotestr string) {
+func migrateMachine(target client.Remote, name, remotestr string, live bool) {
 	s := strings.Split(remotestr, ":")
 	if len(s) <= 1 {
 		fatal(fmt.Errorf("target node must be ip:port (ex: 149.91.13.2:8964)"))
@@ -106,7 +106,7 @@ func migrateMachine(target client.Remote, name, remotestr string) {
 		fatal(fmt.Errorf("port must be an integer"))
 	}
 
-	err = client.MigrateMachine(target, name, client.Remote{s[0], target.SSHUser, v})
+	err = client.MigrateMachine(target, name, client.Remote{s[0], target.SSHUser, v}, live)
 	if err != nil {
 		fatal(err)
 	}

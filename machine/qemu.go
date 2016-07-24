@@ -2,6 +2,7 @@ package machine
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -10,6 +11,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	gonet "net"
 
 	"github.com/quadrifoglio/wir/config"
 	"github.com/quadrifoglio/wir/errors"
@@ -56,7 +59,7 @@ func QemuCreate(name string, img *image.Image, cores, memory int) (Machine, erro
 func QemuStart(m *Machine) error {
 	m.State = StateDown
 
-	args := make([]string, 8)
+	args := make([]string, 10)
 	args[0] = "-m"
 	args[1] = strconv.Itoa(m.Memory)
 	args[2] = "-smp"
@@ -65,6 +68,8 @@ func QemuStart(m *Machine) error {
 	args[5] = fmt.Sprintf("%s/qemu/%s.qcow2", config.API.MachinePath, m.Name)
 	args[6] = "-vnc"
 	args[7] = fmt.Sprintf(":%d", m.Index)
+	args[8] = "-qmp"
+	args[9] = fmt.Sprintf("unix:%s/qemu/%s.sock,server,nowait", config.API.MachinePath, m.Name)
 
 	if config.API.EnableKVM {
 		args = append(args, "-enable-kvm")
@@ -250,6 +255,65 @@ func QemuStats(m *Machine) (Stats, error) {
 	stats.RAMUsed = ram
 
 	return stats, nil
+}
+
+func QemuCheckpoint(m *Machine) error {
+	c, err := gonet.Dial("unix", fmt.Sprintf("%s/qemu/%s.sock", config.API.MachinePath, m.Name))
+	if err != nil {
+		return err
+	}
+
+	defer c.Close()
+
+	var resp map[string]interface{}
+
+	err = json.NewDecoder(c).Decode(&resp)
+	if err != nil {
+		return fmt.Errorf("qmp: failed to decode json response")
+	}
+
+	if _, ok := resp["QMP"]; !ok {
+		return fmt.Errorf("qmp: invalid greeting response")
+	}
+
+	_, err = c.Write([]byte("{\"execute\": \"qmp_capabilities\"}"))
+	if err != nil {
+		return fmt.Errorf("qmp: write: qmp_capabilities failed")
+	}
+
+	resp = nil
+	err = json.NewDecoder(c).Decode(&resp)
+	if err != nil {
+		return fmt.Errorf("qmp: failed to decode json response")
+	}
+
+	if _, ok := resp["return"]; !ok {
+		return fmt.Errorf("qmp: invalid return response")
+	}
+
+	_, err = c.Write([]byte("{\"execute\": \"human-monitor-command\", \"arguments\": {\"command-line\": \"stop\"}}"))
+	if err != nil {
+		return fmt.Errorf("qmp: write: stop failed")
+	}
+
+	resp = nil
+	err = json.NewDecoder(c).Decode(&resp)
+	if err != nil {
+		return fmt.Errorf("qmp: failed to decode json response")
+	}
+
+	_, err = c.Write([]byte("{\"execute\": \"human-monitor-command\", \"arguments\": {\"command-line\": \"savevm checkpoint\"}}"))
+	if err != nil {
+		return fmt.Errorf("qmp: write: savevm failed")
+	}
+
+	resp = nil
+	err = json.NewDecoder(c).Decode(&resp)
+	if err != nil {
+		return fmt.Errorf("qmp: failed to decode json response")
+	}
+
+	return nil
 }
 
 func QemuStop(m *Machine) error {

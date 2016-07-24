@@ -83,9 +83,8 @@ func DBGetImage(name string) (image.Image, error) {
 
 	err := Database.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(ImagesBucket)
-
 		if bucket == nil {
-			return fmt.Errorf("Missing database bucket: %s", ImagesBucket)
+			return errors.NotFound
 		}
 
 		data := bucket.Get([]byte(name))

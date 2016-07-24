@@ -493,14 +493,18 @@ func handleMachineMigrate(w http.ResponseWriter, r *http.Request) {
 		break
 	}
 
-	if !req.Live && m.State != machine.StateDown {
+	if (req.Live && m.State != machine.StateUp) || (!req.Live && m.State != machine.StateDown) {
 		ErrorResponse(errors.InvalidMachineState).Send(w, r)
 		return
 	}
 
 	switch m.Type {
 	case image.TypeQemu:
-		err = inter.MigrateQemu(m, i, client.Remote{config.API.Address, "root", config.API.Port}, req.Target)
+		if req.Live {
+			err = inter.LiveMigrateQemu(m, i, client.Remote{config.API.Address, "root", config.API.Port}, req.Target)
+		} else {
+			err = inter.MigrateQemu(m, i, client.Remote{config.API.Address, "root", config.API.Port}, req.Target)
+		}
 		break
 	case image.TypeLXC:
 		if req.Live {
