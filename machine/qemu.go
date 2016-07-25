@@ -2,7 +2,6 @@ package machine
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -12,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	gonet "net"
+	"github.com/quadrifoglio/go-qmp"
 
 	"github.com/quadrifoglio/wir/config"
 	"github.com/quadrifoglio/wir/errors"
@@ -258,59 +257,21 @@ func QemuStats(m *Machine) (Stats, error) {
 }
 
 func QemuCheckpoint(m *Machine) error {
-	c, err := gonet.Dial("unix", fmt.Sprintf("%s/qemu/%s.sock", config.API.MachinePath, m.Name))
+	c, err := qmp.Open("unix", fmt.Sprintf("%s/qemu/%s.sock", config.API.MachinePath, m.Name))
 	if err != nil {
 		return err
 	}
 
 	defer c.Close()
 
-	var resp map[string]interface{}
-
-	err = json.NewDecoder(c).Decode(&resp)
+	_, err = c.Command("stop", nil)
 	if err != nil {
-		return fmt.Errorf("qmp: failed to decode json response")
+		return err
 	}
 
-	if _, ok := resp["QMP"]; !ok {
-		return fmt.Errorf("qmp: invalid greeting response")
-	}
-
-	_, err = c.Write([]byte("{\"execute\": \"qmp_capabilities\"}"))
+	_, err = c.HumanMonitorCommand("savevm checkpoint")
 	if err != nil {
-		return fmt.Errorf("qmp: write: qmp_capabilities failed")
-	}
-
-	resp = nil
-	err = json.NewDecoder(c).Decode(&resp)
-	if err != nil {
-		return fmt.Errorf("qmp: failed to decode json response")
-	}
-
-	if _, ok := resp["return"]; !ok {
-		return fmt.Errorf("qmp: invalid return response")
-	}
-
-	_, err = c.Write([]byte("{\"execute\": \"human-monitor-command\", \"arguments\": {\"command-line\": \"stop\"}}"))
-	if err != nil {
-		return fmt.Errorf("qmp: write: stop failed")
-	}
-
-	resp = nil
-	err = json.NewDecoder(c).Decode(&resp)
-	if err != nil {
-		return fmt.Errorf("qmp: failed to decode json response")
-	}
-
-	_, err = c.Write([]byte("{\"execute\": \"human-monitor-command\", \"arguments\": {\"command-line\": \"savevm checkpoint\"}}"))
-	if err != nil {
-		return fmt.Errorf("qmp: write: savevm failed")
-	}
-
-	resp = nil
-	err = json.NewDecoder(c).Decode(&resp)
-	if err != nil {
-		return fmt.Errorf("qmp: failed to decode json response")
+		return err
 	}
 
 	return nil
