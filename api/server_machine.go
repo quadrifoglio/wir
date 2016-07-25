@@ -570,12 +570,12 @@ func handleMachineDelete(w http.ResponseWriter, r *http.Request) {
 		break
 	}
 
+	err = DBDeleteMachine(name)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
 	}
 
-	DBDeleteMachine(name)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return

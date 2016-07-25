@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -72,6 +73,11 @@ func QemuStart(m *Machine) error {
 
 	if config.API.EnableKVM {
 		args = append(args, "-enable-kvm")
+	}
+
+	if QemuHasCheckpoint(m) {
+		args = append(args, "-loadvm")
+		args = append(args, "checkpoint")
 	}
 
 	if m.Network.Mode == NetworkModeBridge {
@@ -153,6 +159,13 @@ func QemuStart(m *Machine) error {
 	default:
 		m.State = StateUp
 		break
+	}
+
+	if QemuHasCheckpoint(m) {
+		err := QemuDeleteCheckpoint(m)
+		if err != nil {
+			return err
+		}
 	}
 
 	m.Qemu.PID = cmd.Process.Pid
@@ -256,6 +269,22 @@ func QemuStats(m *Machine) (Stats, error) {
 	return stats, nil
 }
 
+func QemuHasCheckpoint(m *Machine) bool {
+	path := fmt.Sprintf("%s/qemu/%s.qcow2", config.API.MachinePath, m.Name)
+	cmd := exec.Command(config.API.QemuImg, "snapshot", "-l", path)
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return false
+	}
+
+	if strings.Contains(string(out), "checkpoint") {
+		return true
+	}
+
+	return false
+}
+
 func QemuCheckpoint(m *Machine) error {
 	c, err := qmp.Open("unix", fmt.Sprintf("%s/qemu/%s.sock", config.API.MachinePath, m.Name))
 	if err != nil {
@@ -272,6 +301,18 @@ func QemuCheckpoint(m *Machine) error {
 	_, err = c.HumanMonitorCommand("savevm checkpoint")
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func QemuDeleteCheckpoint(m *Machine) error {
+	path := fmt.Sprintf("%s/qemu/%s.qcow2", config.API.MachinePath, m.Name)
+	cmd := exec.Command(config.API.QemuImg, "snapshot", "-d", "checkpoint", path)
+
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf("delete checkpoint: %s", err)
 	}
 
 	return nil
@@ -308,6 +349,11 @@ func QemuDelete(m *Machine) error {
 		}
 
 		tap.Close()
+	}
+
+	err := os.Remove(fmt.Sprintf("%s/qemu/%s.qcow2", config.API.MachinePath, m.Name))
+	if err != nil {
+		return fmt.Errorf("remove disk file: %s", err)
 	}
 
 	return nil

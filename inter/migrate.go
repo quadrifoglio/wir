@@ -65,6 +65,11 @@ func MigrateQemu(m machine.Machine, i image.Image, src, dst client.Remote) error
 		return fmt.Errorf("failed to create remote machine: %s", err)
 	}
 
+	err = machine.QemuStop(&m)
+	if err != nil {
+		return fmt.Errorf("failed to stop local machine: %s", err)
+	}
+
 	err = machine.QemuDelete(&m)
 	if err != nil {
 		return fmt.Errorf("failed to delete local machine: %s", err)
