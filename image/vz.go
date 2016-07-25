@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/quadrifoglio/wir/config"
+	"github.com/quadrifoglio/wir/global"
 	"github.com/quadrifoglio/wir/errors"
 	"github.com/quadrifoglio/wir/utils"
 )
@@ -23,7 +23,7 @@ func VzCreate(name, src string) (Image, error) {
 		return i, errors.UnsupportedProto
 	}
 
-	path := fmt.Sprintf("%s/vz/%s.tar.gz", config.API.ImagePath, name)
+	path := fmt.Sprintf("%s/vz/%s.tar.gz", global.APIConfig.ImagePath, name)
 
 	err = os.MkdirAll(filepath.Dir(path), 0777)
 	if err != nil {

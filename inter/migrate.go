@@ -5,12 +5,12 @@ import (
 	"path/filepath"
 
 	"github.com/quadrifoglio/wir/client"
-	"github.com/quadrifoglio/wir/config"
+	"github.com/quadrifoglio/wir/global"
 	"github.com/quadrifoglio/wir/image"
 	"github.com/quadrifoglio/wir/machine"
 )
 
-func MigrateImage(i image.Image, src, dst client.Remote) error {
+func MigrateImage(i image.Image, src, dst global.Remote) error {
 	_, err := client.GetImage(dst, i.Name)
 	if err == nil {
 		return nil
@@ -34,7 +34,7 @@ func MigrateImage(i image.Image, src, dst client.Remote) error {
 	return nil
 }
 
-func MigrateQemu(m machine.Machine, i image.Image, src, dst client.Remote) error {
+func MigrateQemu(m machine.Machine, i image.Image, src, dst global.Remote) error {
 	err := MigrateImage(i, src, dst)
 	if err != nil {
 		return err
@@ -45,7 +45,7 @@ func MigrateQemu(m machine.Machine, i image.Image, src, dst client.Remote) error
 		return fmt.Errorf("failed to get remote config: %s", err)
 	}
 
-	srcPath := fmt.Sprintf("%s/qemu/%s.qcow2", config.API.MachinePath, m.Name)
+	srcPath := fmt.Sprintf("%s/qemu/%s.qcow2", global.APIConfig.MachinePath, m.Name)
 	dstPath := fmt.Sprintf("%s/qemu/%s.qcow2", conf.MachinePath, m.Name)
 
 	err = RemoteMkdir(dst, filepath.Dir(dstPath))
@@ -78,7 +78,7 @@ func MigrateQemu(m machine.Machine, i image.Image, src, dst client.Remote) error
 	return nil
 }
 
-func LiveMigrateQemu(m machine.Machine, i image.Image, src, dst client.Remote) error {
+func LiveMigrateQemu(m machine.Machine, i image.Image, src, dst global.Remote) error {
 	err := machine.QemuCheckpoint(&m)
 	if err != nil {
 		return fmt.Errorf("failed to snapshot: %s", err)

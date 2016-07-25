@@ -7,11 +7,13 @@ import (
 	"strings"
 
 	"github.com/olekukonko/tablewriter"
+
 	"github.com/quadrifoglio/wir/client"
+	"github.com/quadrifoglio/wir/global"
 	"github.com/quadrifoglio/wir/machine"
 )
 
-func listMachines(target client.Remote, raw bool) {
+func listMachines(target global.Remote, raw bool) {
 	ms, err := client.ListMachines(target)
 	if err != nil {
 		fatal(err)
@@ -35,7 +37,7 @@ func listMachines(target client.Remote, raw bool) {
 	}
 }
 
-func createMachine(target client.Remote, name, img string, cpus, mem int, net machine.NetworkSetup) {
+func createMachine(target global.Remote, name, img string, cpus, mem int, net machine.NetworkSetup) {
 	var req client.MachineRequest
 	req.Name = name
 	req.Image = img
@@ -51,7 +53,7 @@ func createMachine(target client.Remote, name, img string, cpus, mem int, net ma
 	fmt.Println(m.Name)
 }
 
-func showMachine(target client.Remote, name string) {
+func showMachine(target global.Remote, name string) {
 	m, err := client.GetMachine(target, name)
 	if err != nil {
 		fatal(err)
@@ -69,7 +71,7 @@ func showMachine(target client.Remote, name string) {
 	fmt.Println("IP:", m.Network.IP)
 }
 
-func updateMachine(target client.Remote, name string, cpus, mem int, net machine.NetworkSetup) {
+func updateMachine(target global.Remote, name string, cpus, mem int, net machine.NetworkSetup) {
 	var req client.MachineRequest
 	req.Cores = cpus
 	req.Memory = mem
@@ -81,21 +83,21 @@ func updateMachine(target client.Remote, name string, cpus, mem int, net machine
 	}
 }
 
-func startMachine(target client.Remote, name string) {
+func startMachine(target global.Remote, name string) {
 	err := client.StartMachine(target, name)
 	if err != nil {
 		fatal(err)
 	}
 }
 
-func stopMachine(target client.Remote, name string) {
+func stopMachine(target global.Remote, name string) {
 	err := client.StopMachine(target, name)
 	if err != nil {
 		fatal(err)
 	}
 }
 
-func migrateMachine(target client.Remote, name, remotestr string, live bool) {
+func migrateMachine(target global.Remote, name, remotestr string, live bool) {
 	s := strings.Split(remotestr, ":")
 	if len(s) <= 1 {
 		fatal(fmt.Errorf("target node must be ip:port (ex: 149.91.13.2:8964)"))
@@ -106,13 +108,13 @@ func migrateMachine(target client.Remote, name, remotestr string, live bool) {
 		fatal(fmt.Errorf("port must be an integer"))
 	}
 
-	err = client.MigrateMachine(target, name, client.Remote{s[0], target.SSHUser, v}, live)
+	err = client.MigrateMachine(target, name, global.Remote{s[0], target.SSHUser, v}, live)
 	if err != nil {
 		fatal(err)
 	}
 }
 
-func deleteMachine(target client.Remote, name string) {
+func deleteMachine(target global.Remote, name string) {
 	err := client.DeleteMachine(target, name)
 	if err != nil {
 		fatal(err)

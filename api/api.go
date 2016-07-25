@@ -9,8 +9,8 @@ import (
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 
-	"github.com/quadrifoglio/wir/config"
 	"github.com/quadrifoglio/wir/errors"
+	"github.com/quadrifoglio/wir/global"
 	"github.com/quadrifoglio/wir/net"
 	"github.com/quadrifoglio/wir/utils"
 )
@@ -34,7 +34,7 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 	type info struct {
 		Name          string
 		Version       string
-		Configuration config.APIConfig
+		Configuration global.APIConfigStruct
 		Stats         stats
 	}
 
@@ -50,38 +50,38 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fs, err := utils.GetFreeSpace(config.API.MachinePath)
+	fs, err := utils.GetFreeSpace(global.APIConfig.MachinePath)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
 	}
 
-	i := info{"wir api", Version, config.API, stats{cpu, ru, rt, fs}}
+	i := info{"wir api", Version, global.APIConfig, stats{cpu, ru, rt, fs}}
 	SuccessResponse(i).Send(w, r)
 }
 
 func Start() error {
-	err := os.MkdirAll(filepath.Dir(config.API.DatabaseFile), 0777)
+	err := os.MkdirAll(filepath.Dir(global.APIConfig.DatabaseFile), 0777)
 	if err != nil {
 		return err
 	}
 
-	err = os.MkdirAll(config.API.ImagePath, 0777)
+	err = os.MkdirAll(global.APIConfig.ImagePath, 0777)
 	if err != nil {
 		return err
 	}
 
-	err = os.MkdirAll(config.API.MachinePath, 0777)
+	err = os.MkdirAll(global.APIConfig.MachinePath, 0777)
 	if err != nil {
 		return err
 	}
 
-	err = DBOpen(config.API.DatabaseFile)
+	err = DBOpen(global.APIConfig.DatabaseFile)
 	if err != nil {
 		return err
 	}
 
-	err = net.Init(config.API.Ebtables, config.API.BridgeIface)
+	err = net.Init(global.APIConfig.Ebtables, global.APIConfig.BridgeIface)
 	if err != nil {
 		return err
 	}
@@ -108,5 +108,5 @@ func Start() error {
 	r.NotFoundHandler = http.HandlerFunc(handleNotFound)
 	http.Handle("/", handlers.CORS()(r))
 
-	return http.ListenAndServe(fmt.Sprintf("%s:%d", config.API.Address, config.API.Port), nil)
+	return http.ListenAndServe(fmt.Sprintf("%s:%d", global.APIConfig.Address, global.APIConfig.Port), nil)
 }

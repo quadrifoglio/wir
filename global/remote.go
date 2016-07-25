@@ -1,4 +1,4 @@
-package client
+package global
 
 type Remote struct {
 	Addr    string

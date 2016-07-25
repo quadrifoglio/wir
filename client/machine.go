@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/quadrifoglio/wir/global"
 	"github.com/quadrifoglio/wir/machine"
 )
 
@@ -20,7 +21,7 @@ type LinuxSysprep struct {
 	RootPasswd string
 }
 
-func ListMachines(target Remote) ([]machine.Machine, error) {
+func ListMachines(target global.Remote) ([]machine.Machine, error) {
 	type Response struct {
 		ResponseBase
 		Content []machine.Machine
@@ -41,7 +42,7 @@ func ListMachines(target Remote) ([]machine.Machine, error) {
 	return r.Content, apiError(r.ResponseBase)
 }
 
-func CreateMachine(target Remote, i MachineRequest) (machine.Machine, error) {
+func CreateMachine(target global.Remote, i MachineRequest) (machine.Machine, error) {
 	type Response struct {
 		ResponseBase
 		Content machine.Machine
@@ -67,7 +68,7 @@ func CreateMachine(target Remote, i MachineRequest) (machine.Machine, error) {
 	return r.Content, apiError(r.ResponseBase)
 }
 
-func GetMachine(target Remote, name string) (machine.Machine, error) {
+func GetMachine(target global.Remote, name string) (machine.Machine, error) {
 	type Response struct {
 		ResponseBase
 		Content machine.Machine
@@ -88,7 +89,7 @@ func GetMachine(target Remote, name string) (machine.Machine, error) {
 	return r.Content, apiError(r.ResponseBase)
 }
 
-func UpdateMachine(target Remote, name string, i MachineRequest) error {
+func UpdateMachine(target global.Remote, name string, i MachineRequest) error {
 	var r ResponseBase
 
 	data, err := json.Marshal(i)
@@ -109,7 +110,7 @@ func UpdateMachine(target Remote, name string, i MachineRequest) error {
 	return apiError(r)
 }
 
-func StartMachine(target Remote, name string) error {
+func StartMachine(target global.Remote, name string) error {
 	type Response struct {
 		ResponseBase
 		Content machine.Machine
@@ -130,7 +131,7 @@ func StartMachine(target Remote, name string) error {
 	return apiError(r.ResponseBase)
 }
 
-func StopMachine(target Remote, name string) error {
+func StopMachine(target global.Remote, name string) error {
 	type Response struct {
 		ResponseBase
 		Content machine.Machine
@@ -151,11 +152,11 @@ func StopMachine(target Remote, name string) error {
 	return apiError(r.ResponseBase)
 }
 
-func MigrateMachine(target Remote, name string, remote Remote, live bool) error {
+func MigrateMachine(target global.Remote, name string, remote global.Remote, live bool) error {
 	var r ResponseBase
 
 	type request struct {
-		Target Remote
+		Target global.Remote
 		Live   bool
 	}
 
@@ -177,7 +178,7 @@ func MigrateMachine(target Remote, name string, remote Remote, live bool) error 
 	return apiError(r)
 }
 
-func DeleteMachine(target Remote, name string) error {
+func DeleteMachine(target global.Remote, name string) error {
 	type Response struct {
 		ResponseBase
 		Content interface{}

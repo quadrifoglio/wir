@@ -6,8 +6,8 @@ import (
 	"runtime"
 
 	"github.com/alecthomas/kingpin"
-	"github.com/quadrifoglio/wir/client"
 
+	"github.com/quadrifoglio/wir/global"
 	"github.com/quadrifoglio/wir/machine"
 )
 
@@ -84,7 +84,7 @@ func fatal(err error) {
 func main() {
 	s := kingpin.Parse()
 
-	var remote client.Remote
+	var remote global.Remote
 	remote.Addr = *remoteAddr
 	remote.APIPort = *remotePort
 	remote.SSHUser = *remoteUser

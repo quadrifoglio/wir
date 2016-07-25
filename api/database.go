@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/boltdb/bolt"
-	"github.com/quadrifoglio/wir/config"
+	"github.com/quadrifoglio/wir/global"
 	"github.com/quadrifoglio/wir/errors"
 	"github.com/quadrifoglio/wir/image"
 	"github.com/quadrifoglio/wir/machine"
@@ -19,7 +19,7 @@ var (
 )
 
 func DBOpen(file string) error {
-	db, err := bolt.Open(config.API.DatabaseFile, 0600, nil)
+	db, err := bolt.Open(global.APIConfig.DatabaseFile, 0600, nil)
 	if err != nil {
 		return err
 	}

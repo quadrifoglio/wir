@@ -1,11 +1,11 @@
-package config
+package global
 
 import (
 	"encoding/json"
 	"os"
 )
 
-type APIConfig struct {
+type APIConfigStruct struct {
 	NodeID      byte // (0-255)
 	Address     string
 	Port        int
@@ -24,7 +24,7 @@ type APIConfig struct {
 }
 
 var (
-	API APIConfig
+	APIConfig APIConfigStruct
 )
 
 func ReadAPIConfig(file string) error {
@@ -33,7 +33,7 @@ func ReadAPIConfig(file string) error {
 		return err
 	}
 
-	err = json.NewDecoder(f).Decode(&API)
+	err = json.NewDecoder(f).Decode(&APIConfig)
 	if err != nil {
 		return err
 	}

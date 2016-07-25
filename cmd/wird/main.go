@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/quadrifoglio/wir/api"
-	"github.com/quadrifoglio/wir/config"
+	"github.com/quadrifoglio/wir/global"
 )
 
 func main() {
@@ -14,7 +14,7 @@ func main() {
 	var confFile = flag.String("config", "etc/wird.json", "Configuration file to use")
 	flag.Parse()
 
-	err := config.ReadAPIConfig(*confFile)
+	err := global.ReadAPIConfig(*confFile)
 	if err != nil {
 		log.Fatalf("Can not read configuration file: %s\n", err)
 	}
