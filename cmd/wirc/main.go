@@ -61,6 +61,11 @@ var (
 	machineUpdateNetIP   = machineUpdate.Flag("ip", "IP address to use").String()
 	machineUpdateName    = machineUpdate.Arg("name", "Name of the machine to update").Required().String()
 
+	machineLinuxSysprep           = cmdMachine.Command("linux-sysprep", "Prepare machine for cloning")
+	machineLinuxSysprepHostname   = machineLinuxSysprep.Flag("hostname", "Machine hostname").String()
+	machineLinuxSysprepRootPasswd = machineLinuxSysprep.Flag("root-password", "Root password").String()
+	machineLinuxSysprepName       = machineLinuxSysprep.Arg("name", "Machine name").Required().String()
+
 	machineStart     = cmdMachine.Command("start", "Start machine")
 	machineStartName = machineStart.Arg("name", "Machine name").Required().String()
 
@@ -68,8 +73,8 @@ var (
 	machineStopName = machineStop.Arg("name", "Machine name").Required().String()
 
 	machineMigrate       = cmdMachine.Command("migrate", "Migrate machine")
-	machineMigrateName   = machineMigrate.Arg("name", "Machine name").Required().String()
 	machineMigrateLive   = machineMigrate.Flag("live", "Live migration").Bool()
+	machineMigrateName   = machineMigrate.Arg("name", "Machine name").Required().String()
 	machineMigrateTarget = machineMigrate.Arg("target", "Target node (user@ip:port)").Required().String()
 
 	machineDelete     = cmdMachine.Command("delete", "Delete a machine")
@@ -134,6 +139,14 @@ func main() {
 			*machineUpdateCores,
 			*machineUpdateMem,
 			machine.NetworkSetup{*machineUpdateNetMode, *machineUpdateNetMAC, *machineUpdateNetIP},
+		)
+		break
+	case "machine linux-sysprep":
+		linuxSysprepMachine(
+			remote,
+			*machineLinuxSysprepName,
+			*machineLinuxSysprepHostname,
+			*machineLinuxSysprepRootPasswd,
 		)
 		break
 	case "machine start":

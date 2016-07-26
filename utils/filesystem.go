@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -10,7 +11,46 @@ import (
 	"syscall"
 
 	"github.com/amoghe/go-crypt"
+
+	"github.com/quadrifoglio/wir/global"
 )
+
+func TarDirectory(path, output string) error {
+	cmd := exec.Command("tar", "--numeric-owner", "cf", output, "-C", path, ".")
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Printf("failed to tar directory: %s", string(out))
+		return err
+	}
+
+	return nil
+}
+
+func MakeRemoteDirectories(dst global.Remote, dstDir string) error {
+	cmd := exec.Command("ssh", fmt.Sprintf("%s@%s", dst.SSHUser, dst.Addr), "mkdir -p "+dstDir)
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Printf("failed to create remote directory: %s", string(out))
+		return err
+	}
+
+	return nil
+}
+
+func SCP(srcFile string, dst global.Remote, dstFile string) error {
+	dstf := fmt.Sprintf("%s:%s", dst.Addr, dstFile)
+	cmd := exec.Command("scp", "-r", srcFile, dstf)
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Printf("scp failed: %s", string(out))
+		return err
+	}
+
+	return nil
+}
 
 func ClearFolder(dir string) error {
 	d, err := os.Open(dir)
@@ -38,16 +78,16 @@ func ClearFolder(dir string) error {
 func NBDConnectQcow2(qemuNbd, dev, file string) error {
 	cmd := exec.Command(qemuNbd, "-c", dev, file)
 
-	err := cmd.Run()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("nbd-connect: qemu-nbd: %s", err)
+		return fmt.Errorf("nbd-connect: qemu-nbd: %s", string(out))
 	}
 
-	cmd = exec.Command("partx", "-a", "/dev/nbd0")
+	cmd = exec.Command("partx", "-a", dev)
 
-	err = cmd.Run()
+	out, err = cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("nbd-connect: partx: %s", err)
+		return fmt.Errorf("nbd-connect: partx: %s", string(out))
 	}
 
 	return nil
@@ -67,7 +107,7 @@ func Mount(dev, path string) error {
 
 	err = cmd.Run()
 	if err != nil {
-		return fmt.Errorf("mount: mount: %s", err)
+		return fmt.Errorf("mount: %s", err)
 	}
 
 	return nil

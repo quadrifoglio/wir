@@ -12,15 +12,16 @@ const (
 )
 
 type Image struct {
-	Name          string
-	Type          string
-	Source        string
-	MainPartition int
+	Name   string
+	Type   string
+	Source string
 
 	// Optional information
 	Arch    string
 	Distro  string
 	Release string
+
+	MainPartition int
 }
 
 func Create(t, name, source, arch, distro, release string, mainPart int) (Image, error) {

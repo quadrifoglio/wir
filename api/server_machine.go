@@ -132,7 +132,7 @@ func handleMachineLinuxSysprep(w http.ResponseWriter, r *http.Request) {
 
 	err = m.LinuxSysprep(img.MainPartition, sp.Hostname, sp.RootPasswd)
 	if err != nil {
-		ErrorResponse(errors.BadRequest).Send(w, r)
+		ErrorResponse(err).Send(w, r)
 		return
 	}
 

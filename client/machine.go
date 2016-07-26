@@ -110,6 +110,27 @@ func UpdateMachine(target global.Remote, name string, i MachineRequest) error {
 	return apiError(r)
 }
 
+func LinuxSysprepMachine(target global.Remote, name string, i LinuxSysprep) error {
+	var r ResponseBase
+
+	data, err := json.Marshal(i)
+	if err != nil {
+		return fmt.Errorf("json: %s", err)
+	}
+
+	data, err = apiRequest(target, "SYSPREP", "/machines/"+name, data)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(data, &r)
+	if err != nil {
+		return fmt.Errorf("json: %s", err)
+	}
+
+	return apiError(r)
+}
+
 func StartMachine(target global.Remote, name string) error {
 	type Response struct {
 		ResponseBase

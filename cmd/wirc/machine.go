@@ -83,6 +83,17 @@ func updateMachine(target global.Remote, name string, cpus, mem int, net machine
 	}
 }
 
+func linuxSysprepMachine(target global.Remote, name, hostname, rootPasswd string) {
+	var req client.LinuxSysprep
+	req.Hostname = hostname
+	req.RootPasswd = rootPasswd
+
+	err := client.LinuxSysprepMachine(target, name, req)
+	if err != nil {
+		fatal(err)
+	}
+}
+
 func startMachine(target global.Remote, name string) {
 	err := client.StartMachine(target, name)
 	if err != nil {

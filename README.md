@@ -23,4 +23,4 @@ Self-hosted virtualization platform.
 * one of the supported backends (qemu-system, qemu-utils, lxc-dev, vzctl)
 * bridge-utils
 * ebtables
-* for qemu sysprep (optional): nbd kernel module, qemu-nbd, partx (util-linux)
+* for qemu sysprep (optional): nbd kernel module (max_part=12), qemu-nbd, partx (util-linux)

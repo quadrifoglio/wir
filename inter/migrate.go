@@ -8,6 +8,7 @@ import (
 	"github.com/quadrifoglio/wir/global"
 	"github.com/quadrifoglio/wir/image"
 	"github.com/quadrifoglio/wir/machine"
+	"github.com/quadrifoglio/wir/utils"
 )
 
 func MigrateImage(i image.Image, src, dst global.Remote) error {
@@ -48,12 +49,12 @@ func MigrateQemu(m machine.Machine, i image.Image, src, dst global.Remote) error
 	srcPath := fmt.Sprintf("%s/qemu/%s.qcow2", global.APIConfig.MachinePath, m.Name)
 	dstPath := fmt.Sprintf("%s/qemu/%s.qcow2", conf.MachinePath, m.Name)
 
-	err = RemoteMkdir(dst, filepath.Dir(dstPath))
+	err = utils.MakeRemoteDirectories(dst, filepath.Dir(dstPath))
 	if err != nil {
 		return fmt.Errorf("falied to make remote dirs: %s", err)
 	}
 
-	err = SCP(srcPath, dst, dstPath)
+	err = utils.SCP(srcPath, dst, dstPath)
 	if err != nil {
 		return fmt.Errorf("failed to scp to remote: %s", err)
 	}
