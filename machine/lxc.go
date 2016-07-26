@@ -78,10 +78,20 @@ func LxcCreate(m *Machine, name string, img image.Image, cores, memory int) erro
 		if err := c.SetConfigItem("lxc.rootfs", fmt.Sprintf("%s/%s/rootfs", path, name)); err != nil {
 			return fmt.Errorf("failed to change rootfs config: %s", err)
 		}
+	}
 
-		if err := c.SaveConfigFile(fmt.Sprintf("%s/%s/config", path, name)); err != nil {
-			return fmt.Errorf("failed to save config: %s", err)
-		}
+	if err := c.SetConfigItem("lxc.console", "none"); err != nil {
+		return fmt.Errorf("failed to change lxc.console config: %s", err)
+	}
+	if err := c.SetConfigItem("lxc.tty", "0"); err != nil {
+		return fmt.Errorf("failed to change lxc.tty config: %s", err)
+	}
+	if err := c.SetConfigItem("lxc.cgroup.devices.deny", "c 5:1 rwm"); err != nil {
+		return fmt.Errorf("failed to change lxc.cgroup.devices.deny config: %s", err)
+	}
+
+	if err := c.SaveConfigFile(fmt.Sprintf("%s/%s/config", path, name)); err != nil {
+		return fmt.Errorf("failed to save config: %s", err)
 	}
 
 	return nil
@@ -97,11 +107,6 @@ func LxcStart(m *Machine) error {
 
 	c.SetVerbosity(lxc.Verbose)
 
-	err = c.Start()
-	if err != nil {
-		return err
-	}
-
 	if m.Network.Mode == NetworkModeBridge {
 		if err := c.SetConfigItem("lxc.network.hwaddr", m.Network.MAC); err != nil {
 			return err
@@ -113,6 +118,19 @@ func LxcStart(m *Machine) error {
 			return err
 		}
 		if err := c.SetConfigItem("lxc.network.link", "wir0"); err != nil {
+			return err
+		}
+	}
+
+	chk := fmt.Sprintf("%s/%s/checkpoint", path, m.Name)
+	if _, err := os.Stat(chk); err == nil {
+		err = c.Restore(lxc.RestoreOptions{chk, true})
+		if err != nil {
+			return fmt.Errorf("failed to restore: %s", err)
+		}
+	} else {
+		err = c.Start()
+		if err != nil {
 			return err
 		}
 	}
@@ -226,6 +244,11 @@ func LxcCheckpoint(m *Machine) error {
 
 	c.SetVerbosity(lxc.Verbose)
 
+	err = c.Freeze()
+	if err != nil {
+		return err
+	}
+
 	path = fmt.Sprintf("%s/%s/checkpoint", path, m.Name)
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
@@ -243,30 +266,6 @@ func LxcCheckpoint(m *Machine) error {
 	err = c.Checkpoint(lxc.CheckpointOptions{path, false, true})
 	if err != nil {
 		return err
-	}
-
-	return nil
-}
-
-func LxcRestore(m *Machine) error {
-	path := fmt.Sprintf("%s/lxc", global.APIConfig.MachinePath)
-
-	c, err := lxc.NewContainer(m.Name, path)
-	if err != nil {
-		return err
-	}
-
-	c.SetVerbosity(lxc.Verbose)
-
-	path = fmt.Sprintf("%s/%s/checkpoint", path, m.Name)
-
-	if _, err := os.Stat(path); !os.IsNotExist(err) {
-		err = c.Restore(lxc.RestoreOptions{path, true})
-		if err != nil {
-			return err
-		}
-	} else {
-		return fmt.Errorf("restore: no checkpoint")
 	}
 
 	return nil

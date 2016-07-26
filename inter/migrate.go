@@ -114,7 +114,7 @@ func MigrateLxc(m machine.Machine, i image.Image, src, dst global.Remote) error 
 
 	srcFolder := fmt.Sprintf("%s/lxc/%s", global.APIConfig.MachinePath, m.Name)
 
-	err = utils.TarDirectory(srcFolder, "/tmp/%s.tar.gz")
+	err = utils.TarDirectory(srcFolder, fmt.Sprintf("/tmp/%s.tar.gz", m.Name))
 	if err != nil {
 		return err
 	}
@@ -139,10 +139,24 @@ func MigrateLxc(m machine.Machine, i image.Image, src, dst global.Remote) error 
 		return fmt.Errorf("failed to create remote machine: %s", err)
 	}
 
+	err = machine.LxcStop(&m)
+	if err != nil {
+		return fmt.Errorf("failed to stop local machine: %s", err)
+	}
+
 	err = machine.LxcDelete(&m)
 	if err != nil {
 		return fmt.Errorf("failed to delete local machine: %s", err)
 	}
 
 	return nil
+}
+
+func LiveMigrateLxc(m machine.Machine, i image.Image, src, dst global.Remote) error {
+	err := machine.LxcCheckpoint(&m)
+	if err != nil {
+		return fmt.Errorf("failed to snapshot: %s", err)
+	}
+
+	return MigrateLxc(m, i, src, dst)
 }
