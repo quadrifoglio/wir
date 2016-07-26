@@ -36,6 +36,15 @@ func MigrateImage(i image.Image, src, dst global.Remote) error {
 }
 
 func MigrateQemu(m machine.Machine, i image.Image, src, dst global.Remote) error {
+	m.Check()
+
+	if m.State == machine.StateUp {
+		err := machine.QemuStop(&m)
+		if err != nil {
+			return fmt.Errorf("failed to stop local machine: %s", err)
+		}
+	}
+
 	err := MigrateImage(i, src, dst)
 	if err != nil {
 		return err
@@ -66,11 +75,6 @@ func MigrateQemu(m machine.Machine, i image.Image, src, dst global.Remote) error
 		return fmt.Errorf("failed to create remote machine: %s", err)
 	}
 
-	err = machine.QemuStop(&m)
-	if err != nil {
-		return fmt.Errorf("failed to stop local machine: %s", err)
-	}
-
 	err = machine.QemuDelete(&m)
 	if err != nil {
 		return fmt.Errorf("failed to delete local machine: %s", err)
@@ -86,4 +90,59 @@ func LiveMigrateQemu(m machine.Machine, i image.Image, src, dst global.Remote) e
 	}
 
 	return MigrateQemu(m, i, src, dst)
+}
+
+func MigrateLxc(m machine.Machine, i image.Image, src, dst global.Remote) error {
+	m.Check()
+
+	if m.State == machine.StateUp {
+		err := machine.LxcStop(&m)
+		if err != nil {
+			return fmt.Errorf("failed to stop local machine: %s", err)
+		}
+	}
+
+	err := MigrateImage(i, src, dst)
+	if err != nil {
+		return err
+	}
+
+	conf, err := client.GetConfig(dst)
+	if err != nil {
+		return fmt.Errorf("failed to get remote config: %s", err)
+	}
+
+	srcFolder := fmt.Sprintf("%s/lxc/%s", global.APIConfig.MachinePath, m.Name)
+
+	err = utils.TarDirectory(srcFolder, "/tmp/%s.tar.gz")
+	if err != nil {
+		return err
+	}
+
+	srcPath := fmt.Sprintf("/tmp/%s.tar.gz", m.Name)
+	dstPath := fmt.Sprintf("%s/lxc/%s.tar.gz", conf.MachinePath, m.Name)
+
+	err = utils.MakeRemoteDirectories(dst, filepath.Dir(dstPath))
+	if err != nil {
+		return fmt.Errorf("falied to make remote dirs: %s", err)
+	}
+
+	err = utils.SCP(srcPath, dst, dstPath)
+	if err != nil {
+		return fmt.Errorf("failed to scp to remote: %s", err)
+	}
+
+	r := client.MachineRequest{m.Name, i.Name, m.Cores, m.Memory, m.Network}
+
+	_, err = client.CreateMachine(dst, r)
+	if err != nil {
+		return fmt.Errorf("failed to create remote machine: %s", err)
+	}
+
+	err = machine.LxcDelete(&m)
+	if err != nil {
+		return fmt.Errorf("failed to delete local machine: %s", err)
+	}
+
+	return nil
 }

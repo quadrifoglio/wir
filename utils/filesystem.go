@@ -16,11 +16,26 @@ import (
 )
 
 func TarDirectory(path, output string) error {
-	cmd := exec.Command("tar", "--numeric-owner", "cf", output, "-C", path, ".")
+	base := filepath.Base(path)
+	dir := filepath.Dir(path)
+
+	cmd := exec.Command("tar", "cf", output, "--numeric-owner", "-C", dir, base)
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		log.Printf("failed to tar directory: %s", string(out))
+		return err
+	}
+
+	return nil
+}
+
+func UntarDirectory(input, path string) error {
+	cmd := exec.Command("tar", "xf", input, "-C", path)
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Printf("failed to untar directory: %s", string(out))
 		return err
 	}
 

@@ -27,27 +27,61 @@ func LxcCreate(m *Machine, name string, img image.Image, cores, memory int) erro
 		return err
 	}
 
-	c, err := lxc.NewContainer(name, path)
-	if err != nil {
-		return err
-	}
+	var c *lxc.Container
 
-	c.SetVerbosity(lxc.Verbose)
+	tar := fmt.Sprintf("%s/%s.tar.gz", path, name)
+	if _, err := os.Stat(tar); os.IsNotExist(err) {
+		c, err = lxc.NewContainer(name, path)
+		if err != nil {
+			return err
+		}
 
-	if err := c.SetLogFile(path + "/" + m.Name + "/log.txt"); err != nil {
-		return err
-	}
+		if err := c.SetLogFile(fmt.Sprintf("%s/%s/log.txt", path, m.Name)); err != nil {
+			return err
+		}
 
-	var opts lxc.TemplateOptions
-	opts.Template = img.Source
-	opts.Distro = img.Distro
-	opts.Release = img.Release
-	opts.Arch = img.Arch
-	opts.FlushCache = false
-	opts.DisableGPGValidation = false
+		c.SetVerbosity(lxc.Verbose)
 
-	if err := c.Create(opts); err != nil {
-		return err
+		var opts lxc.TemplateOptions
+		opts.Template = img.Source
+		/*opts.Distro = img.Distro
+		opts.Release = img.Release
+		opts.Arch = img.Arch*/
+		opts.FlushCache = false
+		opts.DisableGPGValidation = false
+
+		if err = c.Create(opts); err != nil {
+			return err
+		}
+	} else {
+		err = utils.UntarDirectory(tar, path)
+		if err != nil {
+			return fmt.Errorf("failed to create container from archive: %s", err)
+		}
+
+		c, err = lxc.NewContainer(name, path)
+		if err != nil {
+			return err
+		}
+
+		if err := c.SetLogFile(fmt.Sprintf("%s/%s/log.txt", path, m.Name)); err != nil {
+			return err
+		}
+
+		c.SetVerbosity(lxc.Verbose)
+
+		err = os.Remove(tar)
+		if err != nil {
+			return fmt.Errorf("failed to remove container archive: %s", err)
+		}
+
+		if err := c.SetConfigItem("lxc.rootfs", fmt.Sprintf("%s/%s/rootfs", path, name)); err != nil {
+			return fmt.Errorf("failed to change rootfs config: %s", err)
+		}
+
+		if err := c.SaveConfigFile(fmt.Sprintf("%s/%s/config", path, name)); err != nil {
+			return fmt.Errorf("failed to save config: %s", err)
+		}
 	}
 
 	return nil

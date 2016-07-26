@@ -303,10 +303,8 @@ func handleMachineMigrate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m.Check()
-
 	if (req.Live && m.State != machine.StateUp) || (!req.Live && m.State != machine.StateDown) {
-		ErrorResponse(errors.ImageNotFound).Send(w, r)
+		ErrorResponse(errors.InvalidMachineState).Send(w, r)
 		return
 	}
 
@@ -322,7 +320,7 @@ func handleMachineMigrate(w http.ResponseWriter, r *http.Request) {
 		if req.Live {
 			//err = inter.LiveMigrateLxc(m, global.Remote{global.APIConfig.Address, "root", global.APIConfig.Port}, req.Target)
 		} else {
-			//err = inter.MigrateLxc(m, i, global.Remote{global.APIConfig.Address, "root", global.APIConfig.Port}, req.Target)
+			err = inter.MigrateLxc(m, i, global.Remote{global.APIConfig.Address, "root", global.APIConfig.Port}, req.Target)
 		}
 		break
 	default:
@@ -331,7 +329,7 @@ func handleMachineMigrate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		ErrorResponse(errors.ImageNotFound).Send(w, r)
+		ErrorResponse(err).Send(w, r)
 		return
 	}
 
