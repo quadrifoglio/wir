@@ -27,28 +27,7 @@ func handleImageCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var img image.Image
-
-	switch i.Type {
-	case image.TypeQemu:
-		img, err = image.QemuCreate(i.Name, i.Source)
-		break
-	case image.TypeVz:
-		img, err = image.VzCreate(i.Name, i.Source)
-		break
-	case image.TypeLXC:
-		img, err = image.LxcCreate(i.Name, i.Source)
-		break
-	default:
-		err = errors.InvalidImageType
-		break
-	}
-
-	img.MainPartition = i.MainPartition
-	img.Arch = i.Arch
-	img.Distro = i.Distro
-	img.Release = i.Release
-
+	img, err := image.Create(i.Type, i.Name, i.Source, i.Arch, i.Distro, i.Release, i.MainPartition)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
