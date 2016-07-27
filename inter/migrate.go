@@ -75,21 +75,26 @@ func MigrateQemu(m machine.Machine, i image.Image, src, dst global.Remote) error
 		return fmt.Errorf("failed to create remote machine: %s", err)
 	}
 
-	err = machine.QemuDelete(&m)
-	if err != nil {
-		return fmt.Errorf("failed to delete local machine: %s", err)
-	}
-
 	return nil
 }
 
 func LiveMigrateQemu(m machine.Machine, i image.Image, src, dst global.Remote) error {
 	err := machine.QemuCheckpoint(&m)
 	if err != nil {
-		return fmt.Errorf("failed to snapshot: %s", err)
+		return fmt.Errorf("failed to checkpoint: %s", err)
 	}
 
-	return MigrateQemu(m, i, src, dst)
+	err = MigrateQemu(m, i, src, dst)
+	if err != nil {
+		return err
+	}
+
+	err = client.StartMachine(dst, m.Name)
+	if err != nil {
+		return fmt.Errorf("failed to start remote machine: %s", err)
+	}
+
+	return nil
 }
 
 func MigrateLxc(m machine.Machine, i image.Image, src, dst global.Remote) error {
@@ -144,19 +149,24 @@ func MigrateLxc(m machine.Machine, i image.Image, src, dst global.Remote) error 
 		return fmt.Errorf("failed to stop local machine: %s", err)
 	}
 
-	err = machine.LxcDelete(&m)
-	if err != nil {
-		return fmt.Errorf("failed to delete local machine: %s", err)
-	}
-
 	return nil
 }
 
 func LiveMigrateLxc(m machine.Machine, i image.Image, src, dst global.Remote) error {
 	err := machine.LxcCheckpoint(&m)
 	if err != nil {
-		return fmt.Errorf("failed to snapshot: %s", err)
+		return fmt.Errorf("failed to checkpoint: %s", err)
 	}
 
-	return MigrateLxc(m, i, src, dst)
+	err = MigrateLxc(m, i, src, dst)
+	if err != nil {
+		return err
+	}
+
+	err = client.StartMachine(dst, m.Name)
+	if err != nil {
+		return fmt.Errorf("failed to start remote macine: %s", err)
+	}
+
+	return nil
 }

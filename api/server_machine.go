@@ -335,6 +335,18 @@ func handleMachineMigrate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = m.Delete()
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	err = DBDeleteMachine(name)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
 	SuccessResponse(nil).Send(w, r)
 }
 
