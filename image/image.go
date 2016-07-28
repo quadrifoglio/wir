@@ -7,7 +7,6 @@ import (
 const (
 	TypeUnknown = "unknown"
 	TypeQemu    = "qemu"
-	TypeVz      = "openvz"
 	TypeLXC     = "lxc"
 )
 
@@ -31,9 +30,6 @@ func Create(t, name, source, arch, distro, release string, mainPart int) (Image,
 	switch t {
 	case TypeQemu:
 		img, err = QemuCreate(name, source)
-		break
-	case TypeVz:
-		img, err = VzCreate(name, source)
 		break
 	case TypeLXC:
 		img, err = LxcCreate(name, source)

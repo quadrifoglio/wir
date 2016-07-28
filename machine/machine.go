@@ -27,10 +27,6 @@ type BackendQemu struct {
 	PID int
 }
 
-type BackendVz struct {
-	CTID string
-}
-
 type Stats struct {
 	CPU     float32
 	RAMUsed uint64
@@ -48,7 +44,6 @@ type Machine struct {
 	Network NetworkSetup `json:",omitempty"`
 
 	Qemu BackendQemu
-	Vz   BackendVz
 }
 
 type Machines []Machine
@@ -72,9 +67,6 @@ func Create(freeIndex uint64, name string, img image.Image, cores, memory int, n
 	switch img.Type {
 	case image.TypeQemu:
 		err = QemuCreate(&m, name, img, cores, memory)
-		break
-	case image.TypeVz:
-		err = VzCreate(&m, name, freeIndex, img, cores, memory)
 		break
 	case image.TypeLXC:
 		err = LxcCreate(&m, name, img, cores, memory)
@@ -152,9 +144,6 @@ func (m *Machine) Check() {
 	case image.TypeQemu:
 		QemuCheck(m)
 		break
-	case image.TypeVz:
-		VzCheck(m)
-		break
 	case image.TypeLXC:
 		LxcCheck(m)
 		break
@@ -167,9 +156,6 @@ func (m *Machine) Start() error {
 	switch m.Type {
 	case image.TypeQemu:
 		err = QemuStart(m)
-		break
-	case image.TypeVz:
-		err = VzStart(m)
 		break
 	case image.TypeLXC:
 		err = LxcStart(m)
@@ -199,9 +185,6 @@ func (m *Machine) Stop() error {
 	case image.TypeQemu:
 		err = QemuStop(m)
 		break
-	case image.TypeVz:
-		err = VzStop(m)
-		break
 	case image.TypeLXC:
 		err = LxcStop(m)
 		break
@@ -225,9 +208,6 @@ func (m *Machine) Stats() (Stats, error) {
 	case image.TypeQemu:
 		stats, err = QemuStats(m)
 		break
-	case image.TypeVz:
-		//stats, err = VzStats(m)
-		break
 	case image.TypeLXC:
 		stats, err = LxcStats(m)
 		break
@@ -249,9 +229,6 @@ func (m *Machine) LinuxSysprep(mainPart int, hostname, rootPasswd string) error 
 	switch m.Type {
 	case image.TypeQemu:
 		err = QemuLinuxSysprep(m, mainPart, hostname, rootPasswd)
-		break
-	case image.TypeVz:
-		//err = VzLinuxSysprep()
 		break
 	case image.TypeLXC:
 		err = LxcLinuxSysprep(m, hostname, rootPasswd)
@@ -276,9 +253,6 @@ func (m *Machine) Delete() error {
 	switch m.Type {
 	case image.TypeQemu:
 		err = QemuDelete(m)
-		break
-	case image.TypeVz:
-		err = VzDelete(m)
 		break
 	case image.TypeLXC:
 		err = LxcDelete(m)
