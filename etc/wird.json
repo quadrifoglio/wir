@@ -1,8 +1,14 @@
 {
 	"NodeID": 1,
+	"AdminEmail": "admin@olivier.com",
+
 	"Address": "127.0.0.1",
 	"Port": 1997,
+
 	"BridgeIface": "eth0",
+	"EnableNetMonitor": true,
+	"PPSAlert": 70000,
+	"PPSStop": 90000,
 
 	"EnableKVM": true,
 	"EbtablesCommand": "/sbin/ebtables",

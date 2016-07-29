@@ -3,6 +3,7 @@ package net
 import (
 	"crypto/rand"
 	"fmt"
+	"net"
 )
 
 func Init(ebtables, bridgeIf string) error {
@@ -22,6 +23,15 @@ func Init(ebtables, bridgeIf string) error {
 	}
 
 	return nil
+}
+
+func InterfaceExists(iface string) bool {
+	_, err := net.InterfaceByName(iface)
+	if err != nil {
+		return false
+	}
+
+	return true
 }
 
 func GenerateMAC(nodeId byte) (string, error) {

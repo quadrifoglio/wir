@@ -6,10 +6,16 @@ import (
 )
 
 type APIConfigStruct struct {
-	NodeID      byte // (0-255)
-	Address     string
-	Port        int
-	BridgeIface string
+	NodeID     byte // (0-255)
+	AdminEmail string
+
+	Address string
+	Port    int
+
+	BridgeIface      string
+	EnableNetMonitor bool
+	PPSAlert         uint64
+	PPSStop          uint64
 
 	EnableKVM bool
 	Ebtables  string `json:"EbtablesCommand"`

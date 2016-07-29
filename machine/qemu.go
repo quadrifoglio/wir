@@ -98,6 +98,31 @@ func QemuStart(m *Machine) error {
 			return err
 		}
 
+		if global.APIConfig.EnableNetMonitor {
+			go func(m *Machine) {
+				a := net.MonitorInterface(m.IfName())
+
+				if a == net.MonitorStop {
+					return
+				}
+				if a == net.MonitorAlert {
+					// TODO: Send email
+				}
+				if a == net.MonitorStop {
+					// TODO: Send email
+
+					err := QemuStop(m)
+					if err != nil {
+						log.Println(err)
+					}
+
+					return
+				}
+
+				time.Sleep(60 * time.Second)
+			}(m)
+		}
+
 		args = append(args, "-netdev")
 		args = append(args, fmt.Sprintf("tap,id=net0,ifname=%s,script=no", m.IfName()))
 		args = append(args, "-device")
