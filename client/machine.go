@@ -5,15 +5,13 @@ import (
 	"fmt"
 
 	"github.com/quadrifoglio/wir/shared"
-	"github.com/quadrifoglio/wir/machine"
 )
 
-type MachineRequest struct {
-	Name    string
-	Image   string
-	Cores   int
-	Memory  int
-	Network machine.NetworkSetup
+type MachineResponse struct {
+	shared.MachineInfo
+
+	Type  string
+	State shared.MachineState
 }
 
 type LinuxSysprep struct {
@@ -21,10 +19,10 @@ type LinuxSysprep struct {
 	RootPasswd string
 }
 
-func ListMachines(target shared.Remote) ([]machine.Machine, error) {
+func ListMachines(target shared.Remote) ([]MachineResponse, error) {
 	type Response struct {
 		ResponseBase
-		Content []machine.Machine
+		Content []MachineResponse
 	}
 
 	var r Response
@@ -42,10 +40,10 @@ func ListMachines(target shared.Remote) ([]machine.Machine, error) {
 	return r.Content, apiError(r.ResponseBase)
 }
 
-func CreateMachine(target shared.Remote, i MachineRequest) (machine.Machine, error) {
+func CreateMachine(target shared.Remote, i shared.MachineInfo) (MachineResponse, error) {
 	type Response struct {
 		ResponseBase
-		Content machine.Machine
+		Content MachineResponse
 	}
 
 	var r Response
@@ -68,10 +66,10 @@ func CreateMachine(target shared.Remote, i MachineRequest) (machine.Machine, err
 	return r.Content, apiError(r.ResponseBase)
 }
 
-func GetMachine(target shared.Remote, name string) (machine.Machine, error) {
+func GetMachine(target shared.Remote, name string) (MachineResponse, error) {
 	type Response struct {
 		ResponseBase
-		Content machine.Machine
+		Content MachineResponse
 	}
 
 	var r Response
@@ -89,7 +87,7 @@ func GetMachine(target shared.Remote, name string) (machine.Machine, error) {
 	return r.Content, apiError(r.ResponseBase)
 }
 
-func UpdateMachine(target shared.Remote, name string, i MachineRequest) error {
+func UpdateMachine(target shared.Remote, name string, i shared.MachineInfo) error {
 	var r ResponseBase
 
 	data, err := json.Marshal(i)
@@ -134,7 +132,7 @@ func LinuxSysprepMachine(target shared.Remote, name string, i LinuxSysprep) erro
 func StartMachine(target shared.Remote, name string) error {
 	type Response struct {
 		ResponseBase
-		Content machine.Machine
+		Content shared.MachineInfo
 	}
 
 	var r Response
@@ -155,7 +153,7 @@ func StartMachine(target shared.Remote, name string) error {
 func StopMachine(target shared.Remote, name string) error {
 	type Response struct {
 		ResponseBase
-		Content machine.Machine
+		Content shared.MachineInfo
 	}
 
 	var r Response

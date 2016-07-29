@@ -6,15 +6,14 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/quadrifoglio/wir/client"
 	"github.com/quadrifoglio/wir/errors"
-	"github.com/quadrifoglio/wir/image"
+	"github.com/quadrifoglio/wir/shared"
 )
 
 func handleImageCreate(w http.ResponseWriter, r *http.Request) {
 	PrepareResponse(w, r)
 
-	var i client.ImageRequest
+	var i shared.ImageInfo
 
 	err := json.NewDecoder(r.Body).Decode(&i)
 	if err != nil {
@@ -27,13 +26,25 @@ func handleImageCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	img, err := image.Create(i.Type, i.Name, i.Source, i.Arch, i.Distro, i.Release, i.MainPartition)
+	var img Image
+
+	switch i.Type {
+	case shared.TypeQemu:
+		img = new(QemuImage)
+		err = img.Create(i)
+		break
+	case shared.TypeLXC:
+		img = new(LxcImage)
+		err = img.Create(i)
+		break
+	}
+
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
 	}
 
-	err = DBStoreImage(&img)
+	err = DBStoreImage(img)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return

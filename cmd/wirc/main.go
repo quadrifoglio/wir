@@ -8,7 +8,6 @@ import (
 	"github.com/alecthomas/kingpin"
 
 	"github.com/quadrifoglio/wir/shared"
-	"github.com/quadrifoglio/wir/machine"
 )
 
 var (
@@ -126,7 +125,7 @@ func main() {
 			*machineCreateImage,
 			*machineCreateCores,
 			*machineCreateMem,
-			machine.NetworkSetup{*machineCreateNetMode, *machineCreateNetMAC, *machineCreateNetIP},
+			shared.MachineNetwork{*machineCreateNetMode, *machineCreateNetMAC, *machineCreateNetIP},
 		)
 		break
 	case "machine show":
@@ -138,7 +137,7 @@ func main() {
 			*machineUpdateName,
 			*machineUpdateCores,
 			*machineUpdateMem,
-			machine.NetworkSetup{*machineUpdateNetMode, *machineUpdateNetMAC, *machineUpdateNetIP},
+			shared.MachineNetwork{*machineUpdateNetMode, *machineUpdateNetMAC, *machineUpdateNetIP},
 		)
 		break
 	case "machine linux-sysprep":

@@ -1,6 +1,7 @@
-package machine
+package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -8,21 +9,30 @@ import (
 
 	"gopkg.in/lxc/go-lxc.v2"
 
-	"github.com/quadrifoglio/wir/shared"
-	"github.com/quadrifoglio/wir/image"
 	"github.com/quadrifoglio/wir/net"
+	"github.com/quadrifoglio/wir/shared"
 	"github.com/quadrifoglio/wir/utils"
 )
 
-func LxcCreate(m *Machine, name string, img image.Image, cores, memory int) error {
-	m.Name = name
-	m.Type = img.Type
-	m.Image = img.Name
-	m.Cores = cores
-	m.Memory = memory
-	m.State = StateDown
+type LxcMachine struct {
+	shared.MachineInfo
+}
 
+func (m *LxcMachine) Info() *shared.MachineInfo {
+	return &m.MachineInfo
+}
+
+func (m *LxcMachine) Type() string {
+	return shared.TypeLXC
+}
+
+func (m *LxcMachine) Create(img Image, info shared.MachineInfo) error {
 	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
+
+	m.Name = info.Name
+	m.Image = img.Info().Name
+	m.Cores = info.Cores
+	m.Memory = info.Memory
 
 	err := os.MkdirAll(path, 0777)
 	if err != nil {
@@ -31,9 +41,9 @@ func LxcCreate(m *Machine, name string, img image.Image, cores, memory int) erro
 
 	var c *lxc.Container
 
-	tar := fmt.Sprintf("%s/%s.tar.gz", path, name)
+	tar := fmt.Sprintf("%s/%s.tar.gz", path, m.Name)
 	if _, err := os.Stat(tar); os.IsNotExist(err) {
-		c, err = lxc.NewContainer(name, path)
+		c, err = lxc.NewContainer(m.Name, path)
 		if err != nil {
 			return err
 		}
@@ -45,7 +55,7 @@ func LxcCreate(m *Machine, name string, img image.Image, cores, memory int) erro
 		c.SetVerbosity(lxc.Verbose)
 
 		var opts lxc.TemplateOptions
-		opts.Template = img.Source
+		opts.Template = img.Info().Source
 		/*opts.Distro = img.Distro
 		opts.Release = img.Release
 		opts.Arch = img.Arch*/
@@ -61,7 +71,7 @@ func LxcCreate(m *Machine, name string, img image.Image, cores, memory int) erro
 			return fmt.Errorf("failed to create container from archive: %s", err)
 		}
 
-		c, err = lxc.NewContainer(name, path)
+		c, err = lxc.NewContainer(m.Name, path)
 		if err != nil {
 			return err
 		}
@@ -77,7 +87,7 @@ func LxcCreate(m *Machine, name string, img image.Image, cores, memory int) erro
 			return fmt.Errorf("failed to remove container archive: %s", err)
 		}
 
-		if err := c.SetConfigItem("lxc.rootfs", fmt.Sprintf("%s/%s/rootfs", path, name)); err != nil {
+		if err := c.SetConfigItem("lxc.rootfs", fmt.Sprintf("%s/%s/rootfs", path, m.Name)); err != nil {
 			return fmt.Errorf("failed to change rootfs config: %s", err)
 		}
 	}
@@ -92,14 +102,26 @@ func LxcCreate(m *Machine, name string, img image.Image, cores, memory int) erro
 		return fmt.Errorf("failed to change lxc.cgroup.devices.deny config: %s", err)
 	}
 
-	if err := c.SaveConfigFile(fmt.Sprintf("%s/%s/config", path, name)); err != nil {
+	if err := c.SaveConfigFile(fmt.Sprintf("%s/%s/config", path, m.Name)); err != nil {
 		return fmt.Errorf("failed to save config: %s", err)
 	}
 
 	return nil
 }
 
-func LxcStart(m *Machine) error {
+func (m *LxcMachine) Update(info shared.MachineInfo) error {
+	if info.Cores != 0 && info.Cores != m.Cores {
+		m.Cores = info.Cores
+	}
+
+	if info.Memory != 0 && info.Cores != m.Cores {
+		m.Memory = info.Cores
+	}
+
+	return nil
+}
+
+func (m *LxcMachine) Delete() error {
 	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
 
 	c, err := lxc.NewContainer(m.Name, path)
@@ -109,11 +131,49 @@ func LxcStart(m *Machine) error {
 
 	c.SetVerbosity(lxc.Verbose)
 
-	if m.Network.Mode == NetworkModeBridge {
+	err = c.Destroy()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *LxcMachine) Sysprep(os, hostname, root string) error {
+	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
+
+	c, err := lxc.NewContainer(m.Name, path)
+	if err != nil {
+		return err
+	}
+
+	if err := c.SetConfigItem("lxc.utsname", hostname); err != nil {
+		return err
+	}
+
+	err = utils.ChangeRootPassword(fmt.Sprintf("%s/%s/rootfs/etc/shadow", path, m.Name), root)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *LxcMachine) Start() error {
+	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
+
+	c, err := lxc.NewContainer(m.Name, path)
+	if err != nil {
+		return err
+	}
+
+	c.SetVerbosity(lxc.Verbose)
+
+	if m.Network.Mode == shared.NetworkModeBridge {
 		if err := c.SetConfigItem("lxc.network.type", "veth"); err != nil {
 			return err
 		}
-		if err := c.SetConfigItem("lxc.network.veth.pair", m.IfName()); err != nil {
+		if err := c.SetConfigItem("lxc.network.veth.pair", MachineIfName(m)); err != nil {
 			return err
 		}
 		if err := c.SetConfigItem("lxc.network.flags", "up"); err != nil {
@@ -140,14 +200,12 @@ func LxcStart(m *Machine) error {
 		}
 	}
 
-	if shared.APIConfig.EnableNetMonitor && m.Network.Mode != NetworkModeNone {
-		go func(m *Machine) {
+	if shared.APIConfig.EnableNetMonitor && m.Network.Mode != shared.NetworkModeNone {
+		go func(m *LxcMachine) {
 			for {
-				a := net.MonitorInterface(m.IfName(), "rx")
+				a := net.MonitorInterface(MachineIfName(m), "rx")
 
-				m.Check()
-
-				if m.State != StateUp {
+				if m.State() != shared.StateUp {
 					break
 				}
 
@@ -160,9 +218,9 @@ func LxcStart(m *Machine) error {
 				if a == net.MonitorStop {
 					// TODO: Send email
 
-					log.Println("iface monitor %s: shuting down (to many pps)", m.IfName())
+					log.Println("iface monitor %s: shuting down (to many pps)", MachineIfName(m))
 
-					err := LxcStop(m)
+					err := m.Stop()
 					if err != nil {
 						log.Println(err)
 					}
@@ -183,7 +241,7 @@ func LxcStart(m *Machine) error {
 	return nil
 }
 
-func LxcLinuxSysprep(m *Machine, hostname, root string) error {
+func (m *LxcMachine) Stop() error {
 	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
 
 	c, err := lxc.NewContainer(m.Name, path)
@@ -193,11 +251,7 @@ func LxcLinuxSysprep(m *Machine, hostname, root string) error {
 
 	c.SetVerbosity(lxc.Verbose)
 
-	if err := c.SetConfigItem("lxc.utsname", hostname); err != nil {
-		return err
-	}
-
-	err = utils.ChangeRootPassword(fmt.Sprintf("%s/%s/rootfs/etc/shadow", path, m.Name), root)
+	err = c.Stop()
 	if err != nil {
 		return err
 	}
@@ -205,28 +259,24 @@ func LxcLinuxSysprep(m *Machine, hostname, root string) error {
 	return nil
 }
 
-func LxcCheck(m *Machine) error {
+func (m *LxcMachine) State() shared.MachineState {
 	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
 
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {
-		return err
+		log.Println("state: %s", err)
 	}
-
-	c.SetVerbosity(lxc.Verbose)
 
 	s := c.State()
 	if s == lxc.RUNNING {
-		m.State = StateUp
-	} else {
-		m.State = StateDown
+		return shared.StateUp
 	}
 
-	return nil
+	return shared.StateDown
 }
 
-func LxcStats(m *Machine) (Stats, error) {
-	var stats Stats
+func (m *LxcMachine) Stats() (shared.MachineStats, error) {
+	var stats shared.MachineStats
 
 	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
 
@@ -274,7 +324,17 @@ func LxcStats(m *Machine) (Stats, error) {
 	return stats, nil
 }
 
-func LxcCheckpoint(m *Machine) error {
+func (m *LxcMachine) HasCheckpoint() bool {
+	path := fmt.Sprintf("%s/lxc/%s/checkpoint", shared.APIConfig.MachinePath, m.Name)
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return false
+	}
+
+	return true
+}
+
+func (m *LxcMachine) CreateCheckpoint() error {
 	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
 
 	c, err := lxc.NewContainer(m.Name, path)
@@ -311,7 +371,7 @@ func LxcCheckpoint(m *Machine) error {
 	return nil
 }
 
-func LxcStop(m *Machine) error {
+func (m *LxcMachine) RestoreCheckpoint() error {
 	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
 
 	c, err := lxc.NewContainer(m.Name, path)
@@ -321,7 +381,11 @@ func LxcStop(m *Machine) error {
 
 	c.SetVerbosity(lxc.Verbose)
 
-	err = c.Stop()
+	if !m.HasCheckpoint() {
+		return fmt.Errorf("checkpoint does not exists")
+	}
+
+	err = c.Restore(lxc.RestoreOptions{path, true})
 	if err != nil {
 		return err
 	}
@@ -329,20 +393,18 @@ func LxcStop(m *Machine) error {
 	return nil
 }
 
-func LxcDelete(m *Machine) error {
-	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
+func (m *LxcMachine) DeleteCheckpoint() error {
+	path := fmt.Sprintf("%s/lxc/%s/checkpoint", shared.APIConfig.MachinePath, m.Name)
+	return os.RemoveAll(path)
+}
 
-	c, err := lxc.NewContainer(m.Name, path)
-	if err != nil {
-		return err
+func (m *LxcMachine) MarshalJSON() ([]byte, error) {
+	type mdr struct {
+		LxcMachine
+
+		Type  string
+		State shared.MachineState
 	}
 
-	c.SetVerbosity(lxc.Verbose)
-
-	err = c.Destroy()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return json.Marshal(mdr{*m, m.Type(), m.State()})
 }

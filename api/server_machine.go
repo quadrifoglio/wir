@@ -11,16 +11,13 @@ import (
 	"github.com/quadrifoglio/wir/client"
 	"github.com/quadrifoglio/wir/errors"
 	"github.com/quadrifoglio/wir/shared"
-	"github.com/quadrifoglio/wir/image"
-	"github.com/quadrifoglio/wir/inter"
-	"github.com/quadrifoglio/wir/machine"
 	"github.com/quadrifoglio/wir/utils"
 )
 
 func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
 	PrepareResponse(w, r)
 
-	var m client.MachineRequest
+	var m shared.MachineInfo
 
 	err := json.NewDecoder(r.Body).Decode(&m)
 	if err != nil {
@@ -43,19 +40,31 @@ func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	i, err := DBFreeMachineIndex()
-	if err != nil {
-		ErrorResponse(errors.ImageNotFound).Send(w, r)
-		return
+	var mm Machine
+
+	switch img.Info().Type {
+	case shared.TypeQemu:
+		mm = new(QemuMachine)
+		err = mm.Create(img, m)
+		break
+	case shared.TypeLXC:
+		mm = new(LxcMachine)
+		err = mm.Create(img, m)
+		break
 	}
 
-	mm, err := machine.Create(i, m.Name, img, m.Cores, m.Memory, m.Network)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
 	}
 
-	err = DBStoreMachine(&mm)
+	err = SetupMachineNetwork(mm, m.Network)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	err = DBStoreMachine(mm)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
@@ -76,7 +85,7 @@ func handleMachineUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var nm client.MachineRequest
+	var nm shared.MachineInfo
 
 	err = json.NewDecoder(r.Body).Decode(&nm)
 	if err != nil {
@@ -84,13 +93,19 @@ func handleMachineUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = m.Update(nm.Cores, nm.Memory, nm.Network)
+	err = m.Update(nm)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
 	}
 
-	err = DBStoreMachine(&m)
+	err = UpdateMachineNetwork(m, nm.Network)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	err = DBStoreMachine(m)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
@@ -111,13 +126,13 @@ func handleMachineLinuxSysprep(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	img, err := DBGetImage(m.Image)
+	img, err := DBGetImage(m.Info().Image)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
 	}
 
-	if img.Type == image.TypeQemu && img.MainPartition == 0 {
+	if img.Info().Type == shared.TypeQemu && img.Info().MainPartition == 0 {
 		ErrorResponse(fmt.Errorf("image does not have a specified main partition. can not sysprep.")).Send(w, r)
 		return
 	}
@@ -130,7 +145,7 @@ func handleMachineLinuxSysprep(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = m.LinuxSysprep(img.MainPartition, sp.Hostname, sp.RootPasswd)
+	err = m.Sysprep("linux", sp.Hostname, sp.RootPasswd)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
@@ -151,12 +166,10 @@ func handleMachineList(w http.ResponseWriter, r *http.Request) {
 	sort.Sort(ms)
 
 	for i, _ := range ms {
-		prevState := ms[i].State
+		prevState := ms[i].State()
 
-		ms[i].Check()
-
-		if ms[i].State != prevState {
-			err = DBStoreMachine(&ms[i])
+		if ms[i].State() != prevState {
+			err = DBStoreMachine(ms[i])
 			if err != nil {
 				ErrorResponse(err).Send(w, r)
 				return
@@ -179,9 +192,7 @@ func handleMachineGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m.Check()
-
-	err = DBStoreMachine(&m)
+	err = DBStoreMachine(m)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
@@ -202,9 +213,7 @@ func handleMachineStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	m.Check()
-
-	if m.State != machine.StateDown {
+	if m.State() != shared.StateDown {
 		ErrorResponse(errors.InvalidMachineState).Send(w, r)
 		return
 	}
@@ -215,7 +224,7 @@ func handleMachineStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = DBStoreMachine(&m)
+	err = DBStoreMachine(m)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
@@ -263,7 +272,7 @@ func handleMachineStop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = DBStoreMachine(&m)
+	err = DBStoreMachine(m)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
@@ -297,32 +306,30 @@ func handleMachineMigrate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	i, err := DBGetImage(m.Image)
+	i, err := DBGetImage(m.Info().Image)
 	if err != nil {
 		ErrorResponse(errors.ImageNotFound).Send(w, r)
 		return
 	}
 
-	m.Check()
-
-	if (req.Live && m.State != machine.StateUp) || (!req.Live && m.State != machine.StateDown) {
+	if (req.Live && m.State() != shared.StateUp) || (!req.Live && m.State() != shared.StateDown) {
 		ErrorResponse(errors.InvalidMachineState).Send(w, r)
 		return
 	}
 
-	switch m.Type {
-	case image.TypeQemu:
+	switch i.Info().Type {
+	case shared.TypeQemu:
 		if req.Live {
-			err = inter.LiveMigrateQemu(m, i, shared.Remote{shared.APIConfig.Address, "root", shared.APIConfig.Port}, req.Target)
+			err = LiveMigrateQemu(m, i, shared.Remote{shared.APIConfig.Address, "root", shared.APIConfig.Port}, req.Target)
 		} else {
-			err = inter.MigrateQemu(m, i, shared.Remote{shared.APIConfig.Address, "root", shared.APIConfig.Port}, req.Target)
+			err = MigrateQemu(m, i, shared.Remote{shared.APIConfig.Address, "root", shared.APIConfig.Port}, req.Target)
 		}
 		break
-	case image.TypeLXC:
+	case shared.TypeLXC:
 		if req.Live {
-			err = inter.LiveMigrateLxc(m, i, shared.Remote{shared.APIConfig.Address, "root", shared.APIConfig.Port}, req.Target)
+			err = LiveMigrateLxc(m, i, shared.Remote{shared.APIConfig.Address, "root", shared.APIConfig.Port}, req.Target)
 		} else {
-			err = inter.MigrateLxc(m, i, shared.Remote{shared.APIConfig.Address, "root", shared.APIConfig.Port}, req.Target)
+			err = MigrateLxc(m, i, shared.Remote{shared.APIConfig.Address, "root", shared.APIConfig.Port}, req.Target)
 		}
 		break
 	default:

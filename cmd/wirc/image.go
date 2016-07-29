@@ -36,7 +36,7 @@ func listImages(target shared.Remote, raw bool) {
 }
 
 func createImage(target shared.Remote, name, t, source string, mainPart int, arch, distro, release string) {
-	var req client.ImageRequest
+	var req shared.ImageInfo
 	req.Name = name
 	req.Type = t
 	req.Source = source

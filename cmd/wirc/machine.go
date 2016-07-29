@@ -10,7 +10,6 @@ import (
 
 	"github.com/quadrifoglio/wir/client"
 	"github.com/quadrifoglio/wir/shared"
-	"github.com/quadrifoglio/wir/machine"
 )
 
 func listMachines(target shared.Remote, raw bool) {
@@ -22,14 +21,14 @@ func listMachines(target shared.Remote, raw bool) {
 	if len(ms) > 0 {
 		if raw {
 			for _, m := range ms {
-				fmt.Println(strconv.Itoa(int(m.Index)), m.Name, m.Type, m.Image, machine.StateToString(m.State))
+				fmt.Println(strconv.Itoa(int(m.Index)), m.Name, m.Type, m.Image, shared.StateToString(m.State))
 			}
 		} else {
 			table := tablewriter.NewWriter(os.Stdout)
 			table.SetHeader([]string{"Index", "Name", "Type", "Image", "State", "MAC", "IP"})
 
 			for _, m := range ms {
-				table.Append([]string{strconv.Itoa(int(m.Index)), m.Name, m.Type, m.Image, machine.StateToString(m.State), m.Network.MAC, m.Network.IP})
+				table.Append([]string{strconv.Itoa(int(m.Index)), m.Name, m.Type, m.Image, shared.StateToString(m.State), m.Network.MAC, m.Network.IP})
 			}
 
 			table.Render()
@@ -37,8 +36,8 @@ func listMachines(target shared.Remote, raw bool) {
 	}
 }
 
-func createMachine(target shared.Remote, name, img string, cpus, mem int, net machine.NetworkSetup) {
-	var req client.MachineRequest
+func createMachine(target shared.Remote, name, img string, cpus, mem int, net shared.MachineNetwork) {
+	var req shared.MachineInfo
 	req.Name = name
 	req.Image = img
 	req.Cores = cpus
@@ -63,7 +62,7 @@ func showMachine(target shared.Remote, name string) {
 	fmt.Println("Name:", m.Name)
 	fmt.Println("Type:", m.Type)
 	fmt.Println("Image:", m.Image)
-	fmt.Println("State:", machine.StateToString(m.State))
+	fmt.Println("State:", shared.StateToString(m.State))
 	fmt.Println("Cores:", m.Cores)
 	fmt.Println("Memory:", m.Memory)
 	fmt.Println("Net:", m.Network.Mode)
@@ -71,8 +70,8 @@ func showMachine(target shared.Remote, name string) {
 	fmt.Println("IP:", m.Network.IP)
 }
 
-func updateMachine(target shared.Remote, name string, cpus, mem int, net machine.NetworkSetup) {
-	var req client.MachineRequest
+func updateMachine(target shared.Remote, name string, cpus, mem int, net shared.MachineNetwork) {
+	var req shared.MachineInfo
 	req.Cores = cpus
 	req.Memory = mem
 	req.Network = net

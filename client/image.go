@@ -5,25 +5,12 @@ import (
 	"fmt"
 
 	"github.com/quadrifoglio/wir/shared"
-	"github.com/quadrifoglio/wir/image"
 )
 
-type ImageRequest struct {
-	Name          string
-	Type          string
-	Source        string
-	MainPartition int
-
-	// Optional information
-	Arch    string
-	Distro  string
-	Release string
-}
-
-func ListImages(target shared.Remote) ([]image.Image, error) {
+func ListImages(target shared.Remote) ([]shared.ImageInfo, error) {
 	type Response struct {
 		ResponseBase
-		Content []image.Image
+		Content []shared.ImageInfo
 	}
 
 	var r Response
@@ -41,10 +28,10 @@ func ListImages(target shared.Remote) ([]image.Image, error) {
 	return r.Content, apiError(r.ResponseBase)
 }
 
-func CreateImage(target shared.Remote, i ImageRequest) (image.Image, error) {
+func CreateImage(target shared.Remote, i shared.ImageInfo) (shared.ImageInfo, error) {
 	type Response struct {
 		ResponseBase
-		Content image.Image
+		Content shared.ImageInfo
 	}
 
 	var r Response
@@ -67,10 +54,10 @@ func CreateImage(target shared.Remote, i ImageRequest) (image.Image, error) {
 	return r.Content, apiError(r.ResponseBase)
 }
 
-func GetImage(target shared.Remote, name string) (image.Image, error) {
+func GetImage(target shared.Remote, name string) (shared.ImageInfo, error) {
 	type Response struct {
 		ResponseBase
-		Content image.Image
+		Content shared.ImageInfo
 	}
 
 	var r Response
