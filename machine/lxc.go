@@ -2,6 +2,7 @@ package machine
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 
 	"github.com/quadrifoglio/wir/global"
 	"github.com/quadrifoglio/wir/image"
+	"github.com/quadrifoglio/wir/net"
 	"github.com/quadrifoglio/wir/utils"
 )
 
@@ -119,6 +121,37 @@ func LxcStart(m *Machine) error {
 		}
 		if err := c.SetConfigItem("lxc.network.link", "wir0"); err != nil {
 			return err
+		}
+
+		if global.APIConfig.EnableNetMonitor {
+			go func(m *Machine) {
+				a := net.MonitorInterface(m.IfName())
+
+				m.Check()
+
+				if m.State != StateUp {
+					return
+				}
+
+				if a == net.MonitorStop {
+					return
+				}
+				if a == net.MonitorAlert {
+					// TODO: Send email
+				}
+				if a == net.MonitorStop {
+					// TODO: Send email
+
+					err := LxcStop(m)
+					if err != nil {
+						log.Println(err)
+					}
+
+					return
+				}
+
+				time.Sleep(60 * time.Second)
+			}(m)
 		}
 	}
 

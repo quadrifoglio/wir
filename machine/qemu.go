@@ -102,6 +102,12 @@ func QemuStart(m *Machine) error {
 			go func(m *Machine) {
 				a := net.MonitorInterface(m.IfName())
 
+				m.Check()
+
+				if m.State != StateUp {
+					return
+				}
+
 				if a == net.MonitorStop {
 					return
 				}
