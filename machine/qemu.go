@@ -188,6 +188,8 @@ func QemuStart(m *Machine) error {
 				if a == net.MonitorStop {
 					// TODO: Send email
 
+					log.Println("iface monitor %s: shuting down (to many pps)", m.IfName())
+
 					err := QemuStop(m)
 					if err != nil {
 						log.Println(err)

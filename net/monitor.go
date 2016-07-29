@@ -37,11 +37,11 @@ func MonitorInterface(iface, direction string) int {
 		return MonitorCancel
 	}
 
-	txPPS := tx2 - tx1
+	pps := tx2 - tx1
 
-	if txPPS >= global.APIConfig.PPSStop {
+	if pps >= global.APIConfig.PPSStop {
 		return MonitorStop
-	} else if txPPS >= global.APIConfig.PPSAlert {
+	} else if pps >= global.APIConfig.PPSAlert {
 		return MonitorAlert
 	}
 
