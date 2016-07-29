@@ -8,10 +8,10 @@ import (
 	"github.com/olekukonko/tablewriter"
 
 	"github.com/quadrifoglio/wir/client"
-	"github.com/quadrifoglio/wir/global"
+	"github.com/quadrifoglio/wir/shared"
 )
 
-func listImages(target global.Remote, raw bool) {
+func listImages(target shared.Remote, raw bool) {
 	imgs, err := client.ListImages(target)
 	if err != nil {
 		fatal(err)
@@ -35,7 +35,7 @@ func listImages(target global.Remote, raw bool) {
 	}
 }
 
-func createImage(target global.Remote, name, t, source string, mainPart int, arch, distro, release string) {
+func createImage(target shared.Remote, name, t, source string, mainPart int, arch, distro, release string) {
 	var req client.ImageRequest
 	req.Name = name
 	req.Type = t
@@ -55,7 +55,7 @@ func createImage(target global.Remote, name, t, source string, mainPart int, arc
 	}
 }
 
-func showImage(target global.Remote, name string) {
+func showImage(target shared.Remote, name string) {
 	img, err := client.GetImage(target, name)
 	if err != nil {
 		fatal(err)
@@ -66,7 +66,7 @@ func showImage(target global.Remote, name string) {
 	fmt.Println("Source:", img.Source)
 }
 
-func deleteImage(target global.Remote, name string) {
+func deleteImage(target shared.Remote, name string) {
 	err := client.DeleteImage(target, name)
 	if err != nil {
 		fatal(err)

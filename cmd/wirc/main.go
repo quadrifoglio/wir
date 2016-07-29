@@ -7,7 +7,7 @@ import (
 
 	"github.com/alecthomas/kingpin"
 
-	"github.com/quadrifoglio/wir/global"
+	"github.com/quadrifoglio/wir/shared"
 	"github.com/quadrifoglio/wir/machine"
 )
 
@@ -89,7 +89,7 @@ func fatal(err error) {
 func main() {
 	s := kingpin.Parse()
 
-	var remote global.Remote
+	var remote shared.Remote
 	remote.Addr = *remoteAddr
 	remote.APIPort = *remotePort
 	remote.SSHUser = *remoteUser

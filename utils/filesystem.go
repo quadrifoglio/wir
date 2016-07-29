@@ -12,7 +12,7 @@ import (
 
 	"github.com/amoghe/go-crypt"
 
-	"github.com/quadrifoglio/wir/global"
+	"github.com/quadrifoglio/wir/shared"
 )
 
 func TarDirectory(path, output string) error {
@@ -42,7 +42,7 @@ func UntarDirectory(input, path string) error {
 	return nil
 }
 
-func MakeRemoteDirectories(dst global.Remote, dstDir string) error {
+func MakeRemoteDirectories(dst shared.Remote, dstDir string) error {
 	cmd := exec.Command("ssh", fmt.Sprintf("%s@%s", dst.SSHUser, dst.Addr), "mkdir -p "+dstDir)
 
 	out, err := cmd.CombinedOutput()
@@ -54,7 +54,7 @@ func MakeRemoteDirectories(dst global.Remote, dstDir string) error {
 	return nil
 }
 
-func SCP(srcFile string, dst global.Remote, dstFile string) error {
+func SCP(srcFile string, dst shared.Remote, dstFile string) error {
 	dstf := fmt.Sprintf("%s:%s", dst.Addr, dstFile)
 	cmd := exec.Command("scp", "-r", srcFile, dstf)
 

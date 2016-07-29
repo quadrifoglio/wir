@@ -15,7 +15,7 @@ import (
 	"github.com/quadrifoglio/go-qmp"
 
 	"github.com/quadrifoglio/wir/errors"
-	"github.com/quadrifoglio/wir/global"
+	"github.com/quadrifoglio/wir/shared"
 	"github.com/quadrifoglio/wir/image"
 	"github.com/quadrifoglio/wir/net"
 	"github.com/quadrifoglio/wir/utils"
@@ -26,7 +26,7 @@ var (
 )
 
 func QemuCreate(m *Machine, name string, img image.Image, cores, memory int) error {
-	path := fmt.Sprintf("%s/qemu/%s.qcow2", global.APIConfig.MachinePath, name)
+	path := fmt.Sprintf("%s/qemu/%s.qcow2", shared.APIConfig.MachinePath, name)
 
 	m.Name = name
 	m.Type = img.Type
@@ -43,9 +43,9 @@ func QemuCreate(m *Machine, name string, img image.Image, cores, memory int) err
 	var cmd *exec.Cmd
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		cmd = exec.Command(global.APIConfig.QemuImg, "create", "-b", img.Source, "-f", "qcow2", path)
+		cmd = exec.Command(shared.APIConfig.QemuImg, "create", "-b", img.Source, "-f", "qcow2", path)
 	} else {
-		cmd = exec.Command(global.APIConfig.QemuImg, "rebase", "-b", img.Source, path)
+		cmd = exec.Command(shared.APIConfig.QemuImg, "rebase", "-b", img.Source, path)
 	}
 
 	err = cmd.Run()
@@ -65,13 +65,13 @@ func QemuStart(m *Machine) error {
 	args[2] = "-smp"
 	args[3] = strconv.Itoa(m.Cores)
 	args[4] = "-hda"
-	args[5] = fmt.Sprintf("%s/qemu/%s.qcow2", global.APIConfig.MachinePath, m.Name)
+	args[5] = fmt.Sprintf("%s/qemu/%s.qcow2", shared.APIConfig.MachinePath, m.Name)
 	args[6] = "-vnc"
 	args[7] = fmt.Sprintf(":%d", m.Index)
 	args[8] = "-qmp"
-	args[9] = fmt.Sprintf("unix:%s/qemu/%s.sock,server,nowait", global.APIConfig.MachinePath, m.Name)
+	args[9] = fmt.Sprintf("unix:%s/qemu/%s.sock,server,nowait", shared.APIConfig.MachinePath, m.Name)
 
-	if global.APIConfig.EnableKVM {
+	if shared.APIConfig.EnableKVM {
 		args = append(args, "-enable-kvm")
 	}
 
@@ -104,7 +104,7 @@ func QemuStart(m *Machine) error {
 		args = append(args, fmt.Sprintf("driver=virtio-net,netdev=net0,mac=%s", m.Network.MAC))
 	}
 
-	cmd := exec.Command(global.APIConfig.Qemu, args...)
+	cmd := exec.Command(shared.APIConfig.Qemu, args...)
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -168,7 +168,7 @@ func QemuStart(m *Machine) error {
 		}
 	}
 
-	if global.APIConfig.EnableNetMonitor && m.Network.Mode != NetworkModeNone {
+	if shared.APIConfig.EnableNetMonitor && m.Network.Mode != NetworkModeNone {
 		go func(m *Machine) {
 			for {
 				a := net.MonitorInterface(m.IfName(), "rx")
@@ -215,12 +215,12 @@ func QemuLinuxSysprep(m *Machine, mainPart int, hostname, root string) error {
 	hostnameFile := path + "/etc/hostname"
 	shadowFile := path + "/etc/shadow"
 
-	err := utils.NBDConnectQcow2(global.APIConfig.QemuNbd, "/dev/nbd0", fmt.Sprintf("%s/qemu/%s.qcow2", global.APIConfig.MachinePath, m.Name))
+	err := utils.NBDConnectQcow2(shared.APIConfig.QemuNbd, "/dev/nbd0", fmt.Sprintf("%s/qemu/%s.qcow2", shared.APIConfig.MachinePath, m.Name))
 	if err != nil {
 		return err
 	}
 
-	defer utils.NBDDisconnectQcow2(global.APIConfig.QemuNbd, "/dev/nbd0")
+	defer utils.NBDDisconnectQcow2(shared.APIConfig.QemuNbd, "/dev/nbd0")
 
 	err = utils.Mount(fmt.Sprintf("/dev/nbd0p%d", mainPart), path)
 	if err != nil {
@@ -305,8 +305,8 @@ func QemuStats(m *Machine) (Stats, error) {
 }
 
 func QemuHasCheckpoint(m *Machine) bool {
-	path := fmt.Sprintf("%s/qemu/%s.qcow2", global.APIConfig.MachinePath, m.Name)
-	cmd := exec.Command(global.APIConfig.QemuImg, "snapshot", "-l", path)
+	path := fmt.Sprintf("%s/qemu/%s.qcow2", shared.APIConfig.MachinePath, m.Name)
+	cmd := exec.Command(shared.APIConfig.QemuImg, "snapshot", "-l", path)
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -321,7 +321,7 @@ func QemuHasCheckpoint(m *Machine) bool {
 }
 
 func QemuCheckpoint(m *Machine) error {
-	c, err := qmp.Open("unix", fmt.Sprintf("%s/qemu/%s.sock", global.APIConfig.MachinePath, m.Name))
+	c, err := qmp.Open("unix", fmt.Sprintf("%s/qemu/%s.sock", shared.APIConfig.MachinePath, m.Name))
 	if err != nil {
 		return err
 	}
@@ -342,8 +342,8 @@ func QemuCheckpoint(m *Machine) error {
 }
 
 func QemuDeleteCheckpoint(m *Machine) error {
-	path := fmt.Sprintf("%s/qemu/%s.qcow2", global.APIConfig.MachinePath, m.Name)
-	cmd := exec.Command(global.APIConfig.QemuImg, "snapshot", "-d", "checkpoint", path)
+	path := fmt.Sprintf("%s/qemu/%s.qcow2", shared.APIConfig.MachinePath, m.Name)
+	cmd := exec.Command(shared.APIConfig.QemuImg, "snapshot", "-d", "checkpoint", path)
 
 	err := cmd.Run()
 	if err != nil {
@@ -386,7 +386,7 @@ func QemuDelete(m *Machine) error {
 		tap.Close()
 	}
 
-	err := os.Remove(fmt.Sprintf("%s/qemu/%s.qcow2", global.APIConfig.MachinePath, m.Name))
+	err := os.Remove(fmt.Sprintf("%s/qemu/%s.qcow2", shared.APIConfig.MachinePath, m.Name))
 	if err != nil {
 		return fmt.Errorf("remove disk file: %s", err)
 	}

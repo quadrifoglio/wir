@@ -4,7 +4,7 @@ import (
 	"strconv"
 
 	"github.com/quadrifoglio/wir/errors"
-	"github.com/quadrifoglio/wir/global"
+	"github.com/quadrifoglio/wir/shared"
 	"github.com/quadrifoglio/wir/image"
 	"github.com/quadrifoglio/wir/net"
 )
@@ -80,19 +80,19 @@ func Create(freeIndex uint64, name string, img image.Image, cores, memory int, n
 
 	if len(m.Network.Mode) > 0 {
 		if len(m.Network.MAC) == 0 {
-			m.Network.MAC, err = net.GenerateMAC(global.APIConfig.NodeID)
+			m.Network.MAC, err = net.GenerateMAC(shared.APIConfig.NodeID)
 			if err != nil {
 				return m, err
 			}
 		}
 
-		err = net.GrantBasic(global.APIConfig.Ebtables, m.Network.MAC)
+		err = net.GrantBasic(shared.APIConfig.Ebtables, m.Network.MAC)
 		if err != nil {
 			return m, err
 		}
 
 		if len(m.Network.Mode) > 0 && len(m.Network.IP) > 0 {
-			err := net.GrantTraffic(global.APIConfig.Ebtables, m.Network.MAC, m.Network.IP)
+			err := net.GrantTraffic(shared.APIConfig.Ebtables, m.Network.MAC, m.Network.IP)
 			if err != nil {
 				return m, err
 			}
@@ -116,21 +116,21 @@ func (m *Machine) Update(cores, memory int, network NetworkSetup) error {
 	}
 
 	if len(network.MAC) > 0 && network.MAC != m.Network.MAC {
-		net.DenyTraffic(global.APIConfig.Ebtables, m.Network.MAC, m.Network.IP) // Not handling errors: can fail if no ip was previously registered
+		net.DenyTraffic(shared.APIConfig.Ebtables, m.Network.MAC, m.Network.IP) // Not handling errors: can fail if no ip was previously registered
 
 		m.Network.MAC = network.MAC
-		err := net.GrantTraffic(global.APIConfig.Ebtables, m.Network.MAC, m.Network.IP)
+		err := net.GrantTraffic(shared.APIConfig.Ebtables, m.Network.MAC, m.Network.IP)
 		if err != nil {
 			return err
 		}
 	}
 
 	if len(network.IP) > 0 && network.IP != m.Network.IP {
-		net.DenyTraffic(global.APIConfig.Ebtables, m.Network.MAC, m.Network.IP)
+		net.DenyTraffic(shared.APIConfig.Ebtables, m.Network.MAC, m.Network.IP)
 
 		m.Network.IP = network.IP
 
-		err := net.GrantTraffic(global.APIConfig.Ebtables, m.Network.MAC, m.Network.IP)
+		err := net.GrantTraffic(shared.APIConfig.Ebtables, m.Network.MAC, m.Network.IP)
 		if err != nil {
 			return err
 		}

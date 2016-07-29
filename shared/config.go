@@ -1,4 +1,4 @@
-package global
+package shared
 
 import (
 	"encoding/json"

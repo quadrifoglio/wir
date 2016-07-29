@@ -8,7 +8,7 @@ import (
 
 	"gopkg.in/lxc/go-lxc.v2"
 
-	"github.com/quadrifoglio/wir/global"
+	"github.com/quadrifoglio/wir/shared"
 	"github.com/quadrifoglio/wir/image"
 	"github.com/quadrifoglio/wir/net"
 	"github.com/quadrifoglio/wir/utils"
@@ -22,7 +22,7 @@ func LxcCreate(m *Machine, name string, img image.Image, cores, memory int) erro
 	m.Memory = memory
 	m.State = StateDown
 
-	path := fmt.Sprintf("%s/lxc", global.APIConfig.MachinePath)
+	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
 
 	err := os.MkdirAll(path, 0777)
 	if err != nil {
@@ -100,7 +100,7 @@ func LxcCreate(m *Machine, name string, img image.Image, cores, memory int) erro
 }
 
 func LxcStart(m *Machine) error {
-	path := fmt.Sprintf("%s/lxc", global.APIConfig.MachinePath)
+	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
 
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {
@@ -140,7 +140,7 @@ func LxcStart(m *Machine) error {
 		}
 	}
 
-	if global.APIConfig.EnableNetMonitor && m.Network.Mode != NetworkModeNone {
+	if shared.APIConfig.EnableNetMonitor && m.Network.Mode != NetworkModeNone {
 		go func(m *Machine) {
 			for {
 				a := net.MonitorInterface(m.IfName(), "rx")
@@ -184,7 +184,7 @@ func LxcStart(m *Machine) error {
 }
 
 func LxcLinuxSysprep(m *Machine, hostname, root string) error {
-	path := fmt.Sprintf("%s/lxc", global.APIConfig.MachinePath)
+	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
 
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {
@@ -206,7 +206,7 @@ func LxcLinuxSysprep(m *Machine, hostname, root string) error {
 }
 
 func LxcCheck(m *Machine) error {
-	path := fmt.Sprintf("%s/lxc", global.APIConfig.MachinePath)
+	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
 
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {
@@ -228,7 +228,7 @@ func LxcCheck(m *Machine) error {
 func LxcStats(m *Machine) (Stats, error) {
 	var stats Stats
 
-	path := fmt.Sprintf("%s/lxc", global.APIConfig.MachinePath)
+	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
 
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {
@@ -275,7 +275,7 @@ func LxcStats(m *Machine) (Stats, error) {
 }
 
 func LxcCheckpoint(m *Machine) error {
-	path := fmt.Sprintf("%s/lxc", global.APIConfig.MachinePath)
+	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
 
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {
@@ -312,7 +312,7 @@ func LxcCheckpoint(m *Machine) error {
 }
 
 func LxcStop(m *Machine) error {
-	path := fmt.Sprintf("%s/lxc", global.APIConfig.MachinePath)
+	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
 
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {
@@ -330,7 +330,7 @@ func LxcStop(m *Machine) error {
 }
 
 func LxcDelete(m *Machine) error {
-	path := fmt.Sprintf("%s/lxc", global.APIConfig.MachinePath)
+	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
 
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {

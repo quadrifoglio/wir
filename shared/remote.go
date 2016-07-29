@@ -1,4 +1,4 @@
-package global
+package shared
 
 type Remote struct {
 	Addr    string

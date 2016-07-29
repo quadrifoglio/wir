@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/quadrifoglio/wir/global"
+	"github.com/quadrifoglio/wir/shared"
 )
 
 type APIConfig struct {
@@ -22,7 +22,7 @@ type ResponseBase struct {
 	Message string
 }
 
-func GetConfig(target global.Remote) (APIConfig, error) {
+func GetConfig(target shared.Remote) (APIConfig, error) {
 	type Response struct {
 		ResponseBase
 		Content struct {
@@ -45,7 +45,7 @@ func GetConfig(target global.Remote) (APIConfig, error) {
 	return r.Content.Configuration, apiError(r.ResponseBase)
 }
 
-func apiRequest(target global.Remote, method, url string, body []byte) ([]byte, error) {
+func apiRequest(target shared.Remote, method, url string, body []byte) ([]byte, error) {
 	var c http.Client
 
 	req, err := http.NewRequest(method, fmt.Sprintf("http://%s:%d%s", target.Addr, target.APIPort, url), bytes.NewBuffer(body))

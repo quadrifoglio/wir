@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/quadrifoglio/wir/global"
+	"github.com/quadrifoglio/wir/shared"
 	"github.com/quadrifoglio/wir/image"
 )
 
@@ -20,7 +20,7 @@ type ImageRequest struct {
 	Release string
 }
 
-func ListImages(target global.Remote) ([]image.Image, error) {
+func ListImages(target shared.Remote) ([]image.Image, error) {
 	type Response struct {
 		ResponseBase
 		Content []image.Image
@@ -41,7 +41,7 @@ func ListImages(target global.Remote) ([]image.Image, error) {
 	return r.Content, apiError(r.ResponseBase)
 }
 
-func CreateImage(target global.Remote, i ImageRequest) (image.Image, error) {
+func CreateImage(target shared.Remote, i ImageRequest) (image.Image, error) {
 	type Response struct {
 		ResponseBase
 		Content image.Image
@@ -67,7 +67,7 @@ func CreateImage(target global.Remote, i ImageRequest) (image.Image, error) {
 	return r.Content, apiError(r.ResponseBase)
 }
 
-func GetImage(target global.Remote, name string) (image.Image, error) {
+func GetImage(target shared.Remote, name string) (image.Image, error) {
 	type Response struct {
 		ResponseBase
 		Content image.Image
@@ -88,7 +88,7 @@ func GetImage(target global.Remote, name string) (image.Image, error) {
 	return r.Content, apiError(r.ResponseBase)
 }
 
-func DeleteImage(target global.Remote, name string) error {
+func DeleteImage(target shared.Remote, name string) error {
 	type Response struct {
 		ResponseBase
 		Content interface{}

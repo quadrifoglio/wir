@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/quadrifoglio/wir/global"
+	"github.com/quadrifoglio/wir/shared"
 	"github.com/quadrifoglio/wir/errors"
 	"github.com/quadrifoglio/wir/utils"
 )
@@ -23,7 +23,7 @@ func LxcCreate(name, src string) (Image, error) {
 		return i, errors.UnsupportedProto
 	}
 
-	path := fmt.Sprintf("%s/lxc/%s", global.APIConfig.ImagePath, name)
+	path := fmt.Sprintf("%s/lxc/%s", shared.APIConfig.ImagePath, name)
 
 	err = os.MkdirAll(filepath.Dir(path), 0777)
 	if err != nil {

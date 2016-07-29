@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/quadrifoglio/wir/errors"
-	"github.com/quadrifoglio/wir/global"
+	"github.com/quadrifoglio/wir/shared"
 	"github.com/quadrifoglio/wir/net"
 	"github.com/quadrifoglio/wir/utils"
 )
@@ -34,7 +34,7 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 	type info struct {
 		Name          string
 		Version       string
-		Configuration global.APIConfigStruct
+		Configuration shared.APIConfigStruct
 		Stats         stats
 	}
 
@@ -50,38 +50,38 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fs, err := utils.GetFreeSpace(global.APIConfig.MachinePath)
+	fs, err := utils.GetFreeSpace(shared.APIConfig.MachinePath)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
 	}
 
-	i := info{"wir api", Version, global.APIConfig, stats{cpu, ru, rt, fs}}
+	i := info{"wir api", Version, shared.APIConfig, stats{cpu, ru, rt, fs}}
 	SuccessResponse(i).Send(w, r)
 }
 
 func Start() error {
-	err := os.MkdirAll(filepath.Dir(global.APIConfig.DatabaseFile), 0777)
+	err := os.MkdirAll(filepath.Dir(shared.APIConfig.DatabaseFile), 0777)
 	if err != nil {
 		return err
 	}
 
-	err = os.MkdirAll(global.APIConfig.ImagePath, 0777)
+	err = os.MkdirAll(shared.APIConfig.ImagePath, 0777)
 	if err != nil {
 		return err
 	}
 
-	err = os.MkdirAll(global.APIConfig.MachinePath, 0777)
+	err = os.MkdirAll(shared.APIConfig.MachinePath, 0777)
 	if err != nil {
 		return err
 	}
 
-	err = DBOpen(global.APIConfig.DatabaseFile)
+	err = DBOpen(shared.APIConfig.DatabaseFile)
 	if err != nil {
 		return err
 	}
 
-	err = net.Init(global.APIConfig.Ebtables, global.APIConfig.BridgeIface)
+	err = net.Init(shared.APIConfig.Ebtables, shared.APIConfig.BridgeIface)
 	if err != nil {
 		return err
 	}
@@ -108,5 +108,5 @@ func Start() error {
 	r.NotFoundHandler = http.HandlerFunc(handleNotFound)
 	http.Handle("/", handlers.CORS()(r))
 
-	return http.ListenAndServe(fmt.Sprintf("%s:%d", global.APIConfig.Address, global.APIConfig.Port), nil)
+	return http.ListenAndServe(fmt.Sprintf("%s:%d", shared.APIConfig.Address, shared.APIConfig.Port), nil)
 }

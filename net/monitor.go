@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/quadrifoglio/wir/global"
+	"github.com/quadrifoglio/wir/shared"
 )
 
 const (
@@ -39,9 +39,9 @@ func MonitorInterface(iface, direction string) int {
 
 	pps := tx2 - tx1
 
-	if pps >= global.APIConfig.PPSStop {
+	if pps >= shared.APIConfig.PPSStop {
 		return MonitorStop
-	} else if pps >= global.APIConfig.PPSAlert {
+	} else if pps >= shared.APIConfig.PPSAlert {
 		return MonitorAlert
 	}
 

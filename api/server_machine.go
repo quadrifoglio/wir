@@ -10,7 +10,7 @@ import (
 
 	"github.com/quadrifoglio/wir/client"
 	"github.com/quadrifoglio/wir/errors"
-	"github.com/quadrifoglio/wir/global"
+	"github.com/quadrifoglio/wir/shared"
 	"github.com/quadrifoglio/wir/image"
 	"github.com/quadrifoglio/wir/inter"
 	"github.com/quadrifoglio/wir/machine"
@@ -29,7 +29,7 @@ func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(m.Name) == 0 {
-		m.Name = utils.UniqueID(global.APIConfig.NodeID)
+		m.Name = utils.UniqueID(shared.APIConfig.NodeID)
 	}
 
 	if !DBMachineNameFree(m.Name) {
@@ -276,7 +276,7 @@ func handleMachineMigrate(w http.ResponseWriter, r *http.Request) {
 	PrepareResponse(w, r)
 
 	type Request struct {
-		Target global.Remote
+		Target shared.Remote
 		Live   bool
 	}
 
@@ -313,16 +313,16 @@ func handleMachineMigrate(w http.ResponseWriter, r *http.Request) {
 	switch m.Type {
 	case image.TypeQemu:
 		if req.Live {
-			err = inter.LiveMigrateQemu(m, i, global.Remote{global.APIConfig.Address, "root", global.APIConfig.Port}, req.Target)
+			err = inter.LiveMigrateQemu(m, i, shared.Remote{shared.APIConfig.Address, "root", shared.APIConfig.Port}, req.Target)
 		} else {
-			err = inter.MigrateQemu(m, i, global.Remote{global.APIConfig.Address, "root", global.APIConfig.Port}, req.Target)
+			err = inter.MigrateQemu(m, i, shared.Remote{shared.APIConfig.Address, "root", shared.APIConfig.Port}, req.Target)
 		}
 		break
 	case image.TypeLXC:
 		if req.Live {
-			err = inter.LiveMigrateLxc(m, i, global.Remote{global.APIConfig.Address, "root", global.APIConfig.Port}, req.Target)
+			err = inter.LiveMigrateLxc(m, i, shared.Remote{shared.APIConfig.Address, "root", shared.APIConfig.Port}, req.Target)
 		} else {
-			err = inter.MigrateLxc(m, i, global.Remote{global.APIConfig.Address, "root", global.APIConfig.Port}, req.Target)
+			err = inter.MigrateLxc(m, i, shared.Remote{shared.APIConfig.Address, "root", shared.APIConfig.Port}, req.Target)
 		}
 		break
 	default:

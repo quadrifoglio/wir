@@ -5,13 +5,13 @@ import (
 	"path/filepath"
 
 	"github.com/quadrifoglio/wir/client"
-	"github.com/quadrifoglio/wir/global"
+	"github.com/quadrifoglio/wir/shared"
 	"github.com/quadrifoglio/wir/image"
 	"github.com/quadrifoglio/wir/machine"
 	"github.com/quadrifoglio/wir/utils"
 )
 
-func MigrateImage(i image.Image, src, dst global.Remote) error {
+func MigrateImage(i image.Image, src, dst shared.Remote) error {
 	_, err := client.GetImage(dst, i.Name)
 	if err == nil {
 		return nil
@@ -35,7 +35,7 @@ func MigrateImage(i image.Image, src, dst global.Remote) error {
 	return nil
 }
 
-func MigrateQemu(m machine.Machine, i image.Image, src, dst global.Remote) error {
+func MigrateQemu(m machine.Machine, i image.Image, src, dst shared.Remote) error {
 	m.Check()
 
 	if m.State == machine.StateUp {
@@ -55,7 +55,7 @@ func MigrateQemu(m machine.Machine, i image.Image, src, dst global.Remote) error
 		return fmt.Errorf("failed to get remote config: %s", err)
 	}
 
-	srcPath := fmt.Sprintf("%s/qemu/%s.qcow2", global.APIConfig.MachinePath, m.Name)
+	srcPath := fmt.Sprintf("%s/qemu/%s.qcow2", shared.APIConfig.MachinePath, m.Name)
 	dstPath := fmt.Sprintf("%s/qemu/%s.qcow2", conf.MachinePath, m.Name)
 
 	err = utils.MakeRemoteDirectories(dst, filepath.Dir(dstPath))
@@ -78,7 +78,7 @@ func MigrateQemu(m machine.Machine, i image.Image, src, dst global.Remote) error
 	return nil
 }
 
-func LiveMigrateQemu(m machine.Machine, i image.Image, src, dst global.Remote) error {
+func LiveMigrateQemu(m machine.Machine, i image.Image, src, dst shared.Remote) error {
 	err := machine.QemuCheckpoint(&m)
 	if err != nil {
 		return fmt.Errorf("failed to checkpoint: %s", err)
@@ -97,7 +97,7 @@ func LiveMigrateQemu(m machine.Machine, i image.Image, src, dst global.Remote) e
 	return nil
 }
 
-func MigrateLxc(m machine.Machine, i image.Image, src, dst global.Remote) error {
+func MigrateLxc(m machine.Machine, i image.Image, src, dst shared.Remote) error {
 	m.Check()
 
 	if m.State == machine.StateUp {
@@ -117,7 +117,7 @@ func MigrateLxc(m machine.Machine, i image.Image, src, dst global.Remote) error 
 		return fmt.Errorf("failed to get remote config: %s", err)
 	}
 
-	srcFolder := fmt.Sprintf("%s/lxc/%s", global.APIConfig.MachinePath, m.Name)
+	srcFolder := fmt.Sprintf("%s/lxc/%s", shared.APIConfig.MachinePath, m.Name)
 
 	err = utils.TarDirectory(srcFolder, fmt.Sprintf("/tmp/%s.tar.gz", m.Name))
 	if err != nil {
@@ -152,7 +152,7 @@ func MigrateLxc(m machine.Machine, i image.Image, src, dst global.Remote) error 
 	return nil
 }
 
-func LiveMigrateLxc(m machine.Machine, i image.Image, src, dst global.Remote) error {
+func LiveMigrateLxc(m machine.Machine, i image.Image, src, dst shared.Remote) error {
 	err := machine.LxcCheckpoint(&m)
 	if err != nil {
 		return fmt.Errorf("failed to checkpoint: %s", err)

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/quadrifoglio/wir/global"
+	"github.com/quadrifoglio/wir/shared"
 	"github.com/quadrifoglio/wir/machine"
 )
 
@@ -21,7 +21,7 @@ type LinuxSysprep struct {
 	RootPasswd string
 }
 
-func ListMachines(target global.Remote) ([]machine.Machine, error) {
+func ListMachines(target shared.Remote) ([]machine.Machine, error) {
 	type Response struct {
 		ResponseBase
 		Content []machine.Machine
@@ -42,7 +42,7 @@ func ListMachines(target global.Remote) ([]machine.Machine, error) {
 	return r.Content, apiError(r.ResponseBase)
 }
 
-func CreateMachine(target global.Remote, i MachineRequest) (machine.Machine, error) {
+func CreateMachine(target shared.Remote, i MachineRequest) (machine.Machine, error) {
 	type Response struct {
 		ResponseBase
 		Content machine.Machine
@@ -68,7 +68,7 @@ func CreateMachine(target global.Remote, i MachineRequest) (machine.Machine, err
 	return r.Content, apiError(r.ResponseBase)
 }
 
-func GetMachine(target global.Remote, name string) (machine.Machine, error) {
+func GetMachine(target shared.Remote, name string) (machine.Machine, error) {
 	type Response struct {
 		ResponseBase
 		Content machine.Machine
@@ -89,7 +89,7 @@ func GetMachine(target global.Remote, name string) (machine.Machine, error) {
 	return r.Content, apiError(r.ResponseBase)
 }
 
-func UpdateMachine(target global.Remote, name string, i MachineRequest) error {
+func UpdateMachine(target shared.Remote, name string, i MachineRequest) error {
 	var r ResponseBase
 
 	data, err := json.Marshal(i)
@@ -110,7 +110,7 @@ func UpdateMachine(target global.Remote, name string, i MachineRequest) error {
 	return apiError(r)
 }
 
-func LinuxSysprepMachine(target global.Remote, name string, i LinuxSysprep) error {
+func LinuxSysprepMachine(target shared.Remote, name string, i LinuxSysprep) error {
 	var r ResponseBase
 
 	data, err := json.Marshal(i)
@@ -131,7 +131,7 @@ func LinuxSysprepMachine(target global.Remote, name string, i LinuxSysprep) erro
 	return apiError(r)
 }
 
-func StartMachine(target global.Remote, name string) error {
+func StartMachine(target shared.Remote, name string) error {
 	type Response struct {
 		ResponseBase
 		Content machine.Machine
@@ -152,7 +152,7 @@ func StartMachine(target global.Remote, name string) error {
 	return apiError(r.ResponseBase)
 }
 
-func StopMachine(target global.Remote, name string) error {
+func StopMachine(target shared.Remote, name string) error {
 	type Response struct {
 		ResponseBase
 		Content machine.Machine
@@ -173,11 +173,11 @@ func StopMachine(target global.Remote, name string) error {
 	return apiError(r.ResponseBase)
 }
 
-func MigrateMachine(target global.Remote, name string, remote global.Remote, live bool) error {
+func MigrateMachine(target shared.Remote, name string, remote shared.Remote, live bool) error {
 	var r ResponseBase
 
 	type request struct {
-		Target global.Remote
+		Target shared.Remote
 		Live   bool
 	}
 
@@ -199,7 +199,7 @@ func MigrateMachine(target global.Remote, name string, remote global.Remote, liv
 	return apiError(r)
 }
 
-func DeleteMachine(target global.Remote, name string) error {
+func DeleteMachine(target shared.Remote, name string) error {
 	type Response struct {
 		ResponseBase
 		Content interface{}
