@@ -113,6 +113,9 @@ func LxcStart(m *Machine) error {
 		if err := c.SetConfigItem("lxc.network.type", "veth"); err != nil {
 			return err
 		}
+		if err := c.SetConfigItem("lxc.network.veth.pair", m.IfName()); err != nil {
+			return err
+		}
 		if err := c.SetConfigItem("lxc.network.flags", "up"); err != nil {
 			return err
 		}
@@ -121,37 +124,6 @@ func LxcStart(m *Machine) error {
 		}
 		if err := c.SetConfigItem("lxc.network.hwaddr", m.Network.MAC); err != nil {
 			return err
-		}
-
-		if global.APIConfig.EnableNetMonitor {
-			go func(m *Machine) {
-				a := net.MonitorInterface(m.IfName())
-
-				m.Check()
-
-				if m.State != StateUp {
-					return
-				}
-
-				if a == net.MonitorStop {
-					return
-				}
-				if a == net.MonitorAlert {
-					// TODO: Send email
-				}
-				if a == net.MonitorStop {
-					// TODO: Send email
-
-					err := LxcStop(m)
-					if err != nil {
-						log.Println(err)
-					}
-
-					return
-				}
-
-				time.Sleep(60 * time.Second)
-			}(m)
 		}
 	}
 
@@ -166,6 +138,39 @@ func LxcStart(m *Machine) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	if global.APIConfig.EnableNetMonitor && m.Network.Mode != NetworkModeNone {
+		go func(m *Machine) {
+			for {
+				a := net.MonitorInterface(m.IfName(), "rx")
+
+				m.Check()
+
+				if m.State != StateUp {
+					break
+				}
+
+				if a == net.MonitorCancel {
+					break
+				}
+				if a == net.MonitorAlert {
+					// TODO: Send email
+				}
+				if a == net.MonitorStop {
+					// TODO: Send email
+
+					err := LxcStop(m)
+					if err != nil {
+						log.Println(err)
+					}
+
+					break
+				}
+
+				time.Sleep(10 * time.Second)
+			}
+		}(m)
 	}
 
 	/*err = c.SetMemoryLimit(lxc.ByteSize(m.Memory) * lxc.MB)

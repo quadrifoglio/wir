@@ -6,7 +6,7 @@
 	"Port": 1997,
 
 	"BridgeIface": "eth0",
-	"EnableNetMonitor": true,
+	"EnableNetMonitor": false,
 	"PPSAlert": 70000,
 	"PPSStop": 90000,
 
