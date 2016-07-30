@@ -28,7 +28,6 @@ var (
 type QemuMachine struct {
 	shared.MachineInfo
 
-	// QEMU process' PID
 	PID      int
 	MainPart string
 }
@@ -67,7 +66,7 @@ func (m *QemuMachine) Create(img Image, info shared.MachineInfo) error {
 		return fmt.Errorf("qemu-img: %s", err)
 	}
 
-	return nil
+	return SetupMachineNetwork(m, info.Network)
 }
 
 func (m *QemuMachine) Update(info shared.MachineInfo) error {
@@ -79,7 +78,7 @@ func (m *QemuMachine) Update(info shared.MachineInfo) error {
 		m.Memory = info.Cores
 	}
 
-	return nil
+	return UpdateMachineNetwork(m, info.Network)
 }
 
 func (m *QemuMachine) Delete() error {
@@ -178,6 +177,11 @@ func (m *QemuMachine) Start() error {
 		tap.Close()
 
 		err = net.BridgeAddIf("wir0", MachineIfName(m))
+		if err != nil {
+			return err
+		}
+
+		err = CheckMachineNetwork(m)
 		if err != nil {
 			return err
 		}

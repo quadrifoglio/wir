@@ -58,12 +58,12 @@ func SetupMachineNetwork(m Machine, network shared.MachineNetwork) error {
 			}
 		}
 
-		err = net.GrantBasic(shared.APIConfig.Ebtables, mi.Network.MAC)
+		err = net.GrantTraffic(shared.APIConfig.Ebtables, mi.Network.MAC, "0.0.0.0")
 		if err != nil {
 			return err
 		}
 
-		if len(mi.Network.Mode) > 0 && len(mi.Network.IP) > 0 {
+		if len(mi.Network.IP) > 0 {
 			err := net.GrantTraffic(shared.APIConfig.Ebtables, mi.Network.MAC, mi.Network.IP)
 			if err != nil {
 				return err
@@ -72,6 +72,43 @@ func SetupMachineNetwork(m Machine, network shared.MachineNetwork) error {
 	}
 
 	return err
+}
+
+func CheckMachineNetwork(m Machine) error {
+	mi := m.Info()
+	netw := mi.Network
+
+	if netw.Mode == shared.NetworkModeNone || len(netw.MAC) == 0 {
+		return nil
+	}
+
+	is, err := net.IsGranted(shared.APIConfig.Ebtables, netw.MAC, "0.0.0.0")
+	if err != nil {
+		return err
+	}
+
+	if !is {
+		err := net.GrantTraffic(shared.APIConfig.Ebtables, netw.MAC, "0.0.0.0")
+		if err != nil {
+			return err
+		}
+	}
+
+	if len(netw.IP) > 0 {
+		is, err = net.IsGranted(shared.APIConfig.Ebtables, netw.MAC, netw.IP)
+		if err != nil {
+			return err
+		}
+
+		if !is {
+			err := net.GrantTraffic(shared.APIConfig.Ebtables, netw.MAC, netw.IP)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func UpdateMachineNetwork(m Machine, network shared.MachineNetwork) error {

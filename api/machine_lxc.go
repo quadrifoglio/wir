@@ -106,7 +106,7 @@ func (m *LxcMachine) Create(img Image, info shared.MachineInfo) error {
 		return fmt.Errorf("failed to save config: %s", err)
 	}
 
-	return nil
+	return SetupMachineNetwork(m, info.Network)
 }
 
 func (m *LxcMachine) Update(info shared.MachineInfo) error {
@@ -118,7 +118,7 @@ func (m *LxcMachine) Update(info shared.MachineInfo) error {
 		m.Memory = info.Cores
 	}
 
-	return nil
+	return UpdateMachineNetwork(m, info.Network)
 }
 
 func (m *LxcMachine) Delete() error {
@@ -183,6 +183,11 @@ func (m *LxcMachine) Start() error {
 			return err
 		}
 		if err := c.SetConfigItem("lxc.network.hwaddr", m.Network.MAC); err != nil {
+			return err
+		}
+
+		err = CheckMachineNetwork(m)
+		if err != nil {
 			return err
 		}
 	}

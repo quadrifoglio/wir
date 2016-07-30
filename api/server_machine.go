@@ -58,12 +58,6 @@ func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = SetupMachineNetwork(mm, m.Network)
-	if err != nil {
-		ErrorResponse(err).Send(w, r)
-		return
-	}
-
 	err = DBStoreMachine(mm)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
@@ -94,12 +88,6 @@ func handleMachineUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = m.Update(nm)
-	if err != nil {
-		ErrorResponse(err).Send(w, r)
-		return
-	}
-
-	err = UpdateMachineNetwork(m, nm.Network)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return

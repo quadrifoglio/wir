@@ -1,8 +1,10 @@
 package net
 
 import (
+	"bufio"
 	"fmt"
 	"os/exec"
+	"strings"
 )
 
 const (
@@ -40,15 +42,37 @@ func InitEbtables(ebtables string) error {
 	return nil
 }
 
-func GrantBasic(cmds, mac string) error {
-	cmd := exec.Command(cmds, "-A", "WIR", "-p", "ip", "--ip-src", "0.0.0.0", "-s", mac, "-j", "ACCEPT")
+func IsGranted(cmds, mac, ip string) (bool, error) {
+	cmd := exec.Command(cmds, "-L", "WIR")
 
-	err := cmd.Run()
+	out, err := cmd.StdoutPipe()
 	if err != nil {
-		return fmt.Errorf("granting traffic (0.0.0.0): %s", err)
+		return false, fmt.Errorf("can not open ebtables stdout: %s", err)
 	}
 
-	return nil
+	err = cmd.Start()
+	if err != nil {
+		return false, fmt.Errorf("granting traffic (0.0.0.0): %s", err)
+	}
+
+	defer cmd.Wait()
+
+	sc := bufio.NewScanner(out)
+
+	for sc.Scan() {
+		s := sc.Text()
+		mac = strings.Replace(mac, ":0", ":", -1)
+
+		if strings.Contains(s, mac) && strings.Contains(s, ip) && strings.Contains(s, "ACCEPT") {
+			return true, nil
+		}
+	}
+
+	if err := sc.Err(); err != nil {
+		return false, fmt.Errorf("failed to read ebtables output: %s", err)
+	}
+
+	return false, nil
 }
 
 func GrantTraffic(cmds, mac, ip string) error {
@@ -56,7 +80,7 @@ func GrantTraffic(cmds, mac, ip string) error {
 
 	err := cmd.Run()
 	if err != nil {
-		return fmt.Errorf("granting traffic: %s", err)
+		return fmt.Errorf("granting traffic (%s / %s): %s", mac, ip, err)
 	}
 
 	return nil
@@ -67,7 +91,7 @@ func DenyTraffic(cmds, mac, ip string) error {
 
 	err := cmd.Run()
 	if err != nil {
-		return fmt.Errorf("denying traffic: %s", err)
+		return fmt.Errorf("denying traffic (%s / %s): %s", mac, ip, err)
 	}
 
 	return nil
