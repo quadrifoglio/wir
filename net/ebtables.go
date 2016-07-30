@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
+
+	"github.com/quadrifoglio/wir/shared"
 )
 
 const (
@@ -42,8 +44,8 @@ func InitEbtables(ebtables string) error {
 	return nil
 }
 
-func IsGranted(cmds, mac, ip string) (bool, error) {
-	cmd := exec.Command(cmds, "-L", "WIR")
+func IsGranted(mac, ip string) (bool, error) {
+	cmd := exec.Command(shared.APIConfig.Ebtables, "-L", "WIR")
 
 	out, err := cmd.StdoutPipe()
 	if err != nil {
@@ -75,8 +77,8 @@ func IsGranted(cmds, mac, ip string) (bool, error) {
 	return false, nil
 }
 
-func GrantTraffic(cmds, mac, ip string) error {
-	cmd := exec.Command(cmds, "-A", "WIR", "-p", "ip", "--ip-src", ip, "-s", mac, "-j", "ACCEPT")
+func GrantTraffic(mac, ip string) error {
+	cmd := exec.Command(shared.APIConfig.Ebtables, "-A", "WIR", "-p", "ip", "--ip-src", ip, "-s", mac, "-j", "ACCEPT")
 
 	err := cmd.Run()
 	if err != nil {
@@ -86,8 +88,8 @@ func GrantTraffic(cmds, mac, ip string) error {
 	return nil
 }
 
-func DenyTraffic(cmds, mac, ip string) error {
-	cmd := exec.Command(cmds, "-D", "WIR", "-p", "ip", "--ip-src", ip, "-s", mac, "-j", "ACCEPT")
+func DenyTraffic(mac, ip string) error {
+	cmd := exec.Command(shared.APIConfig.Ebtables, "-D", "WIR", "-p", "ip", "--ip-src", ip, "-s", mac, "-j", "ACCEPT")
 
 	err := cmd.Run()
 	if err != nil {

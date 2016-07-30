@@ -58,13 +58,13 @@ func SetupMachineNetwork(m Machine, network shared.MachineNetwork) error {
 			}
 		}
 
-		err = net.GrantTraffic(shared.APIConfig.Ebtables, mi.Network.MAC, "0.0.0.0")
+		err = net.GrantTraffic(mi.Network.MAC, "0.0.0.0")
 		if err != nil {
 			return err
 		}
 
 		if len(mi.Network.IP) > 0 {
-			err := net.GrantTraffic(shared.APIConfig.Ebtables, mi.Network.MAC, mi.Network.IP)
+			err := net.GrantTraffic(mi.Network.MAC, mi.Network.IP)
 			if err != nil {
 				return err
 			}
@@ -82,26 +82,26 @@ func CheckMachineNetwork(m Machine) error {
 		return nil
 	}
 
-	is, err := net.IsGranted(shared.APIConfig.Ebtables, netw.MAC, "0.0.0.0")
+	is, err := net.IsGranted(netw.MAC, "0.0.0.0")
 	if err != nil {
 		return err
 	}
 
 	if !is {
-		err := net.GrantTraffic(shared.APIConfig.Ebtables, netw.MAC, "0.0.0.0")
+		err := net.GrantTraffic(netw.MAC, "0.0.0.0")
 		if err != nil {
 			return err
 		}
 	}
 
 	if len(netw.IP) > 0 {
-		is, err = net.IsGranted(shared.APIConfig.Ebtables, netw.MAC, netw.IP)
+		is, err = net.IsGranted(netw.MAC, netw.IP)
 		if err != nil {
 			return err
 		}
 
 		if !is {
-			err := net.GrantTraffic(shared.APIConfig.Ebtables, netw.MAC, netw.IP)
+			err := net.GrantTraffic(netw.MAC, netw.IP)
 			if err != nil {
 				return err
 			}
@@ -119,21 +119,21 @@ func UpdateMachineNetwork(m Machine, network shared.MachineNetwork) error {
 	}
 
 	if len(network.MAC) > 0 && network.MAC != mi.Network.MAC {
-		net.DenyTraffic(shared.APIConfig.Ebtables, mi.Network.MAC, mi.Network.IP) // Not handling errors: can fail if no ip was previously registered
+		net.DenyTraffic(mi.Network.MAC, mi.Network.IP) // Not handling errors: can fail if no ip was previously registered
 
 		mi.Network.MAC = network.MAC
-		err := net.GrantTraffic(shared.APIConfig.Ebtables, mi.Network.MAC, mi.Network.IP)
+		err := net.GrantTraffic(mi.Network.MAC, mi.Network.IP)
 		if err != nil {
 			return err
 		}
 	}
 
 	if len(network.IP) > 0 && network.IP != mi.Network.IP {
-		net.DenyTraffic(shared.APIConfig.Ebtables, mi.Network.MAC, mi.Network.IP)
+		net.DenyTraffic(mi.Network.MAC, mi.Network.IP)
 
 		mi.Network.IP = network.IP
 
-		err := net.GrantTraffic(shared.APIConfig.Ebtables, mi.Network.MAC, mi.Network.IP)
+		err := net.GrantTraffic(mi.Network.MAC, mi.Network.IP)
 		if err != nil {
 			return err
 		}
