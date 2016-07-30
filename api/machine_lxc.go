@@ -33,6 +33,7 @@ func (m *LxcMachine) Create(img Image, info shared.MachineInfo) error {
 	m.Image = img.Info().Name
 	m.Cores = info.Cores
 	m.Memory = info.Memory
+	m.Disk = info.Disk
 
 	err := os.MkdirAll(path, 0777)
 	if err != nil {

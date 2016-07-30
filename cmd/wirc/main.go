@@ -43,7 +43,8 @@ var (
 	machineCreate        = cmdMachine.Command("create", "Create a new machine based on an existing image")
 	machineCreateName    = machineCreate.Flag("name", "Name of the machine (will be generated if not specified)").Short('n').String()
 	machineCreateCores   = machineCreate.Flag("cpus", "Number of CPU cores to use").Short('c').Default("1").Int()
-	machineCreateMem     = machineCreate.Flag("memory", "Amount of memory to use").Short('m').Default("512").Int()
+	machineCreateMem     = machineCreate.Flag("memory", "Memory limit in MiB").Short('m').Default("512").Int()
+	machineCreateDisk    = machineCreate.Flag("disk", "Disk space limit in bytes").Short('d').Default("1073741824").Int()
 	machineCreateNetMode = machineCreate.Flag("net", "Network setup to use (bridge by default)").String()
 	machineCreateNetMAC  = machineCreate.Flag("mac", "MAC address to use").String()
 	machineCreateNetIP   = machineCreate.Flag("ip", "IP address to use").String()
@@ -55,6 +56,7 @@ var (
 	machineUpdate        = cmdMachine.Command("update", "Update a machine")
 	machineUpdateCores   = machineUpdate.Flag("cpus", "Number of CPU cores to use").Short('c').Int()
 	machineUpdateMem     = machineUpdate.Flag("memory", "Amount of memory to use").Short('m').Int()
+	machineUpdateDisk    = machineUpdate.Flag("disk", "Disk space limit in bytes").Short('d').Default("1073741824").Int()
 	machineUpdateNetMode = machineUpdate.Flag("net", "Network setup to use").String()
 	machineUpdateNetMAC  = machineUpdate.Flag("mac", "MAC address to use").String()
 	machineUpdateNetIP   = machineUpdate.Flag("ip", "IP address to use").String()
@@ -125,6 +127,7 @@ func main() {
 			*machineCreateImage,
 			*machineCreateCores,
 			*machineCreateMem,
+			*machineCreateDisk,
 			shared.MachineNetwork{*machineCreateNetMode, *machineCreateNetMAC, *machineCreateNetIP},
 		)
 		break
@@ -137,6 +140,7 @@ func main() {
 			*machineUpdateName,
 			*machineUpdateCores,
 			*machineUpdateMem,
+			*machineUpdateDisk,
 			shared.MachineNetwork{*machineUpdateNetMode, *machineUpdateNetMAC, *machineUpdateNetIP},
 		)
 		break

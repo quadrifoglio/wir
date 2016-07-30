@@ -45,6 +45,7 @@ func (m *QemuMachine) Create(img Image, info shared.MachineInfo) error {
 	m.Image = img.Info().Name
 	m.Cores = info.Cores
 	m.Memory = info.Memory
+	m.Disk = info.Disk
 
 	path := fmt.Sprintf("%s/qemu/%s.qcow2", shared.APIConfig.MachinePath, m.Name)
 
@@ -56,7 +57,7 @@ func (m *QemuMachine) Create(img Image, info shared.MachineInfo) error {
 	var cmd *exec.Cmd
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		cmd = exec.Command(shared.APIConfig.QemuImg, "create", "-b", img.Info().Source, "-f", "qcow2", path)
+		cmd = exec.Command(shared.APIConfig.QemuImg, "create", "-b", img.Info().Source, "-f", "qcow2", path, strconv.Itoa(m.Disk))
 	} else {
 		cmd = exec.Command(shared.APIConfig.QemuImg, "rebase", "-b", img.Info().Source, path)
 	}

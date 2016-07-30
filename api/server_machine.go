@@ -25,6 +25,11 @@ func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if m.Disk == 0 {
+		ErrorResponse(errors.BadRequest).Send(w, r)
+		return
+	}
+
 	if len(m.Name) == 0 {
 		m.Name = utils.UniqueID(shared.APIConfig.NodeID)
 	}

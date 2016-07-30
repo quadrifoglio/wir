@@ -36,12 +36,13 @@ func listMachines(target shared.Remote, raw bool) {
 	}
 }
 
-func createMachine(target shared.Remote, name, img string, cpus, mem int, net shared.MachineNetwork) {
+func createMachine(target shared.Remote, name, img string, cpus, mem, disk int, net shared.MachineNetwork) {
 	var req shared.MachineInfo
 	req.Name = name
 	req.Image = img
 	req.Cores = cpus
 	req.Memory = mem
+	req.Disk = disk
 	req.Network = net
 
 	m, err := client.CreateMachine(target, req)
@@ -65,15 +66,17 @@ func showMachine(target shared.Remote, name string) {
 	fmt.Println("State:", shared.StateToString(m.State))
 	fmt.Println("Cores:", m.Cores)
 	fmt.Println("Memory:", m.Memory)
+	fmt.Println("Memory:", m.Disk)
 	fmt.Println("Net:", m.Network.Mode)
 	fmt.Println("MAC:", m.Network.MAC)
 	fmt.Println("IP:", m.Network.IP)
 }
 
-func updateMachine(target shared.Remote, name string, cpus, mem int, net shared.MachineNetwork) {
+func updateMachine(target shared.Remote, name string, cpus, mem, disk int, net shared.MachineNetwork) {
 	var req shared.MachineInfo
 	req.Cores = cpus
 	req.Memory = mem
+	req.Disk = disk
 	req.Network = net
 
 	err := client.UpdateMachine(target, name, req)
