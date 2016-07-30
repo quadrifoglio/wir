@@ -1,35 +1,12 @@
 package shared
 
 const (
-	TypeUnknown = "unknown"
-	TypeQemu    = "qemu"
-	TypeLXC     = "lxc"
-
 	StateDown = 0
 	StateUp   = 1
 
 	NetworkModeNone   = ""
 	NetworkModeBridge = "bridge"
 )
-
-type Remote struct {
-	Addr    string
-	SSHUser string
-	APIPort int
-}
-
-type ImageInfo struct {
-	Name   string
-	Type   string
-	Source string
-
-	// Optional information
-	Arch    string
-	Distro  string
-	Release string
-
-	MainPartition int
-}
 
 type MachineNetwork struct {
 	Mode string
