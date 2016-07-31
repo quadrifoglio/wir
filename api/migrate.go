@@ -96,8 +96,6 @@ func LiveMigrateQemu(m Machine, i Image, src, dst shared.Remote) error {
 }
 
 func MigrateLxc(m Machine, i Image, src, dst shared.Remote) error {
-	mi := m.Info()
-
 	if m.State() == shared.StateUp {
 		err := m.Stop()
 		if err != nil {
@@ -105,37 +103,9 @@ func MigrateLxc(m Machine, i Image, src, dst shared.Remote) error {
 		}
 	}
 
-	err := MigrateImage(i, src, dst)
-	if err != nil {
-		return err
-	}
+	// TODO: Pack rootfs and snapshot, send then to destination
 
-	conf, err := client.GetConfig(dst)
-	if err != nil {
-		return fmt.Errorf("failed to get remote config: %s", err)
-	}
-
-	srcFolder := fmt.Sprintf("%s/lxc/%s", shared.APIConfig.MachinePath, mi.Name)
-
-	err = utils.TarDirectory(srcFolder, fmt.Sprintf("/tmp/%s.tar.gz", mi.Name))
-	if err != nil {
-		return err
-	}
-
-	srcPath := fmt.Sprintf("/tmp/%s.tar.gz", mi.Name)
-	dstPath := fmt.Sprintf("%s/lxc/%s.tar.gz", conf.MachinePath, mi.Name)
-
-	err = utils.MakeRemoteDirectories(dst, filepath.Dir(dstPath))
-	if err != nil {
-		return fmt.Errorf("falied to make remote dirs: %s", err)
-	}
-
-	err = utils.SCP(srcPath, dst, dstPath)
-	if err != nil {
-		return fmt.Errorf("failed to scp to remote: %s", err)
-	}
-
-	_, err = client.CreateMachine(dst, *mi)
+	/*_, err = client.CreateMachine(dst, *mi)
 	if err != nil {
 		return fmt.Errorf("failed to create remote machine: %s", err)
 	}
@@ -143,7 +113,7 @@ func MigrateLxc(m Machine, i Image, src, dst shared.Remote) error {
 	err = m.Stop()
 	if err != nil {
 		return fmt.Errorf("failed to stop local machine: %s", err)
-	}
+	}*/
 
 	return nil
 }

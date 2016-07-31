@@ -19,5 +19,7 @@
 
 	"DatabaseFile": "/var/lib/wir/wir.db",
 	"ImagePath": "/var/lib/wir/images",
-	"MachinePath": "/var/lib/wir/machines"
+	"MachinePath": "/var/lib/wir/machines",
+
+	"ZFSPool": "lxc"
 }

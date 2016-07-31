@@ -27,6 +27,8 @@ type APIConfigStruct struct {
 	DatabaseFile string
 	ImagePath    string
 	MachinePath  string
+
+	ZFSPool string
 }
 
 var (

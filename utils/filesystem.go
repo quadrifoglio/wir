@@ -16,10 +16,7 @@ import (
 )
 
 func TarDirectory(path, output string) error {
-	base := filepath.Base(path)
-	dir := filepath.Dir(path)
-
-	cmd := exec.Command("tar", "cf", output, "--numeric-owner", "-C", dir, base)
+	cmd := exec.Command("tar", "cf", output, "--numeric-owner", "-C", path, ".")
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {

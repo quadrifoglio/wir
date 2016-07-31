@@ -25,7 +25,7 @@ func (i *LxcImage) Create(info shared.ImageInfo) error {
 		return errors.UnsupportedProto
 	}
 
-	path := fmt.Sprintf("%s/lxc/%s", shared.APIConfig.ImagePath, info.Name)
+	path := fmt.Sprintf("%s/lxc/%s.tar.gz", shared.APIConfig.ImagePath, info.Name)
 
 	err = os.MkdirAll(filepath.Dir(path), 0777)
 	if err != nil {

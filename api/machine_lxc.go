@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/bicomsystems/go-libzfs"
 	"gopkg.in/lxc/go-lxc.v2"
 
 	"github.com/quadrifoglio/wir/net"
@@ -40,59 +41,55 @@ func (m *LxcMachine) Create(img Image, info shared.MachineInfo) error {
 		return err
 	}
 
-	var c *lxc.Container
-
-	tar := fmt.Sprintf("%s/%s.tar.gz", path, m.Name)
-	if _, err := os.Stat(tar); os.IsNotExist(err) {
-		c, err = lxc.NewContainer(m.Name, path)
-		if err != nil {
-			return err
-		}
-
-		if err := c.SetLogFile(fmt.Sprintf("%s/%s/log.txt", path, m.Name)); err != nil {
-			return err
-		}
-
-		c.SetVerbosity(lxc.Verbose)
-
-		var opts lxc.TemplateOptions
-		opts.Template = img.Info().Source
-		/*opts.Distro = img.Distro
-		opts.Release = img.Release
-		opts.Arch = img.Arch*/
-		opts.FlushCache = false
-		opts.DisableGPGValidation = false
-
-		if err = c.Create(opts); err != nil {
-			return err
-		}
-	} else {
-		err = utils.UntarDirectory(tar, path)
-		if err != nil {
-			return fmt.Errorf("failed to create container from archive: %s", err)
-		}
-
-		c, err = lxc.NewContainer(m.Name, path)
-		if err != nil {
-			return err
-		}
-
-		if err := c.SetLogFile(fmt.Sprintf("%s/%s/log.txt", path, m.Name)); err != nil {
-			return err
-		}
-
-		c.SetVerbosity(lxc.Verbose)
-
-		err = os.Remove(tar)
-		if err != nil {
-			return fmt.Errorf("failed to remove container archive: %s", err)
-		}
-
-		if err := c.SetConfigItem("lxc.rootfs", fmt.Sprintf("%s/%s/rootfs", path, m.Name)); err != nil {
-			return fmt.Errorf("failed to change rootfs config: %s", err)
-		}
+	c, err := lxc.NewContainer(m.Name, path)
+	if err != nil {
+		return err
 	}
 
+	if err := c.SetLogFile(fmt.Sprintf("%s/%s/log.txt", path, m.Name)); err != nil {
+		return err
+	}
+
+	c.SetVerbosity(lxc.Verbose)
+
+	dsPath := fmt.Sprintf("%s/%s", shared.APIConfig.ZFSPool, m.Name)
+	rootfs := fmt.Sprintf("%s/%s/rootfs", path, m.Name)
+
+	props := make(map[zfs.Prop]zfs.Property)
+	props[zfs.DatasetPropMountpoint] = zfs.Property{Value: rootfs}
+
+	_, err = zfs.DatasetCreate(dsPath, zfs.DatasetTypeFilesystem, props)
+	if err != nil {
+		return fmt.Errorf("zfs create dataset: %s", err)
+	}
+
+	ds, err := zfs.DatasetOpen(dsPath)
+	if err != nil {
+		return fmt.Errorf("zfs open dataset: %s", err)
+	}
+
+	err = ds.Mount("", 0)
+	if err != nil {
+		return fmt.Errorf("zfs mount: %s", err)
+	}
+
+	defer ds.Close()
+
+	// TODO: If the is a migration, unpack the source container's rootfs
+	err = utils.UntarDirectory(img.Info().Source, rootfs)
+	if err != nil {
+		return err
+	}
+
+	if err := c.SetConfigItem("lxc.rootfs", rootfs); err != nil {
+		return fmt.Errorf("failed to change rootfs config: %s", err)
+	}
+	if err := c.SetConfigItem("lxc.rootfs.backend", "zfs"); err != nil {
+		return fmt.Errorf("failed to change rootfs backend config: %s", err)
+	}
+	if err := c.SetConfigItem("lxc.utsname", m.Name); err != nil {
+		return fmt.Errorf("failed to change hostname config: %s", err)
+	}
 	if err := c.SetConfigItem("lxc.console", "none"); err != nil {
 		return fmt.Errorf("failed to change lxc.console config: %s", err)
 	}
@@ -391,9 +388,9 @@ func (m *LxcMachine) RestoreCheckpoint() error {
 		return fmt.Errorf("checkpoint does not exists")
 	}
 
-	err = c.Restore(lxc.RestoreOptions{path, true})
+	err = c.Restore(lxc.RestoreOptions{fmt.Sprintf("%s/%s/checkpoint", path, m.Name), true})
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to restore: %s", err)
 	}
 
 	return nil
