@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"gopkg.in/lxc/go-lxc.v2"
 
-	"github.com/quadrifoglio/wir/net"
 	"github.com/quadrifoglio/wir/shared"
 	"github.com/quadrifoglio/wir/utils"
 )
@@ -56,7 +56,7 @@ func (m *LxcMachine) Create(img Image, info shared.MachineInfo) error {
 			return err
 		}
 
-		err = utils.ZfsSet(ds, "quota", m.Disk)
+		err = utils.ZfsSet(ds, "quota", strconv.Itoa(m.Disk))
 		if err != nil {
 			return err
 		}
@@ -222,36 +222,7 @@ func (m *LxcMachine) Start() error {
 	}
 
 	if shared.APIConfig.EnableNetMonitor && m.Network.Mode != shared.NetworkModeNone {
-		go func(m *LxcMachine) {
-			for {
-				a := net.MonitorInterface(MachineIfName(m), "rx")
-
-				if m.State() != shared.StateUp {
-					break
-				}
-
-				if a == net.MonitorCancel {
-					break
-				}
-				if a == net.MonitorAlert {
-					// TODO: Send email
-				}
-				if a == net.MonitorStop {
-					// TODO: Send email
-
-					log.Println("iface monitor %s: shuting down (to many pps)", MachineIfName(m))
-
-					err := m.Stop()
-					if err != nil {
-						log.Println(err)
-					}
-
-					break
-				}
-
-				time.Sleep(10 * time.Second)
-			}
-		}(m)
+		MonitorNetwork(m)
 	}
 
 	/*err = c.SetMemoryLimit(lxc.ByteSize(m.Memory) * lxc.MB)

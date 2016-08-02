@@ -270,36 +270,7 @@ func (m *QemuMachine) Start() error {
 	}
 
 	if shared.APIConfig.EnableNetMonitor && m.Network.Mode != shared.NetworkModeNone {
-		go func(m *QemuMachine) {
-			for {
-				a := net.MonitorInterface(MachineIfName(m), "rx")
-
-				if m.State() != shared.StateUp {
-					break
-				}
-
-				if a == net.MonitorCancel {
-					break
-				}
-				if a == net.MonitorAlert {
-					// TODO: Send email
-				}
-				if a == net.MonitorStop {
-					// TODO: Send email
-
-					log.Println("iface monitor %s: shuting down (to many pps)", MachineIfName(m))
-
-					err := m.Stop()
-					if err != nil {
-						log.Println(err)
-					}
-
-					break
-				}
-
-				time.Sleep(10 * time.Second)
-			}
-		}(m)
+		MonitorNetwork(m)
 	}
 
 	m.PID = cmd.Process.Pid

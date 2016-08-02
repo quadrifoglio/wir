@@ -2,7 +2,9 @@ package api
 
 import (
 	"encoding/json"
+	"log"
 	"strconv"
+	"time"
 
 	"github.com/quadrifoglio/wir/net"
 	"github.com/quadrifoglio/wir/shared"
@@ -140,6 +142,39 @@ func UpdateMachineNetwork(m Machine, network shared.MachineNetwork) error {
 	}
 
 	return nil
+}
+
+func MonitorNetwork(m Machine) {
+	go func(m Machine) {
+		for {
+			a := net.MonitorInterface(MachineIfName(m), "rx")
+
+			if m.State() != shared.StateUp {
+				break
+			}
+
+			if a == net.MonitorCancel {
+				break
+			}
+			if a == net.MonitorAlert {
+				// TODO: Send email
+			}
+			if a == net.MonitorStop {
+				// TODO: Send email
+
+				log.Println("iface monitor %s: shuting down (to many pps)", MachineIfName(m))
+
+				err := m.Stop()
+				if err != nil {
+					log.Println(err)
+				}
+
+				break
+			}
+
+			time.Sleep(10 * time.Second)
+		}
+	}(m)
 }
 
 func MachineIfName(m Machine) string {
