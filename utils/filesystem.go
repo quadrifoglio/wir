@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -20,6 +21,40 @@ type Partition struct {
 	End        uint64
 	Size       uint64
 	Filesystem string
+}
+
+func SizeQcow2(file string) (uint64, error) {
+	var size uint64
+
+	cmd := exec.Command("qemu-img", "resize", file, strconv.Itoa(int(size)))
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return 0, fmt.Errorf("%s", string(out))
+	}
+
+	for _, l := range strings.Split(string(out), "\n") {
+		if !strings.Contains(l, ":") {
+			continue
+		}
+
+		r, err := regexp.Compile("virtual size:.*\\(([0-9]+)")
+		if err != nil {
+			return 0, err
+		}
+
+		if d := r.Find([]byte(l)); d != nil {
+			s, err := strconv.ParseInt(string(d), 10, 64)
+			if err != nil {
+				return 0, err
+			}
+
+			size = uint64(s)
+			break
+		}
+	}
+
+	return size, nil
 }
 
 func ResizeQcow2(file string, size int) error {

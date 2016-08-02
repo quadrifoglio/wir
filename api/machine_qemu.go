@@ -85,21 +85,23 @@ func (m *QemuMachine) Create(img Image, info shared.MachineInfo) error {
 		return fmt.Errorf("%s", out)
 	}
 
-	err = utils.ResizeQcow2(disk, m.Disk)
-	if err != nil {
-		return err
-	}
+	if m.Disk != 0 {
+		err = utils.ResizeQcow2(disk, m.Disk)
+		if err != nil {
+			return err
+		}
 
-	err = utils.NBDConnectQcow2(disk)
-	if err != nil {
-		return err
-	}
+		err = utils.NBDConnectQcow2(disk)
+		if err != nil {
+			return err
+		}
 
-	defer utils.NBDDisconnectQcow2()
+		defer utils.NBDDisconnectQcow2()
 
-	err = utils.ResizePartition("/dev/nbd0", img.Info().MainPartition, m.Disk)
-	if err != nil {
-		return err
+		err = utils.ResizePartition("/dev/nbd0", img.Info().MainPartition, m.Disk)
+		if err != nil {
+			return err
+		}
 	}
 
 	return SetupMachineNetwork(m, info.Network)
