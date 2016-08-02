@@ -41,13 +41,6 @@ func (m *LxcMachine) Create(img Image, info shared.MachineInfo) error {
 		return err
 	}
 
-	c, err := lxc.NewContainer(m.Name, path)
-	if err != nil {
-		return err
-	}
-
-	c.SetVerbosity(lxc.Verbose)
-
 	if shared.APIConfig.StorageBackend == "zfs" {
 		ds := fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name)
 
@@ -60,10 +53,6 @@ func (m *LxcMachine) Create(img Image, info shared.MachineInfo) error {
 		if err != nil {
 			return err
 		}
-
-		if err := c.SetConfigItem("lxc.rootfs.backend", "zfs"); err != nil {
-			return fmt.Errorf("lxc.rootfs.backend config: %s", err)
-		}
 	} else if shared.APIConfig.StorageBackend == "dir" {
 		err := os.MkdirAll(rootfs, 0775)
 		if err != nil {
@@ -71,21 +60,48 @@ func (m *LxcMachine) Create(img Image, info shared.MachineInfo) error {
 		}
 	}
 
-	if err = c.SetLogFile(fmt.Sprintf("%s/%s/log.txt", path, m.Name)); err != nil {
-		return err
+	basePath := fmt.Sprintf("%s/%s", path, m.Name)
+	mig := fmt.Sprintf("%s/%s.tar.gz", shared.APIConfig.MigrationPath, m.Name)
+
+	// If this is not a migration
+	if _, err := os.Stat(mig); os.IsNotExist(err) {
+		err = utils.UntarDirectory(img.Info().Source, basePath)
+		if err != nil {
+			return err
+		}
+
+		err := utils.ReplaceInFile(fmt.Sprintf("%s/config", basePath), "LXC_TEMPLATE_CONFIG", "/usr/share/lxc/config")
+		if err != nil {
+			return err
+		}
+	} else {
+		err := utils.UntarDirectory(mig, basePath)
+		if err != nil {
+			return err
+		}
+
+		err = os.Remove(mig)
+		if err != nil {
+			return err
+		}
 	}
 
-	// TODO: If the is a migration, unpack the source container's rootfs
-	err = utils.UntarDirectory(img.Info().Source, rootfs)
+	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {
 		return err
 	}
 
+	c.SetVerbosity(lxc.Verbose)
+
+	if err = c.SetLogFile(fmt.Sprintf("%s/%s/log.txt", path, m.Name)); err != nil {
+		return err
+	}
+
+	if err := c.SetConfigItem("lxc.rootfs.backend", shared.APIConfig.StorageBackend); err != nil {
+		return fmt.Errorf("lxc.rootfs.backend config: %s", err)
+	}
 	if err := c.SetConfigItem("lxc.rootfs", rootfs); err != nil {
 		return fmt.Errorf("lxc.rootfs config: %s", err)
-	}
-	if err := c.SetConfigItem("lxc.arch", "x86_64"); err != nil {
-		return fmt.Errorf("lxc.arch config: %s", err)
 	}
 	if err := c.SetConfigItem("lxc.console", "none"); err != nil {
 		return fmt.Errorf("lxc.console config: %s", err)
@@ -94,9 +110,6 @@ func (m *LxcMachine) Create(img Image, info shared.MachineInfo) error {
 		return fmt.Errorf("lxc.tty config: %s", err)
 	}
 	if err := c.SetConfigItem("lxc.cgroup.devices.deny", "c 5:1 rwm"); err != nil {
-		return fmt.Errorf("lxc.cgroup.devices.deny config: %s", err)
-	}
-	if err := c.SetConfigItem("lxc.include", "/usr/share/lxc/config/alpine.common.conf"); err != nil {
 		return fmt.Errorf("lxc.cgroup.devices.deny config: %s", err)
 	}
 
@@ -356,6 +369,11 @@ func (m *LxcMachine) CreateCheckpoint() error {
 	}
 
 	err = c.Checkpoint(lxc.CheckpointOptions{path, false, true})
+	if err != nil {
+		return err
+	}
+
+	err = c.Unfreeze()
 	if err != nil {
 		return err
 	}

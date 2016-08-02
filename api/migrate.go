@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/quadrifoglio/wir/client"
@@ -103,17 +104,37 @@ func MigrateLxc(m Machine, i Image, src, dst shared.Remote) error {
 		}
 	}
 
-	// TODO: Pack rootfs and snapshot, send then to destination
+	err := MigrateImage(i, src, dst)
+	if err != nil {
+		return err
+	}
 
-	/*_, err = client.CreateMachine(dst, *mi)
+	conf, err := client.GetConfig(dst)
+	if err != nil {
+		return fmt.Errorf("failed to get remote config: %s", err)
+	}
+
+	mi := m.Info()
+	basePath := fmt.Sprintf("%s/lxc/%s", shared.APIConfig.MachinePath, mi.Name)
+	srcPath := fmt.Sprintf("/tmp/%s.tar.gz", mi.Name)
+	dstPath := fmt.Sprintf("%s/%s.tar.gz", conf.MigrationPath, mi.Name)
+
+	err = utils.TarDirectory(basePath, srcPath)
+	if err != nil {
+		return err
+	}
+
+	err = utils.SCP(srcPath, dst, dstPath)
+	if err != nil {
+		return err
+	}
+
+	os.Remove(srcPath)
+
+	_, err = client.CreateMachine(dst, *mi)
 	if err != nil {
 		return fmt.Errorf("failed to create remote machine: %s", err)
 	}
-
-	err = m.Stop()
-	if err != nil {
-		return fmt.Errorf("failed to stop local machine: %s", err)
-	}*/
 
 	return nil
 }

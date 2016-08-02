@@ -27,9 +27,10 @@ type APIConfigStruct struct {
 	Qemu      string `json:"QemuCommand"`
 	Vzctl     string `json:"VzctlCommand"`
 
-	DatabaseFile string
-	ImagePath    string
-	MachinePath  string
+	DatabaseFile  string
+	ImagePath     string
+	MigrationPath string
+	MachinePath   string
 }
 
 var (

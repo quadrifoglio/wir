@@ -10,8 +10,8 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/quadrifoglio/wir/errors"
-	"github.com/quadrifoglio/wir/shared"
 	"github.com/quadrifoglio/wir/net"
+	"github.com/quadrifoglio/wir/shared"
 	"github.com/quadrifoglio/wir/utils"
 )
 
@@ -61,17 +61,22 @@ func handleIndex(w http.ResponseWriter, r *http.Request) {
 }
 
 func Start() error {
-	err := os.MkdirAll(filepath.Dir(shared.APIConfig.DatabaseFile), 0777)
+	err := os.MkdirAll(filepath.Dir(shared.APIConfig.DatabaseFile), 0775)
 	if err != nil {
 		return err
 	}
 
-	err = os.MkdirAll(shared.APIConfig.ImagePath, 0777)
+	err = os.MkdirAll(shared.APIConfig.ImagePath, 0775)
 	if err != nil {
 		return err
 	}
 
-	err = os.MkdirAll(shared.APIConfig.MachinePath, 0777)
+	err = os.MkdirAll(shared.APIConfig.MigrationPath, 0775)
+	if err != nil {
+		return err
+	}
+
+	err = os.MkdirAll(shared.APIConfig.MachinePath, 0775)
 	if err != nil {
 		return err
 	}

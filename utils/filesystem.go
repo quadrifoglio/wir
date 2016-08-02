@@ -145,6 +145,17 @@ func RewriteFile(path string, data []byte) error {
 	return nil
 }
 
+func ReplaceInFile(path, search, replace string) error {
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("can not read file: %s", err)
+	}
+
+	newData := strings.Replace(string(data), search, replace, -1)
+
+	return RewriteFile(path, []byte(newData))
+}
+
 func ChangeHostname(hostnamePath, hostname string) error {
 	return RewriteFile(hostnamePath, []byte(hostname))
 }

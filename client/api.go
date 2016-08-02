@@ -11,10 +11,11 @@ import (
 )
 
 type APIConfig struct {
-	Address      string
-	DatabaseFile string
-	ImagePath    string
-	MachinePath  string
+	Address       string
+	DatabaseFile  string
+	ImagePath     string
+	MigrationPath string
+	MachinePath   string
 }
 
 type ResponseBase struct {
