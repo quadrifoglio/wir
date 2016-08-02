@@ -1,4 +1,3 @@
-* lxc: migration: re-do
-* qemu: change storing method
+* migration: re-do
 * net: monitor: send email on pps alert
 * panel: create/edit images and machines
