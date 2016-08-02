@@ -66,3 +66,14 @@ func ZfsUnmount(path string) error {
 
 	return nil
 }
+
+func ZfsDestroy(path string) error {
+	cmd := exec.Command("zfs", "destroy", path)
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("zfs: %s", out)
+	}
+
+	return nil
+}

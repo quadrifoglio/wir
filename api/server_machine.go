@@ -310,24 +310,10 @@ func handleMachineMigrate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	switch i.Info().Type {
-	case shared.TypeQemu:
-		if req.Live {
-			err = LiveMigrateQemu(m, i, shared.Remote{shared.APIConfig.Address, "root", shared.APIConfig.Port}, req.Target)
-		} else {
-			err = MigrateQemu(m, i, shared.Remote{shared.APIConfig.Address, "root", shared.APIConfig.Port}, req.Target)
-		}
-		break
-	case shared.TypeLXC:
-		if req.Live {
-			err = LiveMigrateLxc(m, i, shared.Remote{shared.APIConfig.Address, "root", shared.APIConfig.Port}, req.Target)
-		} else {
-			err = MigrateLxc(m, i, shared.Remote{shared.APIConfig.Address, "root", shared.APIConfig.Port}, req.Target)
-		}
-		break
-	default:
-		err = errors.InvalidImageType
-		return
+	if req.Live {
+		err = LiveMigrateMachine(m, i, shared.Remote{shared.APIConfig.Address, "root", shared.APIConfig.Port}, req.Target)
+	} else {
+		err = MigrateMachine(m, i, shared.Remote{shared.APIConfig.Address, "root", shared.APIConfig.Port}, req.Target)
 	}
 
 	if err != nil {

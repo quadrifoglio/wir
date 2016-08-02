@@ -56,10 +56,22 @@ func (m *QemuMachine) Create(img Image, info shared.MachineInfo) error {
 		if err != nil {
 			return err
 		}
-
-		time.Sleep(1 * time.Second)
 	} else if shared.APIConfig.StorageBackend == "dir" {
 		err := os.MkdirAll(path, 0775)
+		if err != nil {
+			return err
+		}
+	}
+
+	// If this is not a migration
+	mig := fmt.Sprintf("%s/%s.tar.gz", shared.APIConfig.MigrationPath, m.Name)
+	if _, err := os.Stat(mig); err == nil {
+		err := utils.UntarDirectory(mig, path)
+		if err != nil {
+			return err
+		}
+
+		err = os.Remove(mig)
 		if err != nil {
 			return err
 		}
@@ -108,9 +120,16 @@ func (m *QemuMachine) Delete() error {
 		tap.Close()
 	}
 
-	err := os.Remove(fmt.Sprintf("%s/qemu/%s", shared.APIConfig.MachinePath, m.Name))
-	if err != nil {
-		return fmt.Errorf("remove machine folder: %s", err)
+	if shared.APIConfig.StorageBackend == "zfs" {
+		err := utils.ZfsDestroy(fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name))
+		if err != nil {
+			return err
+		}
+	} else if shared.APIConfig.StorageBackend == "dir" {
+		err := os.Remove(fmt.Sprintf("%s/qemu/%s", shared.APIConfig.MachinePath, m.Name))
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

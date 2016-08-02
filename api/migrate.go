@@ -3,7 +3,6 @@ package api
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/quadrifoglio/wir/client"
 	"github.com/quadrifoglio/wir/shared"
@@ -36,67 +35,7 @@ func MigrateImage(i Image, src, dst shared.Remote) error {
 	return nil
 }
 
-func MigrateQemu(m Machine, i Image, src, dst shared.Remote) error {
-	mi := m.Info()
-
-	if m.State() == shared.StateUp {
-		err := m.Stop()
-		if err != nil {
-			return fmt.Errorf("failed to stop local machine: %s", err)
-		}
-	}
-
-	err := MigrateImage(i, src, dst)
-	if err != nil {
-		return err
-	}
-
-	conf, err := client.GetConfig(dst)
-	if err != nil {
-		return fmt.Errorf("failed to get remote config: %s", err)
-	}
-
-	srcPath := fmt.Sprintf("%s/qemu/%s.qcow2", shared.APIConfig.MachinePath, mi.Name)
-	dstPath := fmt.Sprintf("%s/qemu/%s.qcow2", conf.MachinePath, mi.Name)
-
-	err = utils.MakeRemoteDirectories(dst, filepath.Dir(dstPath))
-	if err != nil {
-		return fmt.Errorf("falied to make remote dirs: %s", err)
-	}
-
-	err = utils.SCP(srcPath, dst, dstPath)
-	if err != nil {
-		return fmt.Errorf("failed to scp to remote: %s", err)
-	}
-
-	_, err = client.CreateMachine(dst, *mi)
-	if err != nil {
-		return fmt.Errorf("failed to create remote machine: %s", err)
-	}
-
-	return nil
-}
-
-func LiveMigrateQemu(m Machine, i Image, src, dst shared.Remote) error {
-	err := m.CreateCheckpoint()
-	if err != nil {
-		return fmt.Errorf("failed to checkpoint: %s", err)
-	}
-
-	err = MigrateQemu(m, i, src, dst)
-	if err != nil {
-		return err
-	}
-
-	err = client.StartMachine(dst, m.Info().Name)
-	if err != nil {
-		return fmt.Errorf("failed to start remote machine: %s", err)
-	}
-
-	return nil
-}
-
-func MigrateLxc(m Machine, i Image, src, dst shared.Remote) error {
+func MigrateMachine(m Machine, i Image, src, dst shared.Remote) error {
 	if m.State() == shared.StateUp {
 		err := m.Stop()
 		if err != nil {
@@ -115,7 +54,7 @@ func MigrateLxc(m Machine, i Image, src, dst shared.Remote) error {
 	}
 
 	mi := m.Info()
-	basePath := fmt.Sprintf("%s/lxc/%s", shared.APIConfig.MachinePath, mi.Name)
+	basePath := fmt.Sprintf("%s/%s/%s", shared.APIConfig.MachinePath, i.Info().Type, mi.Name)
 	srcPath := fmt.Sprintf("/tmp/%s.tar.gz", mi.Name)
 	dstPath := fmt.Sprintf("%s/%s.tar.gz", conf.MigrationPath, mi.Name)
 
@@ -139,13 +78,13 @@ func MigrateLxc(m Machine, i Image, src, dst shared.Remote) error {
 	return nil
 }
 
-func LiveMigrateLxc(m Machine, i Image, src, dst shared.Remote) error {
+func LiveMigrateMachine(m Machine, i Image, src, dst shared.Remote) error {
 	err := m.CreateCheckpoint()
 	if err != nil {
 		return fmt.Errorf("failed to checkpoint: %s", err)
 	}
 
-	err = MigrateLxc(m, i, src, dst)
+	err = MigrateMachine(m, i, src, dst)
 	if err != nil {
 		return err
 	}
