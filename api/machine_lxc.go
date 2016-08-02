@@ -48,14 +48,15 @@ func (m *LxcMachine) Create(img Image, info shared.MachineInfo) error {
 
 	c.SetVerbosity(lxc.Verbose)
 
-	if err = c.SetLogFile(fmt.Sprintf("%s/%s/log.txt", path, m.Name)); err != nil {
-		return err
-	}
-
 	if shared.APIConfig.StorageBackend == "zfs" {
 		ds := fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name)
 
 		err := utils.ZfsCreate(ds, rootfs)
+		if err != nil {
+			return err
+		}
+
+		err = utils.ZfsSet(ds, "quota", m.Disk)
 		if err != nil {
 			return err
 		}
@@ -68,6 +69,10 @@ func (m *LxcMachine) Create(img Image, info shared.MachineInfo) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	if err = c.SetLogFile(fmt.Sprintf("%s/%s/log.txt", path, m.Name)); err != nil {
+		return err
 	}
 
 	// TODO: If the is a migration, unpack the source container's rootfs
