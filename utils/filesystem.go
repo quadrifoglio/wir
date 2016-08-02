@@ -2,99 +2,47 @@ package utils
 
 import (
 	"fmt"
-	"io"
-	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"strconv"
 	"strings"
+	"sync"
 	"syscall"
-
-	"github.com/amoghe/go-crypt"
-
-	"github.com/quadrifoglio/wir/shared"
 )
 
-func TarDirectory(path, output string) error {
-	cmd := exec.Command("tar", "cf", output, "--numeric-owner", "-C", path, ".")
+var (
+	nbdMutex sync.Mutex
+)
+
+type Partition struct {
+	Number     int
+	Start      uint64
+	End        uint64
+	Size       uint64
+	Filesystem string
+}
+
+func ResizeQcow2(file string, size int) error {
+	cmd := exec.Command("qemu-img", "resize", file, strconv.Itoa(size))
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Printf("failed to tar directory: %s", string(out))
-		return err
+		return fmt.Errorf("%s", string(out))
 	}
 
 	return nil
 }
 
-func UntarDirectory(input, path string) error {
-	cmd := exec.Command("tar", "xf", input, "-C", path)
-
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		log.Printf("failed to untar directory: %s", string(out))
-		return err
-	}
-
-	return nil
-}
-
-func MakeRemoteDirectories(dst shared.Remote, dstDir string) error {
-	cmd := exec.Command("ssh", fmt.Sprintf("%s@%s", dst.SSHUser, dst.Addr), "mkdir -p "+dstDir)
-
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		log.Printf("failed to create remote directory: %s", string(out))
-		return err
-	}
-
-	return nil
-}
-
-func SCP(srcFile string, dst shared.Remote, dstFile string) error {
-	dstf := fmt.Sprintf("%s:%s", dst.Addr, dstFile)
-	cmd := exec.Command("scp", "-r", srcFile, dstf)
-
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		log.Printf("scp failed: %s", string(out))
-		return err
-	}
-
-	return nil
-}
-
-func ClearFolder(dir string) error {
-	d, err := os.Open(dir)
-	if err != nil {
-		return err
-	}
-
-	defer d.Close()
-
-	names, err := d.Readdirnames(-1)
-	if err != nil {
-		return err
-	}
-
-	for _, name := range names {
-		err = os.RemoveAll(filepath.Join(dir, name))
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func NBDConnectQcow2(qemuNbd, dev, file string) error {
-	cmd := exec.Command(qemuNbd, "-c", dev, file)
+func NBDConnectQcow2(file string) error {
+	dev := "/dev/nbd0"
+	cmd := exec.Command("qemu-nbd", "-c", dev, file)
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("nbd-connect: qemu-nbd: %s", string(out))
 	}
+
+	nbdMutex.Lock()
 
 	cmd = exec.Command("partx", "-a", dev)
 
@@ -106,8 +54,113 @@ func NBDConnectQcow2(qemuNbd, dev, file string) error {
 	return nil
 }
 
-func NBDDisconnectQcow2(qemuNbd, dev string) error {
-	return exec.Command(qemuNbd, "-d", dev).Run()
+func NBDDisconnectQcow2() error {
+	defer nbdMutex.Unlock()
+
+	dev := "/dev/nbd0"
+	return exec.Command("qemu-nbd", "-d", dev).Run()
+}
+
+func ListPartitions(dev string) ([]Partition, error) {
+	cmd := exec.Command("parted", "-m", dev, "unit", "B", "print", "free")
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return nil, fmt.Errorf("%s", out)
+	}
+
+	var parts []Partition
+
+	for _, l := range strings.Split(string(out), "\n") {
+		if len(l) == 0 {
+			break
+		}
+
+		if l[1] != ':' {
+			continue
+		}
+
+		t := strings.Split(l[:len(l)-1], ":")
+		if len(t) < 5 {
+			return nil, fmt.Errorf("invalid output from parted")
+		}
+
+		var p Partition
+
+		if v, err := strconv.Atoi(t[0]); err == nil {
+			p.Number = v
+		}
+		if v, err := strconv.ParseInt(t[1][:len(t[1])-1], 10, 64); err == nil {
+			p.Start = uint64(v)
+		}
+		if v, err := strconv.ParseInt(t[2][:len(t[2])-1], 10, 64); err == nil {
+			p.End = uint64(v)
+		}
+		if v, err := strconv.ParseInt(t[3][:len(t[3])-1], 10, 64); err == nil {
+			p.Size = uint64(v)
+		}
+
+		p.Filesystem = t[4]
+
+		if p.Filesystem == "free" {
+			p.Number = 0
+		}
+
+		parts = append(parts, p)
+	}
+
+	return parts, nil
+}
+
+func ResizePartition(dev string, num, size int) error {
+	parts, err := ListPartitions(dev)
+	if err != nil {
+		return err
+	}
+
+	var mainPart Partition
+	var freeSpace Partition
+	for i, p := range parts {
+		if p.Number == num {
+			mainPart = p
+
+			if i+1 < len(parts) {
+				pp := parts[i+1]
+				if pp.Filesystem == "free" {
+					freeSpace = pp
+				}
+			}
+
+			break
+		}
+	}
+
+	if mainPart.Number == 0 {
+		return fmt.Errorf("can not find main parition (was supposed to be number %d)", num)
+	}
+	if freeSpace.End == 0 {
+		return fmt.Errorf("no free space available after partition %d. can not resize", num)
+	}
+
+	cmd := exec.Command("parted", dev, "unit", "B", "resizepart", strconv.Itoa(mainPart.Number), strconv.Itoa(int(freeSpace.End)))
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("%s", out)
+	}
+
+	cmd = exec.Command("e2fsck", "-f", "-y", fmt.Sprintf("%sp%d", dev, num))
+	cmd.Run()
+
+	cmd = exec.Command("resize2fs", fmt.Sprintf("%sp%d", dev, num))
+
+	out, err = cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("%s", out)
+	}
+
+	fmt.Println()
+
+	return nil
 }
 
 func Mount(dev, path string) error {
@@ -128,96 +181,4 @@ func Mount(dev, path string) error {
 
 func Unmount(path string) error {
 	return syscall.Unmount(path, 0)
-}
-
-func CopyFile(src, dst string) error {
-	f1, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-
-	defer f1.Close()
-
-	f2, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-
-	defer f2.Close()
-
-	_, err = io.Copy(f2, f1)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func RewriteFile(path string, data []byte) error {
-	f, err := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC, 0777)
-	if err != nil {
-		return fmt.Errorf("rewrite-file: open %s: %s", path, err)
-	}
-
-	defer f.Close()
-
-	_, err = f.Write(data)
-	if err != nil {
-		return fmt.Errorf("rewrite-file: write to %s: %s", path, err)
-	}
-
-	return nil
-}
-
-func ReplaceInFile(path, search, replace string) error {
-	data, err := ioutil.ReadFile(path)
-	if err != nil {
-		return fmt.Errorf("can not read file: %s", err)
-	}
-
-	newData := strings.Replace(string(data), search, replace, -1)
-
-	return RewriteFile(path, []byte(newData))
-}
-
-func ChangeHostname(hostnamePath, hostname string) error {
-	return RewriteFile(hostnamePath, []byte(hostname))
-}
-
-func ChangeRootPassword(shadowPath, root string) error {
-	data, err := ioutil.ReadFile(shadowPath)
-	if err != nil {
-		return fmt.Errorf("root-password: can not read entire file: %s", err)
-	}
-
-	n := strings.Index(string(data), ":")
-	if n == -1 {
-		return fmt.Errorf("root-password: invalid file (no ':' char)")
-	}
-
-	nn := strings.Index(string(data[n+1:]), ":")
-	if n == -1 {
-		return fmt.Errorf("root-password: invalid file (no second ':' char)")
-	}
-
-	n = n + nn + 1
-	salt := UniqueID(0)
-
-	str, err := crypt.Crypt(root, fmt.Sprintf("$6$%s$", string(salt[:8])))
-	if err != nil {
-		return fmt.Errorf("can not crypt password: %s", err)
-	}
-
-	str = "root:" + str
-
-	newData := make([]byte, len(str))
-	copy(newData, str)
-	newData = append(newData, data[n:]...)
-
-	err = RewriteFile(shadowPath, newData)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

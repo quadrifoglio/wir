@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/quadrifoglio/go-qmp"
@@ -18,10 +17,6 @@ import (
 	"github.com/quadrifoglio/wir/net"
 	"github.com/quadrifoglio/wir/shared"
 	"github.com/quadrifoglio/wir/utils"
-)
-
-var (
-	sysprepMutex sync.Mutex
 )
 
 type QemuMachine struct {
@@ -90,6 +85,23 @@ func (m *QemuMachine) Create(img Image, info shared.MachineInfo) error {
 		return fmt.Errorf("%s", out)
 	}
 
+	err = utils.ResizeQcow2(disk, m.Disk)
+	if err != nil {
+		return err
+	}
+
+	err = utils.NBDConnectQcow2(disk)
+	if err != nil {
+		return err
+	}
+
+	defer utils.NBDDisconnectQcow2()
+
+	err = utils.ResizePartition("/dev/nbd0", img.Info().MainPartition, m.Disk)
+	if err != nil {
+		return err
+	}
+
 	return SetupMachineNetwork(m, info.Network)
 }
 
@@ -136,21 +148,18 @@ func (m *QemuMachine) Delete() error {
 }
 
 func (m *QemuMachine) Sysprep(os, hostname, root string) error {
-	sysprepMutex.Lock()
-	defer sysprepMutex.Unlock()
-
 	disk := fmt.Sprintf("%s/qemu/%s/disk.qcow2", shared.APIConfig.MachinePath, m.Name)
 
 	path := "/tmp/wir/machines/" + m.Name
 	hostnameFile := path + "/etc/hostname"
 	shadowFile := path + "/etc/shadow"
 
-	err := utils.NBDConnectQcow2(shared.APIConfig.QemuNbd, "/dev/nbd0", disk)
+	err := utils.NBDConnectQcow2(disk)
 	if err != nil {
 		return err
 	}
 
-	defer utils.NBDDisconnectQcow2(shared.APIConfig.QemuNbd, "/dev/nbd0")
+	defer utils.NBDDisconnectQcow2()
 
 	err = utils.Mount(fmt.Sprintf("/dev/nbd0p%d", m.MainPart), path)
 	if err != nil {

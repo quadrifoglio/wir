@@ -17,10 +17,15 @@ Self-hosted virtualization platform.
 * qemu/kvm
 * lxc
 
+## Storage options
+
+* simple directory
+* zfs
+
 ## Requirements
 
 * one of the supported backends (qemu-system, qemu-utils, lxc-dev)
 * bridge-utils
 * ebtables
-* for qemu sysprep (optional): nbd kernel module (max_part=12), qemu-nbd, partx (util-linux)
+* nbd kernel module, qemu-nbd, partx (util-linux), parted
 * for lxc live migration (optional): criu

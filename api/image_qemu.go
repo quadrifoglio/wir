@@ -55,6 +55,7 @@ func (i *QemuImage) Create(info shared.ImageInfo) error {
 	i.Arch = info.Arch
 	i.Distro = info.Distro
 	i.Release = info.Release
+	i.MainPartition = info.MainPartition
 
 	return nil
 }
