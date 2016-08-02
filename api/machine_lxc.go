@@ -7,7 +7,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/bicomsystems/go-libzfs"
 	"gopkg.in/lxc/go-lxc.v2"
 
 	"github.com/quadrifoglio/wir/net"
@@ -28,13 +27,14 @@ func (m *LxcMachine) Type() string {
 }
 
 func (m *LxcMachine) Create(img Image, info shared.MachineInfo) error {
-	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
-
 	m.Name = info.Name
 	m.Image = img.Info().Name
 	m.Cores = info.Cores
 	m.Memory = info.Memory
 	m.Disk = info.Disk
+
+	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
+	rootfs := fmt.Sprintf("%s/%s/rootfs", path, m.Name)
 
 	err := os.MkdirAll(path, 0777)
 	if err != nil {
@@ -46,34 +46,29 @@ func (m *LxcMachine) Create(img Image, info shared.MachineInfo) error {
 		return err
 	}
 
-	if err := c.SetLogFile(fmt.Sprintf("%s/%s/log.txt", path, m.Name)); err != nil {
+	c.SetVerbosity(lxc.Verbose)
+
+	if err = c.SetLogFile(fmt.Sprintf("%s/%s/log.txt", path, m.Name)); err != nil {
 		return err
 	}
 
-	c.SetVerbosity(lxc.Verbose)
+	if shared.APIConfig.StorageBackend == "zfs" {
+		ds := fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name)
 
-	dsPath := fmt.Sprintf("%s/%s", shared.APIConfig.ZFSPool, m.Name)
-	rootfs := fmt.Sprintf("%s/%s/rootfs", path, m.Name)
+		err := utils.ZfsCreate(ds, rootfs)
+		if err != nil {
+			return err
+		}
 
-	props := make(map[zfs.Prop]zfs.Property)
-	props[zfs.DatasetPropMountpoint] = zfs.Property{Value: rootfs}
-
-	_, err = zfs.DatasetCreate(dsPath, zfs.DatasetTypeFilesystem, props)
-	if err != nil {
-		return fmt.Errorf("zfs create dataset: %s", err)
+		if err := c.SetConfigItem("lxc.rootfs.backend", "zfs"); err != nil {
+			return fmt.Errorf("lxc.rootfs.backend config: %s", err)
+		}
+	} else if shared.APIConfig.StorageBackend == "dir" {
+		err := os.MkdirAll(rootfs, 0775)
+		if err != nil {
+			return err
+		}
 	}
-
-	ds, err := zfs.DatasetOpen(dsPath)
-	if err != nil {
-		return fmt.Errorf("zfs open dataset: %s", err)
-	}
-
-	err = ds.Mount("", 0)
-	if err != nil {
-		return fmt.Errorf("zfs mount: %s", err)
-	}
-
-	defer ds.Close()
 
 	// TODO: If the is a migration, unpack the source container's rootfs
 	err = utils.UntarDirectory(img.Info().Source, rootfs)
@@ -82,26 +77,26 @@ func (m *LxcMachine) Create(img Image, info shared.MachineInfo) error {
 	}
 
 	if err := c.SetConfigItem("lxc.rootfs", rootfs); err != nil {
-		return fmt.Errorf("failed to change rootfs config: %s", err)
+		return fmt.Errorf("lxc.rootfs config: %s", err)
 	}
-	if err := c.SetConfigItem("lxc.rootfs.backend", "zfs"); err != nil {
-		return fmt.Errorf("failed to change rootfs backend config: %s", err)
-	}
-	if err := c.SetConfigItem("lxc.utsname", m.Name); err != nil {
-		return fmt.Errorf("failed to change hostname config: %s", err)
+	if err := c.SetConfigItem("lxc.arch", "x86_64"); err != nil {
+		return fmt.Errorf("lxc.arch config: %s", err)
 	}
 	if err := c.SetConfigItem("lxc.console", "none"); err != nil {
-		return fmt.Errorf("failed to change lxc.console config: %s", err)
+		return fmt.Errorf("lxc.console config: %s", err)
 	}
 	if err := c.SetConfigItem("lxc.tty", "0"); err != nil {
-		return fmt.Errorf("failed to change lxc.tty config: %s", err)
+		return fmt.Errorf("lxc.tty config: %s", err)
 	}
 	if err := c.SetConfigItem("lxc.cgroup.devices.deny", "c 5:1 rwm"); err != nil {
-		return fmt.Errorf("failed to change lxc.cgroup.devices.deny config: %s", err)
+		return fmt.Errorf("lxc.cgroup.devices.deny config: %s", err)
+	}
+	if err := c.SetConfigItem("lxc.include", "/usr/share/lxc/config/alpine.common.conf"); err != nil {
+		return fmt.Errorf("lxc.cgroup.devices.deny config: %s", err)
 	}
 
 	if err := c.SaveConfigFile(fmt.Sprintf("%s/%s/config", path, m.Name)); err != nil {
-		return fmt.Errorf("failed to save config: %s", err)
+		return fmt.Errorf("can not write config: %s", err)
 	}
 
 	return SetupMachineNetwork(m, info.Network)
@@ -158,6 +153,20 @@ func (m *LxcMachine) Sysprep(os, hostname, root string) error {
 }
 
 func (m *LxcMachine) Start() error {
+	fs := fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name)
+
+	mounted, err := utils.ZfsIsMounted(fs)
+	if err != nil {
+		return err
+	}
+
+	if !mounted {
+		err := utils.ZfsMount(fs)
+		if err != nil {
+			return err
+		}
+	}
+
 	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
 
 	c, err := lxc.NewContainer(m.Name, path)
@@ -166,6 +175,10 @@ func (m *LxcMachine) Start() error {
 	}
 
 	c.SetVerbosity(lxc.Verbose)
+
+	if err := c.SetConfigItem("lxc.utsname", m.Name); err != nil {
+		return fmt.Errorf("lxc.utsname config: %s", err)
+	}
 
 	if m.Network.Mode == shared.NetworkModeBridge {
 		if err := c.SetConfigItem("lxc.network.type", "veth"); err != nil {

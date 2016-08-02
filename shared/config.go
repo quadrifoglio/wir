@@ -12,6 +12,9 @@ type APIConfigStruct struct {
 	Address string
 	Port    int
 
+	StorageBackend string
+	ZfsPool        string
+
 	BridgeIface      string
 	EnableNetMonitor bool
 	PPSAlert         uint64
@@ -27,8 +30,6 @@ type APIConfigStruct struct {
 	DatabaseFile string
 	ImagePath    string
 	MachinePath  string
-
-	ZFSPool string
 }
 
 var (

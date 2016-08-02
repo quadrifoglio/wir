@@ -5,6 +5,9 @@
 	"Address": "127.0.0.1",
 	"Port": 1997,
 
+	"StorageBackend": "zfs",
+	"ZfsPool": "wir",
+
 	"BridgeIface": "eth0",
 	"EnableNetMonitor": false,
 	"PPSAlert": 70000,
@@ -15,11 +18,8 @@
 	"QemuImgCommand": "/usr/bin/qemu-img",
 	"QemuNbdCommand": "/usr/bin/qemu-nbd",
 	"QemuCommand": "/usr/bin/qemu-system-x86_64",
-	"VzctlCommand": "/usr/sbin/vzctl",
 
 	"DatabaseFile": "/var/lib/wir/wir.db",
 	"ImagePath": "/var/lib/wir/images",
-	"MachinePath": "/var/lib/wir/machines",
-
-	"ZFSPool": "lxc"
+	"MachinePath": "/var/lib/wir/machines"
 }
