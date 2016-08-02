@@ -21,23 +21,37 @@ En cas d'erreur, "Status" prends la valeur appropriée et "Message" détail l'er
 
 Informations sur le serveur
 
+#### Response
+
 ```json
 {
 	"Name": string,
 	"Version": string,
 	"Configuration": {
 		"NodeID": int,
+		"AdminEmail": string (mail),
+
 		"Address": string (ip address),
 		"Port": int,
+
+		"StorageBackend": string,
+		"ZfsPool": string,
+
 		"BridgeIface": string,
+		"EnableNetMonitor": bool,
+		"PPSAlert": int (packets per second),
+		"PPSStop": int (packets per second),
+
 		"EnableKVM": bool,
 		"EbtablesCommand": string (path),
 		"QemuImgCommand": string (path),
 		"QemuNbdCommand": string (path),
 		"QemuCommand": string (path),
 		"VzctlCommand": string (path),
+
 		"DatabaseFile": string (path),
 		"ImagePath": string (path),
+		"MigrationPath": string (path),
 		"MachinePath": string (path)
 	},
 	"Stats": {
@@ -53,6 +67,8 @@ Informations sur le serveur
 
 Listes des images
 
+#### Response
+
 ```json
 [image1, image2, ...]
 ```
@@ -60,6 +76,8 @@ Listes des images
 ### GET /images/*name*
 
 Détails sur une image
+
+#### Response
 
 ```json
 {
@@ -76,6 +94,8 @@ Détails sur une image
 ### POST /images
 
 Créer une image
+
+#### Request
 
 ```json
 {
@@ -103,6 +123,8 @@ Supprimer une image
 
 Liste des machines
 
+#### Response
+
 ```json
 [machine1, machine2, ...]
 ```
@@ -110,6 +132,8 @@ Liste des machines
 ### GET /machines/*name*
 
 Détails sur une machines
+
+#### Response
 
 ```json
 {
@@ -120,17 +144,12 @@ Détails sur une machines
 	"State": int (0 down, 1 up),
 	"Cores": int,
 	"Memory": int (MiB),
+	"Disk": int (MiB),
 	"Network": {
 		"Mode": string,
 		"MAC": string (mac address),
 		"IP": string (ip address)
 	},
-	"Qemu": {
-		"PID": int (pid, only if type is qemu)
-	},
-	"Vz": {
-		"CTID": int (only if type is openvz)
-	}
 }
 ```
 
@@ -138,12 +157,15 @@ Détails sur une machines
 
 Créer une machine
 
+#### Request
+
 ```json
 {
 	"Name": string,
 	"Image": string,
 	"Cores": int,
 	"Memory": int (MiB),
+	"Disk": int (MiB),
 	"Network": {
 		"Mode": string,
 		"MAC": string (mac address),
@@ -162,10 +184,13 @@ Créer une machine
 
 Changer les infos d'une machine
 
+#### Request
+
 ```json
 {
 	"Cores": int,
 	"Memory": int (MiB),
+	"Disk": int (MiB),
 	"Network": {
 		"Mode": string,
 		"MAC": string (mac address),
@@ -179,6 +204,8 @@ Même règles qu'au dessus
 ### SYSPREP /machines/*name*
 
 Change les données internes d'une machine linux (hostname et mot de passe root)
+
+#### Request
 
 ```json
 {
@@ -194,6 +221,8 @@ Démarre la machine
 ### STATS /machines/*name*
 
 Obtenir des informations (CPU, Mémoire utilisée sur l'hôte) a propos de la machine
+
+#### Response
 
 ```json
 {

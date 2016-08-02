@@ -80,7 +80,7 @@ func (m *QemuMachine) Create(img Image, info shared.MachineInfo) error {
 	var cmd *exec.Cmd
 
 	if _, err := os.Stat(disk); os.IsNotExist(err) {
-		cmd = exec.Command(shared.APIConfig.QemuImg, "create", "-b", img.Info().Source, "-f", "qcow2", disk, strconv.Itoa(m.Disk))
+		cmd = exec.Command(shared.APIConfig.QemuImg, "create", "-b", img.Info().Source, "-f", "qcow2", disk)
 	} else {
 		cmd = exec.Command(shared.APIConfig.QemuImg, "rebase", "-b", img.Info().Source, disk)
 	}

@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -127,6 +128,29 @@ func Mount(dev, path string) error {
 
 func Unmount(path string) error {
 	return syscall.Unmount(path, 0)
+}
+
+func CopyFile(src, dst string) error {
+	f1, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+
+	defer f1.Close()
+
+	f2, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+
+	defer f2.Close()
+
+	_, err = io.Copy(f2, f1)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func RewriteFile(path string, data []byte) error {
