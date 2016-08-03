@@ -49,7 +49,7 @@ func (m *LxcMachine) Create(img Image, info shared.MachineInfo) error {
 			return err
 		}
 
-		err = utils.ZfsSet(ds, "quota", strconv.Itoa(m.Disk))
+		err = utils.ZfsSet(ds, "quota", strconv.Itoa(int(m.Disk)))
 		if err != nil {
 			return err
 		}

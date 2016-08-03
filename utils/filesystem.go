@@ -26,7 +26,7 @@ type Partition struct {
 func SizeQcow2(file string) (uint64, error) {
 	var size uint64
 
-	cmd := exec.Command("qemu-img", "resize", file, strconv.Itoa(int(size)))
+	cmd := exec.Command("qemu-img", "info", file)
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -38,11 +38,7 @@ func SizeQcow2(file string) (uint64, error) {
 			continue
 		}
 
-		r, err := regexp.Compile("virtual size:.*\\(([0-9]+)")
-		if err != nil {
-			return 0, err
-		}
-
+		r := regexp.MustCompile("\\(([0-9]+)\\)")
 		if d := r.Find([]byte(l)); d != nil {
 			s, err := strconv.ParseInt(string(d), 10, 64)
 			if err != nil {
@@ -57,8 +53,8 @@ func SizeQcow2(file string) (uint64, error) {
 	return size, nil
 }
 
-func ResizeQcow2(file string, size int) error {
-	cmd := exec.Command("qemu-img", "resize", file, strconv.Itoa(size))
+func ResizeQcow2(file string, size uint64) error {
+	cmd := exec.Command("qemu-img", "resize", file, strconv.FormatUint(size, 10))
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -147,7 +143,7 @@ func ListPartitions(dev string) ([]Partition, error) {
 	return parts, nil
 }
 
-func ResizePartition(dev string, num, size int) error {
+func ResizePartition(dev string, num int, size uint64) error {
 	parts, err := ListPartitions(dev)
 	if err != nil {
 		return err
@@ -177,7 +173,7 @@ func ResizePartition(dev string, num, size int) error {
 		return fmt.Errorf("no free space available after partition %d. can not resize", num)
 	}
 
-	cmd := exec.Command("parted", dev, "unit", "B", "resizepart", strconv.Itoa(mainPart.Number), strconv.Itoa(int(freeSpace.End)))
+	cmd := exec.Command("parted", dev, "unit", "B", "resizepart", strconv.Itoa(mainPart.Number), strconv.FormatUint(freeSpace.End, 10))
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("%s", out)

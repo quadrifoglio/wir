@@ -20,7 +20,7 @@ type MachineInfo struct {
 	Image   string
 	Cores   int
 	Memory  int
-	Disk    int
+	Disk    uint64
 	Network MachineNetwork `json:",omitempty"`
 }
 

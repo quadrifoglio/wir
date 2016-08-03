@@ -85,7 +85,12 @@ func (m *QemuMachine) Create(img Image, info shared.MachineInfo) error {
 		return fmt.Errorf("%s", out)
 	}
 
-	if m.Disk != 0 {
+	imgSize, err := utils.SizeQcow2(img.Info().Source)
+	if err != nil {
+		return err
+	}
+
+	if m.Disk != 0 && m.Disk > imgSize {
 		err = utils.ResizeQcow2(disk, m.Disk)
 		if err != nil {
 			return err
@@ -234,6 +239,9 @@ func (m *QemuMachine) Start() error {
 		args = append(args, fmt.Sprintf("tap,id=net0,ifname=%s,script=no", MachineIfName(m)))
 		args = append(args, "-device")
 		args = append(args, fmt.Sprintf("driver=virtio-net,netdev=net0,mac=%s", m.Network.MAC))
+	} else {
+		args = append(args, "-net")
+		args = append(args, "none")
 	}
 
 	cmd := exec.Command(shared.APIConfig.Qemu, args...)
