@@ -331,25 +331,42 @@ func (m *LxcMachine) Stats() (shared.MachineStats, error) {
 }
 
 func (m *LxcMachine) ListBackups() ([]shared.MachineBackup, error) {
-	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
+	if shared.APIConfig.StorageBackend == "dir" {
+		path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
 
-	c, err := lxc.NewContainer(m.Name, path)
-	if err != nil {
-		return nil, err
+		c, err := lxc.NewContainer(m.Name, path)
+		if err != nil {
+			return nil, err
+		}
+
+		sns, err := c.Snapshots()
+		if err != nil {
+			return nil, err
+		}
+
+		var bks []shared.MachineBackup
+		for _, s := range sns {
+			bks = append(bks, shared.MachineBackup{s.Name, 0})
+		}
+
+		return bks, nil
+	} else if shared.APIConfig.StorageBackend == "zfs" {
+		ds := fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name)
+
+		sns, err := utils.ZfsListSnapshots(ds)
+		if err != nil {
+			return nil, err
+		}
+
+		var bks []shared.MachineBackup
+		for _, s := range sns {
+			bks = append(bks, shared.MachineBackup{s, 0})
+		}
+
+		return bks, nil
 	}
 
-	sns, err := c.Snapshots()
-	if err != nil {
-		return nil, err
-	}
-
-	var bks []shared.MachineBackup
-	for _, s := range sns {
-		fmt.Println(s.Timestamp)
-		bks = append(bks, shared.MachineBackup{s.Name, 0})
-	}
-
-	return bks, nil
+	return nil, errors.InvalidStorage
 }
 
 func (m *LxcMachine) CreateBackup() (shared.MachineBackup, error) {
@@ -359,19 +376,33 @@ func (m *LxcMachine) CreateBackup() (shared.MachineBackup, error) {
 		return b, errors.InvalidMachineState
 	}
 
-	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
+	if shared.APIConfig.StorageBackend == "dir" {
+		path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
 
-	c, err := lxc.NewContainer(m.Name, path)
-	if err != nil {
-		return b, err
+		c, err := lxc.NewContainer(m.Name, path)
+		if err != nil {
+			return b, err
+		}
+
+		s, err := c.CreateSnapshot()
+		if err != nil {
+			return b, err
+		}
+
+		b.Name = s.Name
+	} else if shared.APIConfig.StorageBackend == "zfs" {
+		ds := fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name)
+		t := time.Now().Unix()
+		ts := strconv.FormatInt(t, 10)
+
+		err := utils.ZfsSnapshot(ds, ts)
+		if err != nil {
+			return b, err
+		}
+
+		b.Name = ts
+		b.Timestamp = t
 	}
-
-	s, err := c.CreateSnapshot()
-	if err != nil {
-		return b, err
-	}
-
-	b.Name = s.Name
 
 	return b, nil
 }
@@ -381,42 +412,51 @@ func (m *LxcMachine) RestoreBackup(name string) error {
 		return errors.InvalidMachineState
 	}
 
-	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
-	newName := fmt.Sprintf("%s_restored", m.Name)
+	if shared.APIConfig.StorageBackend == "dir" {
+		path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
+		newName := fmt.Sprintf("%s_restored", m.Name)
 
-	c, err := lxc.NewContainer(m.Name, path)
-	if err != nil {
-		return err
-	}
+		c, err := lxc.NewContainer(m.Name, path)
+		if err != nil {
+			return err
+		}
 
-	err = c.RestoreSnapshot(lxc.Snapshot{Name: name}, newName)
-	if err != nil {
-		return err
-	}
+		err = c.RestoreSnapshot(lxc.Snapshot{Name: name}, newName)
+		if err != nil {
+			return err
+		}
 
-	err = os.Mkdir(fmt.Sprintf("%s/%s/snaps", path, newName), 0775)
-	if err != nil {
-		return err
-	}
+		err = os.Mkdir(fmt.Sprintf("%s/%s/snaps", path, newName), 0775)
+		if err != nil {
+			return err
+		}
 
-	err = utils.CopyFolder(fmt.Sprintf("%s/%s/snaps", path, m.Name), fmt.Sprintf("%s/%s/snaps", path, newName))
-	if err != nil {
-		return err
-	}
+		err = utils.CopyFolder(fmt.Sprintf("%s/%s/snaps", path, m.Name), fmt.Sprintf("%s/%s/snaps", path, newName))
+		if err != nil {
+			return err
+		}
 
-	err = c.Destroy()
-	if err != nil {
-		return err
-	}
+		err = c.Destroy()
+		if err != nil {
+			return err
+		}
 
-	c, err = lxc.NewContainer(newName, path)
-	if err != nil {
-		return err
-	}
+		c, err = lxc.NewContainer(newName, path)
+		if err != nil {
+			return err
+		}
 
-	err = c.Rename(m.Name)
-	if err != nil {
-		return err
+		err = c.Rename(m.Name)
+		if err != nil {
+			return err
+		}
+	} else if shared.APIConfig.StorageBackend == "zfs" {
+		ds := fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name)
+
+		err := utils.ZfsRestore(ds, name)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -425,14 +465,23 @@ func (m *LxcMachine) RestoreBackup(name string) error {
 func (m *LxcMachine) DeleteBackup(name string) error {
 	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
 
-	c, err := lxc.NewContainer(m.Name, path)
-	if err != nil {
-		return err
-	}
+	if shared.APIConfig.StorageBackend == "dir" {
+		c, err := lxc.NewContainer(m.Name, path)
+		if err != nil {
+			return err
+		}
 
-	err = c.DestroySnapshot(lxc.Snapshot{Name: name})
-	if err != nil {
-		return err
+		err = c.DestroySnapshot(lxc.Snapshot{Name: name})
+		if err != nil {
+			return err
+		}
+	} else if shared.APIConfig.StorageBackend == "zfs" {
+		ds := fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name)
+
+		err := utils.ZfsDeleteSnapshot(ds, name)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

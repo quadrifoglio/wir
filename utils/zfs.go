@@ -17,6 +17,71 @@ func ZfsCreate(path, mountpoint string) error {
 	return nil
 }
 
+func ZfsListSnapshots(path string) ([]string, error) {
+	cmd := exec.Command("zfs", "list", "-t", "snapshot")
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return nil, fmt.Errorf("zfs: %s", out)
+	}
+
+	var snaps []string
+	for i, l := range strings.Split(string(out), "\n") {
+		if i == 0 {
+			continue
+		}
+
+		f := strings.Fields(l)
+		if len(f) < 1 {
+			return nil, fmt.Errorf("zfs: invalid output from zfs list")
+		}
+
+		s := strings.Split(f[0], "@")
+		if len(s) != 2 {
+			return nil, fmt.Errorf("zfs: invalid output from zfs list")
+		}
+
+		if s[0] == path {
+			snaps = append(snaps, s[1])
+		}
+	}
+
+	return snaps, nil
+}
+
+func ZfsSnapshot(path, snap string) error {
+	cmd := exec.Command("zfs", "snapshot", fmt.Sprintf("%s@%s", path, snap))
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("zfs: %s", out)
+	}
+
+	return nil
+}
+
+func ZfsRestore(path, snap string) error {
+	cmd := exec.Command("zfs", "rollback", fmt.Sprintf("%s@%s", path, snap))
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("zfs: %s", out)
+	}
+
+	return nil
+}
+
+func ZfsDeleteSnapshot(path, snap string) error {
+	cmd := exec.Command("zfs", "destroy", fmt.Sprintf("%s@%s", path, snap))
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("zfs: %s", out)
+	}
+
+	return nil
+}
+
 func ZfsSet(path, key, value string) error {
 	cmd := exec.Command("zfs", "set", fmt.Sprintf("%s=%s", key, value), path)
 

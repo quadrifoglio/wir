@@ -15,4 +15,5 @@ var (
 	InvalidMachineState = errors.New("Invalid Machine State")
 	StartFailed         = errors.New("Machine Start Failed")
 	KillFailed          = errors.New("Process kill failed")
+	InvalidStorage      = errors.New("Invalid storage backend")
 )
