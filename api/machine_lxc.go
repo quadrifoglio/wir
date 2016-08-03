@@ -10,6 +10,7 @@ import (
 
 	"gopkg.in/lxc/go-lxc.v2"
 
+	"github.com/quadrifoglio/wir/errors"
 	"github.com/quadrifoglio/wir/shared"
 	"github.com/quadrifoglio/wir/utils"
 )
@@ -329,21 +330,111 @@ func (m *LxcMachine) Stats() (shared.MachineStats, error) {
 	return stats, nil
 }
 
-func (m *LxcMachine) ListBackups() ([]string, error) {
-	var bks []string
+func (m *LxcMachine) ListBackups() ([]shared.MachineBackup, error) {
+	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
+
+	c, err := lxc.NewContainer(m.Name, path)
+	if err != nil {
+		return nil, err
+	}
+
+	sns, err := c.Snapshots()
+	if err != nil {
+		return nil, err
+	}
+
+	var bks []shared.MachineBackup
+	for _, s := range sns {
+		fmt.Println(s.Timestamp)
+		bks = append(bks, shared.MachineBackup{s.Name, 0})
+	}
 
 	return bks, nil
 }
 
-func (m *LxcMachine) CreateBackup(name string) error {
-	return nil
+func (m *LxcMachine) CreateBackup() (shared.MachineBackup, error) {
+	var b shared.MachineBackup
+
+	if m.State() != shared.StateDown {
+		return b, errors.InvalidMachineState
+	}
+
+	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
+
+	c, err := lxc.NewContainer(m.Name, path)
+	if err != nil {
+		return b, err
+	}
+
+	s, err := c.CreateSnapshot()
+	if err != nil {
+		return b, err
+	}
+
+	b.Name = s.Name
+
+	return b, nil
 }
 
 func (m *LxcMachine) RestoreBackup(name string) error {
+	if m.State() != shared.StateDown {
+		return errors.InvalidMachineState
+	}
+
+	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
+	newName := fmt.Sprintf("%s_restored", m.Name)
+
+	c, err := lxc.NewContainer(m.Name, path)
+	if err != nil {
+		return err
+	}
+
+	err = c.RestoreSnapshot(lxc.Snapshot{Name: name}, newName)
+	if err != nil {
+		return err
+	}
+
+	err = os.Mkdir(fmt.Sprintf("%s/%s/snaps", path, newName), 0775)
+	if err != nil {
+		return err
+	}
+
+	err = utils.CopyFolder(fmt.Sprintf("%s/%s/snaps", path, m.Name), fmt.Sprintf("%s/%s/snaps", path, newName))
+	if err != nil {
+		return err
+	}
+
+	err = c.Destroy()
+	if err != nil {
+		return err
+	}
+
+	c, err = lxc.NewContainer(newName, path)
+	if err != nil {
+		return err
+	}
+
+	err = c.Rename(m.Name)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (m *LxcMachine) DeleteBackup(name string) error {
+	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
+
+	c, err := lxc.NewContainer(m.Name, path)
+	if err != nil {
+		return err
+	}
+
+	err = c.DestroySnapshot(lxc.Snapshot{Name: name})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -380,7 +471,7 @@ func (m *LxcMachine) CreateCheckpoint() error {
 			return err
 		}
 	} else {
-		err := utils.ClearFolder(path)
+		err := os.RemoveAll(path)
 		if err != nil {
 			return err
 		}

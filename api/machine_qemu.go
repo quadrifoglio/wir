@@ -388,7 +388,7 @@ func (m *QemuMachine) Stats() (shared.MachineStats, error) {
 	return stats, nil
 }
 
-func (m *QemuMachine) ListBackups() ([]string, error) {
+func (m *QemuMachine) ListBackups() ([]shared.MachineBackup, error) {
 	disk := fmt.Sprintf("%s/qemu/%s/disk.qcow2", shared.APIConfig.MachinePath, m.Name)
 
 	sns, err := utils.ListSnapshotsQcow2(disk)
@@ -396,25 +396,42 @@ func (m *QemuMachine) ListBackups() ([]string, error) {
 		return nil, err
 	}
 
-	var bks []string
+	var bks []shared.MachineBackup
 
 	for _, s := range sns {
 		if strings.HasPrefix(s, "backup_") {
-			bks = append(bks, s[7:])
+			t, err := strconv.ParseInt(s[7:], 10, 64)
+			if err != nil {
+				return nil, err
+			}
+
+			bks = append(bks, shared.MachineBackup{s[7:], t})
 		}
 	}
 
 	return bks, nil
 }
 
-func (m *QemuMachine) CreateBackup(name string) error {
+func (m *QemuMachine) CreateBackup() (shared.MachineBackup, error) {
+	var b shared.MachineBackup
+
 	disk := fmt.Sprintf("%s/qemu/%s/disk.qcow2", shared.APIConfig.MachinePath, m.Name)
 
 	if m.State() != shared.StateDown {
-		return errors.InvalidMachineState
+		return b, errors.InvalidMachineState
 	}
 
-	return utils.SnapshotQcow2(disk, fmt.Sprintf("backup_%s", name))
+	now := time.Now().Unix()
+
+	err := utils.SnapshotQcow2(disk, fmt.Sprintf("backup_%d", now))
+	if err != nil {
+		return b, err
+	}
+
+	b.Name = strconv.FormatInt(now, 10)
+	b.Timestamp = now
+
+	return b, nil
 }
 
 func (m *QemuMachine) RestoreBackup(name string) error {

@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 
 	"github.com/amoghe/go-crypt"
@@ -64,24 +63,12 @@ func SCP(srcFile string, dst shared.Remote, dstFile string) error {
 	return nil
 }
 
-func ClearFolder(dir string) error {
-	d, err := os.Open(dir)
+func CopyFolder(src, dst string) error {
+	cmd := exec.Command("cp", "-R", src, dst)
+
+	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return err
-	}
-
-	defer d.Close()
-
-	names, err := d.Readdirnames(-1)
-	if err != nil {
-		return err
-	}
-
-	for _, name := range names {
-		err = os.RemoveAll(filepath.Join(dir, name))
-		if err != nil {
-			return err
-		}
+		return fmt.Errorf("%s", string(out))
 	}
 
 	return nil

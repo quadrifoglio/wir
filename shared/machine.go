@@ -30,6 +30,11 @@ type MachineStats struct {
 	RAMFree uint64
 }
 
+type MachineBackup struct {
+	Name      string
+	Timestamp int64
+}
+
 type MachineState int
 
 func StateToString(s MachineState) string {
