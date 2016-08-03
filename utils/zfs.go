@@ -27,6 +27,9 @@ func ZfsListSnapshots(path string) ([]string, error) {
 
 	var snaps []string
 	for i, l := range strings.Split(string(out), "\n") {
+		if len(l) == 0 {
+			break
+		}
 		if i == 0 {
 			continue
 		}
@@ -133,7 +136,7 @@ func ZfsUnmount(path string) error {
 }
 
 func ZfsDestroy(path string) error {
-	cmd := exec.Command("zfs", "destroy", path)
+	cmd := exec.Command("zfs", "destroy", "-r", path)
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {

@@ -50,9 +50,11 @@ func (m *LxcMachine) Create(img Image, info shared.MachineInfo) error {
 			return err
 		}
 
-		err = utils.ZfsSet(ds, "quota", strconv.Itoa(int(m.Disk)))
-		if err != nil {
-			return err
+		if m.Disk != 0 {
+			err = utils.ZfsSet(ds, "quota", strconv.Itoa(int(m.Disk)))
+			if err != nil {
+				return err
+			}
 		}
 	} else if shared.APIConfig.StorageBackend == "dir" {
 		err := os.MkdirAll(rootfs, 0775)
@@ -134,21 +136,7 @@ func (m *LxcMachine) Update(info shared.MachineInfo) error {
 }
 
 func (m *LxcMachine) Delete() error {
-	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
-
-	c, err := lxc.NewContainer(m.Name, path)
-	if err != nil {
-		return err
-	}
-
-	c.SetVerbosity(lxc.Verbose)
-
-	err = c.Destroy()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return utils.ZfsDestroy(fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name))
 }
 
 func (m *LxcMachine) Sysprep(os, hostname, root string) error {
@@ -360,7 +348,12 @@ func (m *LxcMachine) ListBackups() ([]shared.MachineBackup, error) {
 
 		var bks []shared.MachineBackup
 		for _, s := range sns {
-			bks = append(bks, shared.MachineBackup{s, 0})
+			t, err := strconv.ParseInt(s, 10, 64)
+			if err != nil {
+				return nil, err
+			}
+
+			bks = append(bks, shared.MachineBackup{s, t})
 		}
 
 		return bks, nil
