@@ -1,4 +1,5 @@
-* backups: lxc: rewrite for backend dir
-* migration: optimize (using zfs/btrfs send/recv)
+* add clone functionality: whole copy of the machine
+* backups: lxc: rewrite for backend dir, use clone instand of liblxc's snapshot
+* migration: optimize (using fs's send/recv commands)
 * net: monitor: send email on pps alert
-* panel: create/edit images and machines
+* maybe: add btrfs support ?
