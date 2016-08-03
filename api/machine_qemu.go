@@ -388,6 +388,50 @@ func (m *QemuMachine) Stats() (shared.MachineStats, error) {
 	return stats, nil
 }
 
+func (m *QemuMachine) ListBackups() ([]string, error) {
+	disk := fmt.Sprintf("%s/qemu/%s/disk.qcow2", shared.APIConfig.MachinePath, m.Name)
+
+	sns, err := utils.ListSnapshotsQcow2(disk)
+	if err != nil {
+		return nil, err
+	}
+
+	var bks []string
+
+	for _, s := range sns {
+		if strings.HasPrefix(s, "backup_") {
+			bks = append(bks, s[7:])
+		}
+	}
+
+	return bks, nil
+}
+
+func (m *QemuMachine) CreateBackup(name string) error {
+	disk := fmt.Sprintf("%s/qemu/%s/disk.qcow2", shared.APIConfig.MachinePath, m.Name)
+
+	if m.State() != shared.StateDown {
+		return errors.InvalidMachineState
+	}
+
+	return utils.SnapshotQcow2(disk, fmt.Sprintf("backup_%s", name))
+}
+
+func (m *QemuMachine) RestoreBackup(name string) error {
+	disk := fmt.Sprintf("%s/qemu/%s/disk.qcow2", shared.APIConfig.MachinePath, m.Name)
+
+	if m.State() != shared.StateDown {
+		return errors.InvalidMachineState
+	}
+
+	return utils.RestoreQcow2(disk, fmt.Sprintf("backup_%s", name))
+}
+
+func (m *QemuMachine) DeleteBackup(name string) error {
+	disk := fmt.Sprintf("%s/qemu/%s/disk.qcow2", shared.APIConfig.MachinePath, m.Name)
+	return utils.DeleteSnapshotQcow2(disk, fmt.Sprintf("backup_%s", name))
+}
+
 func (m *QemuMachine) HasCheckpoint() bool {
 	path := fmt.Sprintf("%s/qemu/%s/disk.qcow2", shared.APIConfig.MachinePath, m.Name)
 	cmd := exec.Command(shared.APIConfig.QemuImg, "snapshot", "-l", path)

@@ -27,6 +27,11 @@ type Machine interface {
 	State() shared.MachineState
 	Stats() (shared.MachineStats, error)
 
+	ListBackups() ([]string, error)
+	CreateBackup(name string) error
+	RestoreBackup(name string) error
+	DeleteBackup(name string) error
+
 	HasCheckpoint() bool
 	CreateCheckpoint() error
 	RestoreCheckpoint() error

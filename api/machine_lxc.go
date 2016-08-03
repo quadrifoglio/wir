@@ -329,6 +329,24 @@ func (m *LxcMachine) Stats() (shared.MachineStats, error) {
 	return stats, nil
 }
 
+func (m *LxcMachine) ListBackups() ([]string, error) {
+	var bks []string
+
+	return bks, nil
+}
+
+func (m *LxcMachine) CreateBackup(name string) error {
+	return nil
+}
+
+func (m *LxcMachine) RestoreBackup(name string) error {
+	return nil
+}
+
+func (m *LxcMachine) DeleteBackup(name string) error {
+	return nil
+}
+
 func (m *LxcMachine) HasCheckpoint() bool {
 	path := fmt.Sprintf("%s/lxc/%s/checkpoint", shared.APIConfig.MachinePath, m.Name)
 

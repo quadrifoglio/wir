@@ -64,6 +64,63 @@ func ResizeQcow2(file string, size uint64) error {
 	return nil
 }
 
+func ListSnapshotsQcow2(file string) ([]string, error) {
+	cmd := exec.Command("qemu-img", "snapshot", "-l", file)
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return nil, fmt.Errorf("%s", out)
+	}
+
+	var sns []string
+	for i, l := range strings.Split(string(out), "\n") {
+		if i < 2 {
+			continue
+		}
+
+		f := strings.Fields(l)
+
+		if len(f) > 1 {
+			sns = append(sns, f[0])
+		}
+	}
+
+	return sns, nil
+}
+
+func SnapshotQcow2(file, name string) error {
+	cmd := exec.Command("qemu-img", "snapshot", "-c", name, file)
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("%s", out)
+	}
+
+	return nil
+}
+
+func RestoreQcow2(file, name string) error {
+	cmd := exec.Command("qemu-img", "snapshot", "-a", name, file)
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("%s", out)
+	}
+
+	return nil
+}
+
+func DeleteSnapshotQcow2(file, name string) error {
+	cmd := exec.Command("qemu-img", "snapshot", "-d", name, file)
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("%s", out)
+	}
+
+	return nil
+}
+
 func NBDConnectQcow2(file string) error {
 	dev := "/dev/nbd0"
 	cmd := exec.Command("qemu-nbd", "-c", dev, file)
