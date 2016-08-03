@@ -110,6 +110,11 @@ func Start() error {
 	r.HandleFunc("/machines/{name}", handleMachineMigrate).Methods("MIGRATE")
 	r.HandleFunc("/machines/{name}", handleMachineDelete).Methods("DELETE")
 
+	r.HandleFunc("/machines/{name}/backups", handleMachineCreateBackup).Methods("POST")
+	r.HandleFunc("/machines/{name}/backups", handleMachineListBackups).Methods("GET")
+	r.HandleFunc("/machines/{name}/backups/{backup}", handleMachineRestoreBackup).Methods("RESTORE")
+	r.HandleFunc("/machines/{name}/backups/{backup}", handleMachineDeleteBackup).Methods("DELETE")
+
 	r.NotFoundHandler = http.HandlerFunc(handleNotFound)
 	http.Handle("/", handlers.CORS()(r))
 

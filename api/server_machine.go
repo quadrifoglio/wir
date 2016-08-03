@@ -14,6 +14,53 @@ import (
 	"github.com/quadrifoglio/wir/utils"
 )
 
+func handleMachineList(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
+	ms, err := DBListMachines()
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	sort.Sort(ms)
+
+	for i, _ := range ms {
+		prevState := ms[i].State()
+
+		if ms[i].State() != prevState {
+			err = DBStoreMachine(ms[i])
+			if err != nil {
+				ErrorResponse(err).Send(w, r)
+				return
+			}
+		}
+	}
+
+	SuccessResponse(ms).Send(w, r)
+}
+
+func handleMachineGet(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
+	vars := mux.Vars(r)
+	name := vars["name"]
+
+	m, err := DBGetMachine(name)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	err = DBStoreMachine(m)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	SuccessResponse(m).Send(w, r)
+}
+
 func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
 	PrepareResponse(w, r)
 
@@ -102,6 +149,33 @@ func handleMachineUpdate(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(nil).Send(w, r)
 }
 
+func handleMachineDelete(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
+	vars := mux.Vars(r)
+	name := vars["name"]
+
+	m, err := DBGetMachine(name)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	err = m.Delete()
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	err = DBDeleteMachine(name)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	SuccessResponse(nil).Send(w, r)
+}
+
 func handleMachineLinuxSysprep(w http.ResponseWriter, r *http.Request) {
 	PrepareResponse(w, r)
 
@@ -142,53 +216,6 @@ func handleMachineLinuxSysprep(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(nil).Send(w, r)
 }
 
-func handleMachineList(w http.ResponseWriter, r *http.Request) {
-	PrepareResponse(w, r)
-
-	ms, err := DBListMachines()
-	if err != nil {
-		ErrorResponse(err).Send(w, r)
-		return
-	}
-
-	sort.Sort(ms)
-
-	for i, _ := range ms {
-		prevState := ms[i].State()
-
-		if ms[i].State() != prevState {
-			err = DBStoreMachine(ms[i])
-			if err != nil {
-				ErrorResponse(err).Send(w, r)
-				return
-			}
-		}
-	}
-
-	SuccessResponse(ms).Send(w, r)
-}
-
-func handleMachineGet(w http.ResponseWriter, r *http.Request) {
-	PrepareResponse(w, r)
-
-	vars := mux.Vars(r)
-	name := vars["name"]
-
-	m, err := DBGetMachine(name)
-	if err != nil {
-		ErrorResponse(err).Send(w, r)
-		return
-	}
-
-	err = DBStoreMachine(m)
-	if err != nil {
-		ErrorResponse(err).Send(w, r)
-		return
-	}
-
-	SuccessResponse(m).Send(w, r)
-}
-
 func handleMachineStart(w http.ResponseWriter, r *http.Request) {
 	PrepareResponse(w, r)
 
@@ -207,6 +234,33 @@ func handleMachineStart(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = m.Start()
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	err = DBStoreMachine(m)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	SuccessResponse(nil).Send(w, r)
+}
+
+func handleMachineStop(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
+	vars := mux.Vars(r)
+	name := vars["name"]
+
+	m, err := DBGetMachine(name)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	err = m.Stop()
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
@@ -242,7 +296,7 @@ func handleMachineStats(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(stats).Send(w, r)
 }
 
-func handleMachineStop(w http.ResponseWriter, r *http.Request) {
+func handleMachineListBackups(w http.ResponseWriter, r *http.Request) {
 	PrepareResponse(w, r)
 
 	vars := mux.Vars(r)
@@ -254,13 +308,72 @@ func handleMachineStop(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = m.Stop()
+	bks, err := m.ListBackups()
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
 	}
 
-	err = DBStoreMachine(m)
+	SuccessResponse(bks).Send(w, r)
+}
+
+func handleMachineCreateBackup(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
+	vars := mux.Vars(r)
+	name := vars["name"]
+
+	m, err := DBGetMachine(name)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	bk, err := m.CreateBackup()
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	SuccessResponse(bk).Send(w, r)
+}
+
+func handleMachineRestoreBackup(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
+	vars := mux.Vars(r)
+	name := vars["name"]
+	bk := vars["backup"]
+
+	m, err := DBGetMachine(name)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	err = m.RestoreBackup(bk)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	SuccessResponse(nil).Send(w, r)
+}
+
+func handleMachineDeleteBackup(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
+	vars := mux.Vars(r)
+	name := vars["name"]
+	bk := vars["backup"]
+
+	m, err := DBGetMachine(name)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	err = m.DeleteBackup(bk)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
@@ -311,33 +424,6 @@ func handleMachineMigrate(w http.ResponseWriter, r *http.Request) {
 		err = MigrateMachine(m, i, shared.Remote{shared.APIConfig.Address, "root", shared.APIConfig.Port}, req.Target)
 	}
 
-	if err != nil {
-		ErrorResponse(err).Send(w, r)
-		return
-	}
-
-	err = m.Delete()
-	if err != nil {
-		ErrorResponse(err).Send(w, r)
-		return
-	}
-
-	err = DBDeleteMachine(name)
-	if err != nil {
-		ErrorResponse(err).Send(w, r)
-		return
-	}
-
-	SuccessResponse(nil).Send(w, r)
-}
-
-func handleMachineDelete(w http.ResponseWriter, r *http.Request) {
-	PrepareResponse(w, r)
-
-	vars := mux.Vars(r)
-	name := vars["name"]
-
-	m, err := DBGetMachine(name)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
