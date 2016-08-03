@@ -81,7 +81,7 @@ func ListSnapshotsQcow2(file string) ([]string, error) {
 		f := strings.Fields(l)
 
 		if len(f) > 1 {
-			sns = append(sns, f[0])
+			sns = append(sns, f[1])
 		}
 	}
 

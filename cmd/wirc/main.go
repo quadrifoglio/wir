@@ -80,6 +80,23 @@ var (
 
 	machineDelete     = cmdMachine.Command("delete", "Delete a machine")
 	machineDeleteName = machineDelete.Arg("name", "Machine name").Required().String()
+
+	cmdBackups        = kingpin.Command("backups", "List backups")
+	cmdBackupsRaw     = cmdBackups.Flag("raw", "Raw listing (no table)").Bool()
+	cmdBackupsMachine = cmdBackups.Arg("machine", "Machine name").Required().String()
+
+	cmdBackup = kingpin.Command("backup", "Create, restore or delete a backup")
+
+	backupCreate        = cmdBackup.Command("create", "Create a backup")
+	backupCreateMachine = backupCreate.Arg("machine", "Machine name").Required().String()
+
+	backupRestore        = cmdBackup.Command("restore", "Restore backup from a backup")
+	backupRestoreMachine = backupRestore.Arg("machine", "Machine name").Required().String()
+	backupRestoreName    = backupRestore.Arg("name", "Backup name").Required().String()
+
+	backupDelete        = cmdBackup.Command("delete", "Delete a backup")
+	backupDeleteMachine = backupDelete.Arg("machine", "Machine name").Required().String()
+	backupDeleteName    = backupDelete.Arg("name", "Backup name").Required().String()
 )
 
 func fatal(err error) {
@@ -167,6 +184,18 @@ func main() {
 		break
 	case "machine delete":
 		deleteMachine(remote, *machineDeleteName)
+		break
+	case "backups":
+		listBackups(remote, *cmdBackupsMachine, *cmdBackupsRaw)
+		break
+	case "backup create":
+		createBackup(remote, *backupCreateMachine)
+		break
+	case "backup restore":
+		restoreBackup(remote, *backupRestoreMachine, *backupRestoreName)
+		break
+	case "backup delete":
+		deleteBackup(remote, *backupDeleteMachine, *backupDeleteName)
 		break
 	}
 }
