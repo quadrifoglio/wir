@@ -85,6 +85,27 @@ func ZfsDeleteSnapshot(path, snap string) error {
 	return nil
 }
 
+func ZfsClone(path, new string) error {
+	err := ZfsSnapshot(path, "clone")
+	if err != nil {
+		return err
+	}
+
+	cmd := exec.Command("zfs", "clone", fmt.Sprintf("%s@clone", path), new)
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("zfs: %s", out)
+	}
+
+	err = ZfsDeleteSnapshot(path, "clone")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func ZfsSet(path, key, value string) error {
 	cmd := exec.Command("zfs", "set", fmt.Sprintf("%s=%s", key, value), path)
 

@@ -339,6 +339,51 @@ func (m *LxcMachine) Stats() (shared.MachineStats, error) {
 	return stats, nil
 }
 
+func (m *LxcMachine) Clone(name string) error {
+	if m.State() != shared.StateDown {
+		return errors.InvalidMachineState
+	}
+
+	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
+
+	if shared.APIConfig.StorageBackend == "dir" {
+		src := fmt.Sprintf("%s/%s", path, m.Name)
+		dst := fmt.Sprintf("%s/%s", path, name)
+
+		err := os.MkdirAll(dst, 0775)
+		if err != nil {
+			return err
+		}
+
+		err = utils.CopyFolder(src, dst)
+		if err != nil {
+			return err
+		}
+	} else if shared.APIConfig.StorageBackend == "zfs" {
+		src := fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name)
+		dst := fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, name)
+
+		err := utils.ZfsClone(src, dst)
+		if err != nil {
+			return err
+		}
+	}
+
+	c, err := lxc.NewContainer(name, path)
+	if err != nil {
+		return err
+	}
+
+	if err := c.SetConfigItem("lxc.rootfs", fmt.Sprintf("%s/%s/rootfs", path, name)); err != nil {
+		return fmt.Errorf("lxc.rootfs config: %s", err)
+	}
+	if err := c.SetConfigItem("lxc.rootfs.backend", shared.APIConfig.StorageBackend); err != nil {
+		return fmt.Errorf("lxc.rootfs.backend config: %s", err)
+	}
+
+	return nil
+}
+
 func (m *LxcMachine) ListBackups() ([]shared.MachineBackup, error) {
 	if shared.APIConfig.StorageBackend == "dir" {
 		path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
