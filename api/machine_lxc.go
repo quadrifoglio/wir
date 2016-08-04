@@ -464,7 +464,7 @@ func (m *LxcMachine) RestoreBackup(name string) error {
 			return err
 		}
 
-		err = os.Rename(fmt.Sprintf("%s/%s_backup_%s", path, m.Name, name), fmt.Sprintf("%s/%s", path, m.Name))
+		err = utils.CopyFolder(fmt.Sprintf("%s/%s_backup_%s", path, m.Name, name), fmt.Sprintf("%s/%s", path, m.Name))
 		if err != nil {
 			return err
 		}
