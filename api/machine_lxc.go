@@ -3,9 +3,11 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"gopkg.in/lxc/go-lxc.v2"
@@ -350,12 +352,7 @@ func (m *LxcMachine) Clone(name string) error {
 		src := fmt.Sprintf("%s/%s", path, m.Name)
 		dst := fmt.Sprintf("%s/%s", path, name)
 
-		err := os.MkdirAll(dst, 0775)
-		if err != nil {
-			return err
-		}
-
-		err = utils.CopyFolder(src, dst)
+		err := utils.CopyFolder(src, dst)
 		if err != nil {
 			return err
 		}
@@ -385,25 +382,24 @@ func (m *LxcMachine) Clone(name string) error {
 }
 
 func (m *LxcMachine) ListBackups() ([]shared.MachineBackup, error) {
+	var bks []shared.MachineBackup
+
 	if shared.APIConfig.StorageBackend == "dir" {
 		path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
 
-		c, err := lxc.NewContainer(m.Name, path)
+		files, err := ioutil.ReadDir(path)
 		if err != nil {
 			return nil, err
 		}
 
-		sns, err := c.Snapshots()
-		if err != nil {
-			return nil, err
-		}
+		for _, f := range files {
+			n := f.Name()
+			bn := fmt.Sprintf("%s_backup", m.Name)
 
-		var bks []shared.MachineBackup
-		for _, s := range sns {
-			bks = append(bks, shared.MachineBackup{s.Name, 0})
+			if strings.HasPrefix(n, bn) {
+				bks = append(bks, shared.MachineBackup{n[len(bn)+1:], 0})
+			}
 		}
-
-		return bks, nil
 	} else if shared.APIConfig.StorageBackend == "zfs" {
 		ds := fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name)
 
@@ -412,7 +408,6 @@ func (m *LxcMachine) ListBackups() ([]shared.MachineBackup, error) {
 			return nil, err
 		}
 
-		var bks []shared.MachineBackup
 		for _, s := range sns {
 			t, err := strconv.ParseInt(s, 10, 64)
 			if err != nil {
@@ -421,11 +416,9 @@ func (m *LxcMachine) ListBackups() ([]shared.MachineBackup, error) {
 
 			bks = append(bks, shared.MachineBackup{s, t})
 		}
-
-		return bks, nil
 	}
 
-	return nil, errors.InvalidStorage
+	return bks, nil
 }
 
 func (m *LxcMachine) CreateBackup() (shared.MachineBackup, error) {
@@ -435,33 +428,25 @@ func (m *LxcMachine) CreateBackup() (shared.MachineBackup, error) {
 		return b, errors.InvalidMachineState
 	}
 
+	t := time.Now().Unix()
+	ts := strconv.FormatInt(t, 10)
+
 	if shared.APIConfig.StorageBackend == "dir" {
-		path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
-
-		c, err := lxc.NewContainer(m.Name, path)
+		err := m.Clone(fmt.Sprintf("%s_backup_%s", m.Name, ts))
 		if err != nil {
 			return b, err
 		}
-
-		s, err := c.CreateSnapshot()
-		if err != nil {
-			return b, err
-		}
-
-		b.Name = s.Name
 	} else if shared.APIConfig.StorageBackend == "zfs" {
 		ds := fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name)
-		t := time.Now().Unix()
-		ts := strconv.FormatInt(t, 10)
 
 		err := utils.ZfsSnapshot(ds, ts)
 		if err != nil {
 			return b, err
 		}
-
-		b.Name = ts
-		b.Timestamp = t
 	}
+
+	b.Name = ts
+	b.Timestamp = t
 
 	return b, nil
 }
@@ -473,39 +458,13 @@ func (m *LxcMachine) RestoreBackup(name string) error {
 
 	if shared.APIConfig.StorageBackend == "dir" {
 		path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
-		newName := fmt.Sprintf("%s_restored", m.Name)
 
-		c, err := lxc.NewContainer(m.Name, path)
+		err := m.Delete()
 		if err != nil {
 			return err
 		}
 
-		err = c.RestoreSnapshot(lxc.Snapshot{Name: name}, newName)
-		if err != nil {
-			return err
-		}
-
-		err = os.Mkdir(fmt.Sprintf("%s/%s/snaps", path, newName), 0775)
-		if err != nil {
-			return err
-		}
-
-		err = utils.CopyFolder(fmt.Sprintf("%s/%s/snaps", path, m.Name), fmt.Sprintf("%s/%s/snaps", path, newName))
-		if err != nil {
-			return err
-		}
-
-		err = c.Destroy()
-		if err != nil {
-			return err
-		}
-
-		c, err = lxc.NewContainer(newName, path)
-		if err != nil {
-			return err
-		}
-
-		err = c.Rename(m.Name)
+		err = os.Rename(fmt.Sprintf("%s/%s_backup_%s", path, m.Name, name), fmt.Sprintf("%s/%s", path, m.Name))
 		if err != nil {
 			return err
 		}
@@ -525,12 +484,7 @@ func (m *LxcMachine) DeleteBackup(name string) error {
 	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
 
 	if shared.APIConfig.StorageBackend == "dir" {
-		c, err := lxc.NewContainer(m.Name, path)
-		if err != nil {
-			return err
-		}
-
-		err = c.DestroySnapshot(lxc.Snapshot{Name: name})
+		err := os.RemoveAll(fmt.Sprintf("%s/%s_backup_%s", path, m.Name, name))
 		if err != nil {
 			return err
 		}
