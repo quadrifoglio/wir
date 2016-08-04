@@ -397,7 +397,12 @@ func (m *LxcMachine) ListBackups() ([]shared.MachineBackup, error) {
 			bn := fmt.Sprintf("%s_backup", m.Name)
 
 			if strings.HasPrefix(n, bn) {
-				bks = append(bks, shared.MachineBackup{n[len(bn)+1:], 0})
+				b, err := strconv.ParseInt(n[len(bn)+1:], 10, 64)
+				if err != nil {
+					return nil, err
+				}
+
+				bks = append(bks, shared.MachineBackup(b))
 			}
 		}
 	} else if shared.APIConfig.StorageBackend == "zfs" {
@@ -414,7 +419,7 @@ func (m *LxcMachine) ListBackups() ([]shared.MachineBackup, error) {
 				return nil, err
 			}
 
-			bks = append(bks, shared.MachineBackup{s, t})
+			bks = append(bks, shared.MachineBackup(t))
 		}
 	}
 
@@ -429,26 +434,22 @@ func (m *LxcMachine) CreateBackup() (shared.MachineBackup, error) {
 	}
 
 	t := time.Now().Unix()
-	ts := strconv.FormatInt(t, 10)
 
 	if shared.APIConfig.StorageBackend == "dir" {
-		err := m.Clone(fmt.Sprintf("%s_backup_%s", m.Name, ts))
+		err := m.Clone(fmt.Sprintf("%s_backup_%d", m.Name, t))
 		if err != nil {
 			return b, err
 		}
 	} else if shared.APIConfig.StorageBackend == "zfs" {
 		ds := fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name)
 
-		err := utils.ZfsSnapshot(ds, ts)
+		err := utils.ZfsSnapshot(ds, strconv.FormatInt(t, 10))
 		if err != nil {
 			return b, err
 		}
 	}
 
-	b.Name = ts
-	b.Timestamp = t
-
-	return b, nil
+	return shared.MachineBackup(t), nil
 }
 
 func (m *LxcMachine) RestoreBackup(name string) error {

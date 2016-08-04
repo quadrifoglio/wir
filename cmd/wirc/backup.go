@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/olekukonko/tablewriter"
 
@@ -17,7 +18,7 @@ func createBackup(target shared.Remote, machine string) {
 		fatal(err)
 	}
 
-	fmt.Println(bk.Name)
+	fmt.Println(bk)
 }
 
 func listBackups(target shared.Remote, machine string, raw bool) {
@@ -29,14 +30,18 @@ func listBackups(target shared.Remote, machine string, raw bool) {
 	if len(bks) > 0 {
 		if raw {
 			for _, b := range bks {
-				fmt.Println(machine, b.Name, b.Timestamp)
+				t := time.Unix(int64(b), 0)
+				fmt.Println(machine, b, t.Format(time.UnixDate))
 			}
 		} else {
 			table := tablewriter.NewWriter(os.Stdout)
 			table.SetHeader([]string{"Machine", "Name", "Timestamp"})
 
 			for _, b := range bks {
-				table.Append([]string{machine, b.Name, strconv.FormatInt(b.Timestamp, 10)})
+				t := time.Unix(int64(b), 0)
+				ts := t.Format(time.UnixDate)
+
+				table.Append([]string{machine, strconv.FormatInt(int64(b), 10), ts})
 			}
 
 			table.Render()

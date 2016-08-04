@@ -438,7 +438,7 @@ func (m *QemuMachine) ListBackups() ([]shared.MachineBackup, error) {
 				return nil, err
 			}
 
-			bks = append(bks, shared.MachineBackup{s[7:], t})
+			bks = append(bks, shared.MachineBackup(t))
 		}
 	}
 
@@ -461,10 +461,7 @@ func (m *QemuMachine) CreateBackup() (shared.MachineBackup, error) {
 		return b, err
 	}
 
-	b.Name = strconv.FormatInt(now, 10)
-	b.Timestamp = now
-
-	return b, nil
+	return shared.MachineBackup(now), nil
 }
 
 func (m *QemuMachine) RestoreBackup(name string) error {
