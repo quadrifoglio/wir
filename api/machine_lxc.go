@@ -136,7 +136,26 @@ func (m *LxcMachine) Update(info shared.MachineInfo) error {
 }
 
 func (m *LxcMachine) Delete() error {
-	return utils.ZfsDestroy(fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name))
+	if shared.APIConfig.StorageBackend == "zfs" {
+		err := utils.ZfsDestroy(fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name))
+		if err != nil {
+			return err
+		}
+	} else {
+		path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
+
+		c, err := lxc.NewContainer(m.Name, path)
+		if err != nil {
+			return err
+		}
+
+		err = c.Destroy()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (m *LxcMachine) Sysprep(os, hostname, root string) error {
@@ -162,15 +181,17 @@ func (m *LxcMachine) Sysprep(os, hostname, root string) error {
 func (m *LxcMachine) Start() error {
 	fs := fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name)
 
-	mounted, err := utils.ZfsIsMounted(fs)
-	if err != nil {
-		return err
-	}
-
-	if !mounted {
-		err := utils.ZfsMount(fs)
+	if shared.APIConfig.StorageBackend == "zfs" {
+		mounted, err := utils.ZfsIsMounted(fs)
 		if err != nil {
 			return err
+		}
+
+		if !mounted {
+			err := utils.ZfsMount(fs)
+			if err != nil {
+				return err
+			}
 		}
 	}
 

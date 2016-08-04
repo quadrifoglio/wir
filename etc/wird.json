@@ -5,7 +5,7 @@
 	"Address": "127.0.0.1",
 	"Port": 1997,
 
-	"StorageBackend": "zfs",
+	"StorageBackend": "dir",
 	"ZfsPool": "wir",
 
 	"BridgeIface": "eth0",
