@@ -149,7 +149,7 @@ func (m *QemuMachine) Delete() error {
 			return err
 		}
 	} else if shared.APIConfig.StorageBackend == "dir" {
-		err := os.Remove(fmt.Sprintf("%s/qemu/%s", shared.APIConfig.MachinePath, m.Name))
+		err := os.RemoveAll(fmt.Sprintf("%s/qemu/%s", shared.APIConfig.MachinePath, m.Name))
 		if err != nil {
 			return err
 		}

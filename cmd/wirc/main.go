@@ -45,7 +45,7 @@ var (
 	machineCreateCores   = machineCreate.Flag("cpus", "Number of CPU cores to use").Short('c').Default("1").Int()
 	machineCreateMem     = machineCreate.Flag("memory", "Memory limit in MiB").Short('m').Default("512").Int()
 	machineCreateDisk    = machineCreate.Flag("disk", "Disk space limit in bytes").Short('d').Uint()
-	machineCreateNetMode = machineCreate.Flag("net", "Network setup to use (bridge by default)").String()
+	machineCreateNetMode = machineCreate.Flag("net", "Network setup to use").String()
 	machineCreateNetMAC  = machineCreate.Flag("mac", "MAC address to use").String()
 	machineCreateNetIP   = machineCreate.Flag("ip", "IP address to use").String()
 	machineCreateImage   = machineCreate.Arg("image", "Name of image to use").Required().String()

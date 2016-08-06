@@ -124,6 +124,22 @@ func ReplaceInFile(path, search, replace string) error {
 	return RewriteFile(path, []byte(newData))
 }
 
+func DeleteLinesInFile(path, prefix string) error {
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		return fmt.Errorf("can not read file: %s", err)
+	}
+
+	var newData []byte
+	for _, l := range strings.Split(string(data), "\n") {
+		if len(l) > 1 && !strings.HasPrefix(l, prefix) {
+			newData = append(newData, []byte(fmt.Sprintf("%s\n", l))...)
+		}
+	}
+
+	return RewriteFile(path, []byte(newData))
+}
+
 func ChangeHostname(hostnamePath, hostname string) error {
 	return RewriteFile(hostnamePath, []byte(hostname))
 }

@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -230,18 +231,31 @@ func (m *LxcMachine) Start() error {
 		if err != nil {
 			return err
 		}
+
+		if err := c.SaveConfigFile(fmt.Sprintf("%s/%s/config", path, m.Name)); err != nil {
+			return fmt.Errorf("can not write config: %s", err)
+		}
+	} else {
+		err := utils.DeleteLinesInFile(fmt.Sprintf("%s/%s/config", path, m.Name), "lxc.network")
+		if err != nil {
+			return err
+		}
 	}
 
 	chk := fmt.Sprintf("%s/%s/checkpoint", path, m.Name)
 	if _, err := os.Stat(chk); err == nil {
-		err = c.Restore(lxc.RestoreOptions{chk, true})
+		cmd := exec.Command("lxc-checkpoint", "-P", path, "-r", "-D", chk, "-n", m.Name)
+
+		err = cmd.Run()
 		if err != nil {
-			return fmt.Errorf("failed to restore: %s", err)
+			return fmt.Errorf("failed to restore container")
 		}
 	} else {
-		err = c.Start()
+		cmd := exec.Command("lxc-start", "-P", path, "-n", m.Name)
+
+		err = cmd.Run()
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to restore container")
 		}
 	}
 
