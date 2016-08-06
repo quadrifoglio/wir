@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/quadrifoglio/go-qmp"
@@ -79,6 +80,9 @@ func (m *QemuMachine) Create(img Image, info shared.MachineInfo) error {
 	} else {
 		cmd = exec.Command(shared.APIConfig.QemuImg, "rebase", "-b", img.Info().Source, disk)
 	}
+
+	cmd.SysProcAttr = new(syscall.SysProcAttr)
+	cmd.SysProcAttr.Setsid = true
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {

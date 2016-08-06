@@ -117,6 +117,9 @@ func (m *LxcMachine) Create(img Image, info shared.MachineInfo) error {
 	if err := c.SetConfigItem("lxc.cgroup.devices.deny", "c 5:1 rwm"); err != nil {
 		return fmt.Errorf("lxc.cgroup.devices.deny config: %s", err)
 	}
+	if err := c.SetConfigItem("lxc.utsname", m.Name); err != nil {
+		return fmt.Errorf("lxc.utsname config: %s", err)
+	}
 
 	if err := c.SaveConfigFile(fmt.Sprintf("%s/%s/config", path, m.Name)); err != nil {
 		return fmt.Errorf("can not write config: %s", err)
@@ -205,10 +208,6 @@ func (m *LxcMachine) Start() error {
 	}
 
 	c.SetVerbosity(lxc.Verbose)
-
-	if err := c.SetConfigItem("lxc.utsname", m.Name); err != nil {
-		return fmt.Errorf("lxc.utsname config: %s", err)
-	}
 
 	if m.Network.Mode == shared.NetworkModeBridge {
 		if err := c.SetConfigItem("lxc.network.type", "veth"); err != nil {
