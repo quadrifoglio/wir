@@ -1,6 +1,7 @@
 package net
 
 import (
+	"fmt"
 	"os"
 	"syscall"
 	"unsafe"
@@ -9,7 +10,7 @@ import (
 func OpenTAP(name string) (*os.File, error) {
 	f, err := os.OpenFile("/dev/net/tun", os.O_RDWR, 0)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("open /dev/net/tun: %s", err)
 	}
 
 	var r ifreq
@@ -20,7 +21,7 @@ func OpenTAP(name string) (*os.File, error) {
 	_, _, errno := syscall.Syscall(syscall.SYS_IOCTL, f.Fd(), uintptr(syscall.TUNSETIFF), uintptr(unsafe.Pointer(&r)))
 	if errno != 0 {
 		f.Close()
-		return nil, errno
+		return nil, fmt.Errorf("open tap: %s", errno)
 	}
 
 	return f, nil

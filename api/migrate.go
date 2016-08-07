@@ -75,7 +75,7 @@ func MigrateMachine(m Machine, i shared.Image, src, dst shared.Remote) error {
 }
 
 func LiveMigrateMachine(m Machine, i shared.Image, src, dst shared.Remote) error {
-	err := m.CreateCheckpoint()
+	err := m.CreateCheckpoint("wird_migration")
 	if err != nil {
 		return fmt.Errorf("failed to checkpoint: %s", err)
 	}

@@ -311,16 +311,13 @@ func (m *LxcMachine) Start() error {
 		}
 	}
 
-	chk := fmt.Sprintf("%s/%s/checkpoint", path, m.Name)
-	if _, err := os.Stat(chk); err == nil {
-		cmd := exec.Command("lxc-checkpoint", "-P", path, "-r", "-D", chk, "-n", m.Name)
-
-		err = cmd.Run()
+	if m.HasCheckpoint("wird_migration") {
+		err := m.RestoreCheckpoint("wird_migration")
 		if err != nil {
-			return fmt.Errorf("failed to restore container")
+			return err
 		}
 
-		err = os.RemoveAll(chk)
+		err = m.DeleteCheckpoint("wird_migration")
 		if err != nil {
 			return err
 		}
@@ -596,8 +593,8 @@ func (m *LxcMachine) DeleteBackup(name string) error {
 	return nil
 }
 
-func (m *LxcMachine) HasCheckpoint() bool {
-	path := fmt.Sprintf("%s/lxc/%s/checkpoint", shared.APIConfig.MachinePath, m.Name)
+func (m *LxcMachine) HasCheckpoint(name string) bool {
+	path := fmt.Sprintf("%s/lxc/%s/checkpoint_%s", shared.APIConfig.MachinePath, m.Name, name)
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return false
@@ -606,7 +603,7 @@ func (m *LxcMachine) HasCheckpoint() bool {
 	return true
 }
 
-func (m *LxcMachine) CreateCheckpoint() error {
+func (m *LxcMachine) CreateCheckpoint(name string) error {
 	if m.State() != shared.StateUp {
 		return errors.InvalidMachineState
 	}
@@ -625,7 +622,7 @@ func (m *LxcMachine) CreateCheckpoint() error {
 		return err
 	}
 
-	path = fmt.Sprintf("%s/%s/checkpoint", path, m.Name)
+	path = fmt.Sprintf("%s/%s/checkpoint_%s", path, m.Name, name)
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		err := os.MkdirAll(path, 0777)
@@ -652,17 +649,17 @@ func (m *LxcMachine) CreateCheckpoint() error {
 	return nil
 }
 
-func (m *LxcMachine) RestoreCheckpoint() error {
+func (m *LxcMachine) RestoreCheckpoint(name string) error {
 	if m.State() != shared.StateDown {
 		return errors.InvalidMachineState
 	}
 
-	if !m.HasCheckpoint() {
+	if !m.HasCheckpoint(name) {
 		return fmt.Errorf("checkpoint does not exists")
 	}
 
 	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
-	chk := fmt.Sprintf("%s/%s/checkpoint", path, m.Name)
+	chk := fmt.Sprintf("%s/%s/checkpoint_%s", path, m.Name, name)
 
 	cmd := exec.Command("lxc-checkpoint", "-P", path, "-r", "-D", chk, "-n", m.Name)
 
@@ -679,8 +676,8 @@ func (m *LxcMachine) RestoreCheckpoint() error {
 	return nil
 }
 
-func (m *LxcMachine) DeleteCheckpoint() error {
-	path := fmt.Sprintf("%s/lxc/%s/checkpoint", shared.APIConfig.MachinePath, m.Name)
+func (m *LxcMachine) DeleteCheckpoint(name string) error {
+	path := fmt.Sprintf("%s/lxc/%s/checkpoint_%s", shared.APIConfig.MachinePath, m.Name, name)
 	return os.RemoveAll(path)
 }
 

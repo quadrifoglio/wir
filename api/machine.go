@@ -34,10 +34,10 @@ type Machine interface {
 	RestoreBackup(name string) error
 	DeleteBackup(name string) error
 
-	HasCheckpoint() bool
-	CreateCheckpoint() error
-	RestoreCheckpoint() error
-	DeleteCheckpoint() error
+	HasCheckpoint(name string) bool
+	CreateCheckpoint(name string) error
+	RestoreCheckpoint(name string) error
+	DeleteCheckpoint(name string) error
 }
 
 type Machines []Machine

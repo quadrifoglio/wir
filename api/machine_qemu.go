@@ -178,27 +178,6 @@ func (m *QemuMachine) Delete() error {
 		return errors.InvalidMachineState
 	}
 
-	for i, iface := range m.Interfaces {
-		if iface.Mode != shared.NetworkModeNone {
-			err := net.DeleteInterface(iface)
-			if err != nil {
-				return err
-			}
-
-			tap, err := net.OpenTAP(MachineIfName(m, i))
-			if err != nil {
-				return err
-			}
-
-			err = net.TAPPersist(tap, false)
-			if err != nil {
-				return err
-			}
-
-			tap.Close()
-		}
-	}
-
 	if shared.APIConfig.StorageBackend == "zfs" {
 		err := utils.ZfsDestroy(fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name))
 		if err != nil {
@@ -275,9 +254,9 @@ func (m *QemuMachine) Start() error {
 		args = append(args, "-enable-kvm")
 	}
 
-	if m.HasCheckpoint() {
+	if m.HasCheckpoint("checkpoint_wird_migration") {
 		args = append(args, "-loadvm")
-		args = append(args, "checkpoint")
+		args = append(args, "checkpoint_wird_migration")
 	}
 
 	if len(m.Interfaces) == 0 {
@@ -294,6 +273,7 @@ func (m *QemuMachine) Start() error {
 
 			err = net.TAPPersist(tap, true)
 			if err != nil {
+				tap.Close()
 				return fmt.Errorf("tap persist: %s", err)
 			}
 
@@ -374,8 +354,8 @@ func (m *QemuMachine) Start() error {
 		break
 	}
 
-	if m.HasCheckpoint() {
-		err := m.DeleteCheckpoint()
+	if m.HasCheckpoint("wird_migration") {
+		err := m.DeleteCheckpoint("wird_migration")
 		if err != nil {
 			return err
 		}
@@ -392,6 +372,16 @@ func (m *QemuMachine) Start() error {
 func (m *QemuMachine) Stop() error {
 	if m.State() != shared.StateUp {
 		return errors.InvalidMachineState
+	}
+
+	for i, _ := range m.Interfaces {
+		tap, err := net.OpenTAP(MachineIfName(m, i))
+		if err != nil {
+			continue
+		}
+
+		net.TAPPersist(tap, false)
+		tap.Close()
 	}
 
 	proc, err := os.FindProcess(m.PID)
@@ -561,7 +551,7 @@ func (m *QemuMachine) DeleteBackup(name string) error {
 	return utils.DeleteSnapshotQcow2(disk, fmt.Sprintf("backup_%s", name))
 }
 
-func (m *QemuMachine) HasCheckpoint() bool {
+func (m *QemuMachine) HasCheckpoint(name string) bool {
 	path := fmt.Sprintf("%s/qemu/%s/disk.qcow2", shared.APIConfig.MachinePath, m.Name)
 	cmd := exec.Command("qemu-img", "snapshot", "-l", path)
 
@@ -570,14 +560,14 @@ func (m *QemuMachine) HasCheckpoint() bool {
 		return false
 	}
 
-	if strings.Contains(string(out), "checkpoint") {
+	if strings.Contains(string(out), fmt.Sprintf("checkpoint_%s", name)) {
 		return true
 	}
 
 	return false
 }
 
-func (m *QemuMachine) CreateCheckpoint() error {
+func (m *QemuMachine) CreateCheckpoint(name string) error {
 	if m.State() != shared.StateUp {
 		return errors.InvalidMachineState
 	}
@@ -594,7 +584,7 @@ func (m *QemuMachine) CreateCheckpoint() error {
 		return err
 	}
 
-	_, err = c.HumanMonitorCommand("savevm checkpoint")
+	_, err = c.HumanMonitorCommand(fmt.Sprintf("savevm checkpoint_%s", name))
 	if err != nil {
 		return err
 	}
@@ -602,7 +592,7 @@ func (m *QemuMachine) CreateCheckpoint() error {
 	return nil
 }
 
-func (m *QemuMachine) RestoreCheckpoint() error {
+func (m *QemuMachine) RestoreCheckpoint(name string) error {
 	c, err := qmp.Open("unix", fmt.Sprintf("%s/qemu/%s/qmp.sock", shared.APIConfig.MachinePath, m.Name))
 	if err != nil {
 		return err
@@ -615,7 +605,7 @@ func (m *QemuMachine) RestoreCheckpoint() error {
 		return err
 	}
 
-	_, err = c.HumanMonitorCommand("loadvm checkpoint")
+	_, err = c.HumanMonitorCommand(fmt.Sprintf("loadvm checkpoint_%s", name))
 	if err != nil {
 		return err
 	}
@@ -628,9 +618,9 @@ func (m *QemuMachine) RestoreCheckpoint() error {
 	return nil
 }
 
-func (m *QemuMachine) DeleteCheckpoint() error {
+func (m *QemuMachine) DeleteCheckpoint(name string) error {
 	path := fmt.Sprintf("%s/qemu/%s/disk.qcow2", shared.APIConfig.MachinePath, m.Name)
-	cmd := exec.Command("qemu-img", "snapshot", "-d", "checkpoint", path)
+	cmd := exec.Command("qemu-img", "snapshot", "-d", fmt.Sprintf("checkpoint_%s", name), path)
 
 	err := cmd.Run()
 	if err != nil {
