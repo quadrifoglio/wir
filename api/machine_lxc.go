@@ -474,7 +474,7 @@ func (m *LxcMachine) Clone(name string) error {
 }
 
 func (m *LxcMachine) ListBackups() ([]shared.MachineBackup, error) {
-	var bks []shared.MachineBackup
+	bks := make([]shared.MachineBackup, 0)
 
 	if shared.APIConfig.StorageBackend == "dir" {
 		path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
@@ -591,6 +591,26 @@ func (m *LxcMachine) DeleteBackup(name string) error {
 	}
 
 	return nil
+}
+
+func (m *LxcMachine) ListCheckpoints() ([]string, error) {
+	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
+
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		return nil, err
+	}
+
+	chks := make([]string, 0)
+	for _, f := range files {
+		n := f.Name()
+
+		if strings.HasPrefix(n, "checkpoint_") && len(n) > 11 {
+			chks = append(chks, n[11:])
+		}
+	}
+
+	return chks, nil
 }
 
 func (m *LxcMachine) HasCheckpoint(name string) bool {

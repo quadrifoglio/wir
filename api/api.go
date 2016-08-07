@@ -94,13 +94,13 @@ func Start() error {
 	r := mux.NewRouter()
 	r.HandleFunc("/", handleIndex).Methods("GET")
 
-	r.HandleFunc("/images", handleImageCreate).Methods("POST")
 	r.HandleFunc("/images", handleImageList).Methods("GET")
+	r.HandleFunc("/images", handleImageCreate).Methods("POST")
 	r.HandleFunc("/images/{name}", handleImageGet).Methods("GET")
 	r.HandleFunc("/images/{name}", handleImageDelete).Methods("DELETE")
 
-	r.HandleFunc("/machines", handleMachineCreate).Methods("POST")
 	r.HandleFunc("/machines", handleMachineList).Methods("GET")
+	r.HandleFunc("/machines", handleMachineCreate).Methods("POST")
 	r.HandleFunc("/machines/{name}", handleMachineUpdate).Methods("POST")
 	r.HandleFunc("/machines/{name}", handleMachineLinuxSysprep).Methods("SYSPREP")
 	r.HandleFunc("/machines/{name}", handleMachineGet).Methods("GET")
@@ -110,8 +110,13 @@ func Start() error {
 	r.HandleFunc("/machines/{name}", handleMachineMigrate).Methods("MIGRATE")
 	r.HandleFunc("/machines/{name}", handleMachineDelete).Methods("DELETE")
 
-	r.HandleFunc("/machines/{name}/backups", handleMachineCreateBackup).Methods("POST")
+	r.HandleFunc("/machines/{name}/checkpoints", handleMachineListCheckpoints).Methods("GET")
+	r.HandleFunc("/machines/{name}/checkpoints/{checkpoint}", handleMachineCreateCheckpoint).Methods("POST")
+	r.HandleFunc("/machines/{name}/checkpoints/{checkpoint}", handleMachineRestoreCheckpoint).Methods("RESTORE")
+	r.HandleFunc("/machines/{name}/checkpoints/{checkpoint}", handleMachineDeleteCheckpoint).Methods("DELETE")
+
 	r.HandleFunc("/machines/{name}/backups", handleMachineListBackups).Methods("GET")
+	r.HandleFunc("/machines/{name}/backups", handleMachineCreateBackup).Methods("POST")
 	r.HandleFunc("/machines/{name}/backups/{backup}", handleMachineRestoreBackup).Methods("RESTORE")
 	r.HandleFunc("/machines/{name}/backups/{backup}", handleMachineDeleteBackup).Methods("DELETE")
 

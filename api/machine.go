@@ -29,15 +29,16 @@ type Machine interface {
 
 	Clone(name string) error
 
-	ListBackups() ([]shared.MachineBackup, error)
-	CreateBackup() (shared.MachineBackup, error)
-	RestoreBackup(name string) error
-	DeleteBackup(name string) error
-
+	ListCheckpoints() ([]string, error)
 	HasCheckpoint(name string) bool
 	CreateCheckpoint(name string) error
 	RestoreCheckpoint(name string) error
 	DeleteCheckpoint(name string) error
+
+	ListBackups() ([]shared.MachineBackup, error)
+	CreateBackup() (shared.MachineBackup, error)
+	RestoreBackup(name string) error
+	DeleteBackup(name string) error
 }
 
 type Machines []Machine

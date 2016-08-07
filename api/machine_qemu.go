@@ -493,6 +493,110 @@ func (m *QemuMachine) Clone(name string) error {
 	return nil
 }
 
+func (m *QemuMachine) ListCheckpoints() ([]string, error) {
+	path := fmt.Sprintf("%s/qemu/%s/disk.qcow2", shared.APIConfig.MachinePath, m.Name)
+
+	snaps, err := utils.ListSnapshotsQcow2(path)
+	if err != nil {
+		return nil, err
+	}
+
+	chks := make([]string, 0)
+	for _, s := range snaps {
+		if strings.HasPrefix(s, "checkpoint_") && len(s) > 9 {
+			chks = append(chks, s[11:])
+		}
+	}
+
+	return chks, nil
+}
+
+func (m *QemuMachine) HasCheckpoint(name string) bool {
+	path := fmt.Sprintf("%s/qemu/%s/disk.qcow2", shared.APIConfig.MachinePath, m.Name)
+	cmd := exec.Command("qemu-img", "snapshot", "-l", path)
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return false
+	}
+
+	if strings.Contains(string(out), fmt.Sprintf("checkpoint_%s", name)) {
+		return true
+	}
+
+	return false
+}
+
+func (m *QemuMachine) CreateCheckpoint(name string) error {
+	if m.State() != shared.StateUp {
+		return errors.InvalidMachineState
+	}
+
+	c, err := qmp.Open("unix", fmt.Sprintf("%s/qemu/%s/qmp.sock", shared.APIConfig.MachinePath, m.Name))
+	if err != nil {
+		return err
+	}
+
+	defer c.Close()
+
+	_, err = c.Command("stop", nil)
+	if err != nil {
+		return err
+	}
+
+	_, err = c.HumanMonitorCommand(fmt.Sprintf("savevm checkpoint_%s", name))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *QemuMachine) RestoreCheckpoint(name string) error {
+	if m.State() == shared.StateDown {
+		err := m.Start()
+		if err != nil {
+			return err
+		}
+	}
+
+	c, err := qmp.Open("unix", fmt.Sprintf("%s/qemu/%s/qmp.sock", shared.APIConfig.MachinePath, m.Name))
+	if err != nil {
+		return err
+	}
+
+	defer c.Close()
+
+	_, err = c.Command("stop", nil)
+	if err != nil {
+		return err
+	}
+
+	_, err = c.HumanMonitorCommand(fmt.Sprintf("loadvm checkpoint_%s", name))
+	if err != nil {
+		return err
+	}
+
+	_, err = c.Command("cont", nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *QemuMachine) DeleteCheckpoint(name string) error {
+	path := fmt.Sprintf("%s/qemu/%s/disk.qcow2", shared.APIConfig.MachinePath, m.Name)
+	cmd := exec.Command("qemu-img", "snapshot", "-d", fmt.Sprintf("checkpoint_%s", name), path)
+
+	err := cmd.Run()
+	if err != nil {
+		return fmt.Errorf("delete checkpoint: %s", err)
+	}
+
+	return nil
+}
+
 func (m *QemuMachine) ListBackups() ([]shared.MachineBackup, error) {
 	disk := fmt.Sprintf("%s/qemu/%s/disk.qcow2", shared.APIConfig.MachinePath, m.Name)
 
@@ -501,8 +605,7 @@ func (m *QemuMachine) ListBackups() ([]shared.MachineBackup, error) {
 		return nil, err
 	}
 
-	var bks []shared.MachineBackup
-
+	bks := make([]shared.MachineBackup, 0)
 	for _, s := range sns {
 		if strings.HasPrefix(s, "backup_") {
 			t, err := strconv.ParseInt(s[7:], 10, 64)
@@ -549,85 +652,6 @@ func (m *QemuMachine) RestoreBackup(name string) error {
 func (m *QemuMachine) DeleteBackup(name string) error {
 	disk := fmt.Sprintf("%s/qemu/%s/disk.qcow2", shared.APIConfig.MachinePath, m.Name)
 	return utils.DeleteSnapshotQcow2(disk, fmt.Sprintf("backup_%s", name))
-}
-
-func (m *QemuMachine) HasCheckpoint(name string) bool {
-	path := fmt.Sprintf("%s/qemu/%s/disk.qcow2", shared.APIConfig.MachinePath, m.Name)
-	cmd := exec.Command("qemu-img", "snapshot", "-l", path)
-
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return false
-	}
-
-	if strings.Contains(string(out), fmt.Sprintf("checkpoint_%s", name)) {
-		return true
-	}
-
-	return false
-}
-
-func (m *QemuMachine) CreateCheckpoint(name string) error {
-	if m.State() != shared.StateUp {
-		return errors.InvalidMachineState
-	}
-
-	c, err := qmp.Open("unix", fmt.Sprintf("%s/qemu/%s/qmp.sock", shared.APIConfig.MachinePath, m.Name))
-	if err != nil {
-		return err
-	}
-
-	defer c.Close()
-
-	_, err = c.Command("stop", nil)
-	if err != nil {
-		return err
-	}
-
-	_, err = c.HumanMonitorCommand(fmt.Sprintf("savevm checkpoint_%s", name))
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *QemuMachine) RestoreCheckpoint(name string) error {
-	c, err := qmp.Open("unix", fmt.Sprintf("%s/qemu/%s/qmp.sock", shared.APIConfig.MachinePath, m.Name))
-	if err != nil {
-		return err
-	}
-
-	defer c.Close()
-
-	_, err = c.Command("stop", nil)
-	if err != nil {
-		return err
-	}
-
-	_, err = c.HumanMonitorCommand(fmt.Sprintf("loadvm checkpoint_%s", name))
-	if err != nil {
-		return err
-	}
-
-	_, err = c.Command("cont", nil)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *QemuMachine) DeleteCheckpoint(name string) error {
-	path := fmt.Sprintf("%s/qemu/%s/disk.qcow2", shared.APIConfig.MachinePath, m.Name)
-	cmd := exec.Command("qemu-img", "snapshot", "-d", fmt.Sprintf("checkpoint_%s", name), path)
-
-	err := cmd.Run()
-	if err != nil {
-		return fmt.Errorf("delete checkpoint: %s", err)
-	}
-
-	return nil
 }
 
 func (m *QemuMachine) MarshalJSON() ([]byte, error) {
