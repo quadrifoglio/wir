@@ -76,9 +76,9 @@ func (m *QemuMachine) Create(img Image, info shared.MachineInfo) error {
 	var cmd *exec.Cmd
 
 	if _, err := os.Stat(disk); os.IsNotExist(err) {
-		cmd = exec.Command(shared.APIConfig.QemuImg, "create", "-b", img.Info().Source, "-f", "qcow2", disk)
+		cmd = exec.Command("qemu-img", "create", "-b", img.Info().Source, "-f", "qcow2", disk)
 	} else {
-		cmd = exec.Command(shared.APIConfig.QemuImg, "rebase", "-b", img.Info().Source, disk)
+		cmd = exec.Command("qemu-img", "rebase", "-b", img.Info().Source, disk)
 	}
 
 	cmd.SysProcAttr = new(syscall.SysProcAttr)
@@ -248,7 +248,7 @@ func (m *QemuMachine) Start() error {
 		args = append(args, "none")
 	}
 
-	cmd := exec.Command(shared.APIConfig.Qemu, args...)
+	cmd := exec.Command("qemu-system-x86_64", args...)
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -485,7 +485,7 @@ func (m *QemuMachine) DeleteBackup(name string) error {
 
 func (m *QemuMachine) HasCheckpoint() bool {
 	path := fmt.Sprintf("%s/qemu/%s/disk.qcow2", shared.APIConfig.MachinePath, m.Name)
-	cmd := exec.Command(shared.APIConfig.QemuImg, "snapshot", "-l", path)
+	cmd := exec.Command("qemu-img", "snapshot", "-l", path)
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -548,7 +548,7 @@ func (m *QemuMachine) RestoreCheckpoint() error {
 
 func (m *QemuMachine) DeleteCheckpoint() error {
 	path := fmt.Sprintf("%s/qemu/%s/disk.qcow2", shared.APIConfig.MachinePath, m.Name)
-	cmd := exec.Command(shared.APIConfig.QemuImg, "snapshot", "-d", "checkpoint", path)
+	cmd := exec.Command("qemu-img", "snapshot", "-d", "checkpoint", path)
 
 	err := cmd.Run()
 	if err != nil {

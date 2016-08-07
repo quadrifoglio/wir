@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
-
-	"github.com/quadrifoglio/wir/shared"
 )
 
 const (
@@ -20,19 +18,19 @@ type ifreq struct {
 	osef  [0x16]byte
 }
 
-func InitEbtables(ebtables string) error {
-	cmd := exec.Command(ebtables, "-L", "WIR")
+func InitEbtables() error {
+	cmd := exec.Command("ebtables", "-L", "WIR")
 
 	err := cmd.Run()
 	if err != nil {
-		cmd = exec.Command(ebtables, "-N", "WIR", "-P", "DROP")
+		cmd = exec.Command("ebtables", "-N", "WIR", "-P", "DROP")
 
 		err := cmd.Run()
 		if err != nil {
 			return fmt.Errorf("ebtables: creating WIR chain: %s", err)
 		}
 
-		cmd = exec.Command(ebtables, "-A", "FORWARD", "-p", "ip", "-i", "v+", "-j", "WIR")
+		cmd = exec.Command("ebtables", "-A", "FORWARD", "-p", "ip", "-i", "v+", "-j", "WIR")
 
 		out, err := cmd.CombinedOutput()
 		if err != nil {
@@ -45,7 +43,7 @@ func InitEbtables(ebtables string) error {
 }
 
 func IsGranted(mac, ip string) (bool, error) {
-	cmd := exec.Command(shared.APIConfig.Ebtables, "-L", "WIR")
+	cmd := exec.Command("ebtables", "-L", "WIR")
 
 	out, err := cmd.StdoutPipe()
 	if err != nil {
@@ -78,7 +76,7 @@ func IsGranted(mac, ip string) (bool, error) {
 }
 
 func GrantTraffic(mac, ip string) error {
-	cmd := exec.Command(shared.APIConfig.Ebtables, "-A", "WIR", "-p", "ip", "--ip-src", ip, "-s", mac, "-j", "ACCEPT")
+	cmd := exec.Command("ebtables", "-A", "WIR", "-p", "ip", "--ip-src", ip, "-s", mac, "-j", "ACCEPT")
 
 	err := cmd.Run()
 	if err != nil {
@@ -89,7 +87,7 @@ func GrantTraffic(mac, ip string) error {
 }
 
 func DenyTraffic(mac, ip string) error {
-	cmd := exec.Command(shared.APIConfig.Ebtables, "-D", "WIR", "-p", "ip", "--ip-src", ip, "-s", mac, "-j", "ACCEPT")
+	cmd := exec.Command("ebtables", "-D", "WIR", "-p", "ip", "--ip-src", ip, "-s", mac, "-j", "ACCEPT")
 
 	err := cmd.Run()
 	if err != nil {

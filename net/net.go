@@ -4,20 +4,22 @@ import (
 	"crypto/rand"
 	"fmt"
 	"net"
+
+	"github.com/quadrifoglio/wir/shared"
 )
 
-func Init(ebtables, bridgeIf string) error {
+func Init() error {
 	err := CreateBridge("wir0")
 	if err != nil {
 		return err
 	}
 
-	err = BridgeAddIf("wir0", bridgeIf)
+	err = BridgeAddIf("wir0", shared.APIConfig.BridgeIface)
 	if err != nil {
 		return err
 	}
 
-	err = InitEbtables(ebtables)
+	err = InitEbtables()
 	if err != nil {
 		return err
 	}

@@ -12,6 +12,7 @@ type APIConfigStruct struct {
 	Address string
 	Port    int
 
+	EnableKVM      bool
 	StorageBackend string
 	ZfsPool        string
 
@@ -19,13 +20,6 @@ type APIConfigStruct struct {
 	EnableNetMonitor bool
 	PPSAlert         uint64
 	PPSStop          uint64
-
-	EnableKVM bool
-	Ebtables  string `json:"EbtablesCommand"`
-	QemuImg   string `json:"QemuImgCommand"`
-	QemuNbd   string `json:"QemuNbdCommand"`
-	Qemu      string `json:"QemuCommand"`
-	Vzctl     string `json:"VzctlCommand"`
 
 	DatabaseFile  string
 	ImagePath     string

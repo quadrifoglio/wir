@@ -86,7 +86,7 @@ func Start() error {
 		return err
 	}
 
-	err = net.Init(shared.APIConfig.Ebtables, shared.APIConfig.BridgeIface)
+	err = net.Init()
 	if err != nil {
 		return err
 	}

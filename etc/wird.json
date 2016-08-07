@@ -5,6 +5,7 @@
 	"Address": "127.0.0.1",
 	"Port": 1997,
 
+	"EnableKVM": true,
 	"StorageBackend": "dir",
 	"ZfsPool": "wir",
 
@@ -12,12 +13,6 @@
 	"EnableNetMonitor": false,
 	"PPSAlert": 70000,
 	"PPSStop": 90000,
-
-	"EnableKVM": true,
-	"EbtablesCommand": "/sbin/ebtables",
-	"QemuImgCommand": "/usr/bin/qemu-img",
-	"QemuNbdCommand": "/usr/bin/qemu-nbd",
-	"QemuCommand": "/usr/bin/qemu-system-x86_64",
 
 	"DatabaseFile": "/var/lib/wir/wir.db",
 	"ImagePath": "/var/lib/wir/images",
