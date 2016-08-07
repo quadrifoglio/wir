@@ -13,6 +13,7 @@ import (
 
 	"gopkg.in/lxc/go-lxc.v2"
 
+	"github.com/quadrifoglio/wir/client"
 	"github.com/quadrifoglio/wir/errors"
 	"github.com/quadrifoglio/wir/shared"
 	"github.com/quadrifoglio/wir/utils"
@@ -623,12 +624,5 @@ func (m *LxcMachine) DeleteCheckpoint() error {
 }
 
 func (m *LxcMachine) MarshalJSON() ([]byte, error) {
-	type mdr struct {
-		LxcMachine
-
-		Type  string
-		State shared.MachineState
-	}
-
-	return json.Marshal(mdr{*m, m.Type(), m.State()})
+	return json.Marshal(client.MachineResponse{m.MachineInfo, m.Type(), m.State()})
 }

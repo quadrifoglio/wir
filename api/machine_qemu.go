@@ -14,6 +14,7 @@ import (
 
 	"github.com/quadrifoglio/go-qmp"
 
+	"github.com/quadrifoglio/wir/client"
 	"github.com/quadrifoglio/wir/errors"
 	"github.com/quadrifoglio/wir/net"
 	"github.com/quadrifoglio/wir/shared"
@@ -578,12 +579,5 @@ func (m *QemuMachine) DeleteCheckpoint() error {
 }
 
 func (m *QemuMachine) MarshalJSON() ([]byte, error) {
-	type mdr struct {
-		QemuMachine
-
-		Type  string
-		State shared.MachineState
-	}
-
-	return json.Marshal(mdr{*m, m.Type(), m.State()})
+	return json.Marshal(client.MachineResponse{m.MachineInfo, m.Type(), m.State()})
 }
