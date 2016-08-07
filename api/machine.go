@@ -13,7 +13,7 @@ import (
 type Machine interface {
 	json.Marshaler
 
-	Create(img Image, info shared.MachineInfo) error
+	Create(img shared.Image, info shared.MachineInfo) error
 	Update(info shared.MachineInfo) error
 	Delete() error
 

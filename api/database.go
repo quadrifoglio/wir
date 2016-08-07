@@ -27,7 +27,7 @@ func DBOpen(file string) error {
 	return nil
 }
 
-func DBStoreImage(i Image) error {
+func DBStoreImage(i shared.Image) error {
 	err := Database.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists(ImagesBucket)
 		if err != nil {
@@ -39,7 +39,7 @@ func DBStoreImage(i Image) error {
 			return err
 		}
 
-		err = bucket.Put([]byte(i.Info().Name), data)
+		err = bucket.Put([]byte(i.Name), data)
 		if err != nil {
 			return err
 		}
@@ -50,8 +50,8 @@ func DBStoreImage(i Image) error {
 	return err
 }
 
-func DBListImages() ([]Image, error) {
-	var imgs []Image = make([]Image, 0)
+func DBListImages() ([]shared.Image, error) {
+	imgs := make([]shared.Image, 0)
 
 	Database.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket(ImagesBucket)
@@ -60,26 +60,14 @@ func DBListImages() ([]Image, error) {
 		}
 
 		b.ForEach(func(_, v []byte) error {
-			if strings.Contains(string(v), "\"Type\":\"qemu\"") {
-				i := new(QemuImage)
+			var i shared.Image
 
-				err := json.Unmarshal(v, i)
-				if err != nil {
-					return err
-				}
-
-				imgs = append(imgs, i)
-			} else if strings.Contains(string(v), "\"Type\":\"lxc\"") {
-				i := new(LxcImage)
-
-				err := json.Unmarshal(v, i)
-				if err != nil {
-					return err
-				}
-
-				imgs = append(imgs, i)
+			err := json.Unmarshal(v, &i)
+			if err != nil {
+				return err
 			}
 
+			imgs = append(imgs, i)
 			return nil
 		})
 
@@ -89,8 +77,8 @@ func DBListImages() ([]Image, error) {
 	return imgs, nil
 }
 
-func DBGetImage(name string) (Image, error) {
-	var img Image
+func DBGetImage(name string) (shared.Image, error) {
+	var img shared.Image
 
 	err := Database.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(ImagesBucket)
@@ -103,24 +91,9 @@ func DBGetImage(name string) (Image, error) {
 			return errors.NotFound
 		}
 
-		if strings.Contains(string(data), "\"Type\":\"qemu\"") {
-			i := new(QemuImage)
-
-			err := json.Unmarshal(data, i)
-			if err != nil {
-				return err
-			}
-
-			img = i
-		} else if strings.Contains(string(data), "\"Type\":\"lxc\"") {
-			i := new(LxcImage)
-
-			err := json.Unmarshal(data, i)
-			if err != nil {
-				return err
-			}
-
-			img = i
+		err := json.Unmarshal(data, &img)
+		if err != nil {
+			return err
 		}
 
 		return nil

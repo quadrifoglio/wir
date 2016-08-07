@@ -9,22 +9,18 @@ import (
 	"github.com/quadrifoglio/wir/utils"
 )
 
-func MigrateImage(i Image, src, dst shared.Remote) error {
-	im := i.Info()
-
-	_, err := client.GetImage(dst, im.Name)
+func MigrateImage(i shared.Image, src, dst shared.Remote) error {
+	_, err := client.GetImage(dst, i.Name)
 	if err == nil {
 		return nil
 	}
 
-	r := shared.ImageInfo{
-		im.Name,
-		im.Type,
-		fmt.Sprintf("scp://%s/%s", src.Addr, im.Source),
-		im.Arch,
-		im.Distro,
-		im.Release,
-		im.MainPartition,
+	r := shared.Image{
+		i.Name,
+		i.Type,
+		fmt.Sprintf("scp://%s/%s", src.Addr, i.Source),
+		i.Desc,
+		i.MainPartition,
 	}
 
 	_, err = client.CreateImage(dst, r)
@@ -35,7 +31,7 @@ func MigrateImage(i Image, src, dst shared.Remote) error {
 	return nil
 }
 
-func MigrateMachine(m Machine, i Image, src, dst shared.Remote) error {
+func MigrateMachine(m Machine, i shared.Image, src, dst shared.Remote) error {
 	if m.State() == shared.StateUp {
 		err := m.Stop()
 		if err != nil {
@@ -54,7 +50,7 @@ func MigrateMachine(m Machine, i Image, src, dst shared.Remote) error {
 	}
 
 	mi := m.Info()
-	basePath := fmt.Sprintf("%s/%s/%s", shared.APIConfig.MachinePath, i.Info().Type, mi.Name)
+	basePath := fmt.Sprintf("%s/%s/%s", shared.APIConfig.MachinePath, i.Type, mi.Name)
 	srcPath := fmt.Sprintf("/tmp/%s.tar.gz", mi.Name)
 	dstPath := fmt.Sprintf("%s/%s.tar.gz", conf.MigrationPath, mi.Name)
 
@@ -78,7 +74,7 @@ func MigrateMachine(m Machine, i Image, src, dst shared.Remote) error {
 	return nil
 }
 
-func LiveMigrateMachine(m Machine, i Image, src, dst shared.Remote) error {
+func LiveMigrateMachine(m Machine, i shared.Image, src, dst shared.Remote) error {
 	err := m.CreateCheckpoint()
 	if err != nil {
 		return fmt.Errorf("failed to checkpoint: %s", err)

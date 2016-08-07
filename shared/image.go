@@ -6,15 +6,12 @@ const (
 	TypeLXC     = "lxc"
 )
 
-type ImageInfo struct {
+type Image struct {
 	Name   string
 	Type   string
 	Source string
 
 	// Optional information
-	Arch    string
-	Distro  string
-	Release string
-
+	Desc          string
 	MainPartition int
 }

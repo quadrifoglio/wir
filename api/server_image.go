@@ -13,32 +13,20 @@ import (
 func handleImageCreate(w http.ResponseWriter, r *http.Request) {
 	PrepareResponse(w, r)
 
-	var i shared.ImageInfo
+	var img shared.Image
 
-	err := json.NewDecoder(r.Body).Decode(&i)
+	err := json.NewDecoder(r.Body).Decode(&img)
 	if err != nil {
 		ErrorResponse(errors.BadRequest).Send(w, r)
 		return
 	}
 
-	if len(i.Source) <= 0 {
+	if len(img.Source) <= 0 || len(img.Name) <= 0 {
 		ErrorResponse(errors.BadRequest).Send(w, r)
 		return
 	}
 
-	var img Image
-
-	switch i.Type {
-	case shared.TypeQemu:
-		img = new(QemuImage)
-		err = img.Create(i)
-		break
-	case shared.TypeLXC:
-		img = new(LxcImage)
-		err = img.Create(i)
-		break
-	}
-
+	err = CreateImage(&img)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return

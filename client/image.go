@@ -7,10 +7,10 @@ import (
 	"github.com/quadrifoglio/wir/shared"
 )
 
-func ListImages(target shared.Remote) ([]shared.ImageInfo, error) {
+func ListImages(target shared.Remote) ([]shared.Image, error) {
 	type Response struct {
 		ResponseBase
-		Content []shared.ImageInfo
+		Content []shared.Image
 	}
 
 	var r Response
@@ -28,10 +28,10 @@ func ListImages(target shared.Remote) ([]shared.ImageInfo, error) {
 	return r.Content, apiError(r.ResponseBase)
 }
 
-func CreateImage(target shared.Remote, i shared.ImageInfo) (shared.ImageInfo, error) {
+func CreateImage(target shared.Remote, i shared.Image) (shared.Image, error) {
 	type Response struct {
 		ResponseBase
-		Content shared.ImageInfo
+		Content shared.Image
 	}
 
 	var r Response
@@ -54,10 +54,10 @@ func CreateImage(target shared.Remote, i shared.ImageInfo) (shared.ImageInfo, er
 	return r.Content, apiError(r.ResponseBase)
 }
 
-func GetImage(target shared.Remote, name string) (shared.ImageInfo, error) {
+func GetImage(target shared.Remote, name string) (shared.Image, error) {
 	type Response struct {
 		ResponseBase
-		Content shared.ImageInfo
+		Content shared.Image
 	}
 
 	var r Response

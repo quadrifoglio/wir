@@ -35,9 +35,9 @@ func (m *QemuMachine) Type() string {
 	return shared.TypeQemu
 }
 
-func (m *QemuMachine) Create(img Image, info shared.MachineInfo) error {
+func (m *QemuMachine) Create(img shared.Image, info shared.MachineInfo) error {
 	m.Name = info.Name
-	m.Image = img.Info().Name
+	m.Image = img.Name
 	m.Cores = info.Cores
 	m.Memory = info.Memory
 	m.Disk = info.Disk
@@ -76,9 +76,9 @@ func (m *QemuMachine) Create(img Image, info shared.MachineInfo) error {
 	var cmd *exec.Cmd
 
 	if _, err := os.Stat(disk); os.IsNotExist(err) {
-		cmd = exec.Command("qemu-img", "create", "-b", img.Info().Source, "-f", "qcow2", disk)
+		cmd = exec.Command("qemu-img", "create", "-b", img.Source, "-f", "qcow2", disk)
 	} else {
-		cmd = exec.Command("qemu-img", "rebase", "-b", img.Info().Source, disk)
+		cmd = exec.Command("qemu-img", "rebase", "-b", img.Source, disk)
 	}
 
 	out, err := cmd.CombinedOutput()
@@ -86,7 +86,7 @@ func (m *QemuMachine) Create(img Image, info shared.MachineInfo) error {
 		return fmt.Errorf("%s", out)
 	}
 
-	imgSize, err := utils.SizeQcow2(img.Info().Source)
+	imgSize, err := utils.SizeQcow2(img.Source)
 	if err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func (m *QemuMachine) Create(img Image, info shared.MachineInfo) error {
 
 		defer utils.NBDDisconnectQcow2()
 
-		err = utils.ResizePartition("/dev/nbd0", img.Info().MainPartition, m.Disk)
+		err = utils.ResizePartition("/dev/nbd0", img.MainPartition, m.Disk)
 		if err != nil {
 			return err
 		}

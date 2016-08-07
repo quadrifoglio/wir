@@ -30,9 +30,9 @@ func (m *LxcMachine) Type() string {
 	return shared.TypeLXC
 }
 
-func (m *LxcMachine) Create(img Image, info shared.MachineInfo) error {
+func (m *LxcMachine) Create(img shared.Image, info shared.MachineInfo) error {
 	m.Name = info.Name
-	m.Image = img.Info().Name
+	m.Image = img.Name
 	m.Cores = info.Cores
 	m.Memory = info.Memory
 	m.Disk = info.Disk
@@ -71,7 +71,7 @@ func (m *LxcMachine) Create(img Image, info shared.MachineInfo) error {
 
 	// If this is not a migration
 	if _, err := os.Stat(mig); os.IsNotExist(err) {
-		err = utils.UntarDirectory(img.Info().Source, basePath)
+		err = utils.UntarDirectory(img.Source, basePath)
 		if err != nil {
 			return err
 		}

@@ -20,14 +20,14 @@ func listImages(target shared.Remote, raw bool) {
 	if len(imgs) > 0 {
 		if raw {
 			for _, i := range imgs {
-				fmt.Println(i.Name, i.Type, i.Source, i.Arch, i.Distro, i.Release)
+				fmt.Println(i.Name, i.Type, i.Source, i.Desc)
 			}
 		} else {
 			table := tablewriter.NewWriter(os.Stdout)
-			table.SetHeader([]string{"Name", "Type", "Source", "Arch", "Distro", "Release"})
+			table.SetHeader([]string{"Name", "Type", "Source", "Description"})
 
 			for _, i := range imgs {
-				table.Append([]string{i.Name, i.Type, i.Source, i.Arch, i.Distro, i.Release})
+				table.Append([]string{i.Name, i.Type, i.Source, i.Desc})
 			}
 
 			table.Render()
@@ -35,15 +35,13 @@ func listImages(target shared.Remote, raw bool) {
 	}
 }
 
-func createImage(target shared.Remote, name, t, source string, mainPart int, arch, distro, release string) {
-	var req shared.ImageInfo
+func createImage(target shared.Remote, name, t, source, desc string, mainPart int) {
+	var req shared.Image
 	req.Name = name
 	req.Type = t
 	req.Source = source
+	req.Desc = desc
 	req.MainPartition = mainPart
-	req.Arch = arch
-	req.Distro = distro
-	req.Release = release
 
 	if !strings.Contains(source, "//") {
 		req.Source = "file://" + source
@@ -64,6 +62,8 @@ func showImage(target shared.Remote, name string) {
 	fmt.Println("Name:", img.Name)
 	fmt.Println("Type:", img.Type)
 	fmt.Println("Source:", img.Source)
+	fmt.Println("Description:", img.Desc)
+	fmt.Println("Main parition", img.MainPartition)
 }
 
 func deleteImage(target shared.Remote, name string) {

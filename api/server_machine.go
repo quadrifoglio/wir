@@ -89,7 +89,7 @@ func handleMachineCreate(w http.ResponseWriter, r *http.Request) {
 
 	var mm Machine
 
-	switch img.Info().Type {
+	switch img.Type {
 	case shared.TypeQemu:
 		mm = new(QemuMachine)
 		err = mm.Create(img, m)
@@ -194,7 +194,7 @@ func handleMachineLinuxSysprep(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if img.Info().Type == shared.TypeQemu && img.Info().MainPartition == 0 {
+	if img.Type == shared.TypeQemu && img.MainPartition == 0 {
 		ErrorResponse(fmt.Errorf("image does not have a specified main partition. can not sysprep.")).Send(w, r)
 		return
 	}
