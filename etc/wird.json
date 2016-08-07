@@ -6,7 +6,7 @@
 	"Port": 1997,
 
 	"EnableKVM": true,
-	"StorageBackend": "dir",
+	"StorageBackend": "zfs",
 	"ZfsPool": "wir",
 
 	"BridgeIface": "eth0",

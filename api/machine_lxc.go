@@ -142,29 +142,32 @@ func (m *LxcMachine) Update(info shared.MachineInfo) error {
 }
 
 func (m *LxcMachine) Delete() error {
+	if m.State() != shared.StateDown {
+		return errors.InvalidMachineState
+	}
+
+	base := fmt.Sprintf("%s/lxc/%s", shared.APIConfig.MachinePath, m.Name)
+
 	if shared.APIConfig.StorageBackend == "zfs" {
 		err := utils.ZfsDestroy(fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name))
 		if err != nil {
 			return err
 		}
-	} else {
-		path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
+	}
 
-		c, err := lxc.NewContainer(m.Name, path)
-		if err != nil {
-			return err
-		}
-
-		err = c.Destroy()
-		if err != nil {
-			return err
-		}
+	err := os.RemoveAll(base)
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
 func (m *LxcMachine) Sysprep(os, hostname, root string) error {
+	if m.State() != shared.StateDown {
+		return errors.InvalidMachineState
+	}
+
 	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
 
 	c, err := lxc.NewContainer(m.Name, path)
@@ -185,6 +188,10 @@ func (m *LxcMachine) Sysprep(os, hostname, root string) error {
 }
 
 func (m *LxcMachine) Start() error {
+	if m.State() != shared.StateDown {
+		return errors.InvalidMachineState
+	}
+
 	fs := fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name)
 
 	if shared.APIConfig.StorageBackend == "zfs" {
@@ -250,6 +257,11 @@ func (m *LxcMachine) Start() error {
 		if err != nil {
 			return fmt.Errorf("failed to restore container")
 		}
+
+		err = os.RemoveAll(chk)
+		if err != nil {
+			return err
+		}
 	} else {
 		cmd := exec.Command("lxc-start", "-P", path, "-n", m.Name)
 
@@ -272,6 +284,10 @@ func (m *LxcMachine) Start() error {
 }
 
 func (m *LxcMachine) Stop() error {
+	if m.State() != shared.StateUp {
+		return errors.InvalidMachineState
+	}
+
 	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
 
 	c, err := lxc.NewContainer(m.Name, path)
@@ -306,6 +322,10 @@ func (m *LxcMachine) State() shared.MachineState {
 }
 
 func (m *LxcMachine) Stats() (shared.MachineStats, error) {
+	if m.State() != shared.StateUp {
+		return errors.InvalidMachineState
+	}
+
 	var stats shared.MachineStats
 
 	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
@@ -525,6 +545,10 @@ func (m *LxcMachine) HasCheckpoint() bool {
 }
 
 func (m *LxcMachine) CreateCheckpoint() error {
+	if m.State() != shared.StateUp {
+		return errors.InvalidMachineState
+	}
+
 	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
 
 	c, err := lxc.NewContainer(m.Name, path)
@@ -567,22 +591,27 @@ func (m *LxcMachine) CreateCheckpoint() error {
 }
 
 func (m *LxcMachine) RestoreCheckpoint() error {
-	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
-
-	c, err := lxc.NewContainer(m.Name, path)
-	if err != nil {
-		return err
+	if m.State() != shared.StateDown {
+		return errors.InvalidMachineState
 	}
-
-	c.SetVerbosity(lxc.Verbose)
 
 	if !m.HasCheckpoint() {
 		return fmt.Errorf("checkpoint does not exists")
 	}
 
-	err = c.Restore(lxc.RestoreOptions{fmt.Sprintf("%s/%s/checkpoint", path, m.Name), true})
+	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
+	chk := fmt.Sprintf("%s/%s/checkpoint", path, m.Name)
+
+	cmd := exec.Command("lxc-checkpoint", "-P", path, "-r", "-D", chk, "-n", m.Name)
+
+	err = cmd.Run()
 	if err != nil {
-		return fmt.Errorf("failed to restore: %s", err)
+		return fmt.Errorf("failed to restore container")
+	}
+
+	err = os.RemoveAll(chk)
+	if err != nil {
+		return err
 	}
 
 	return nil

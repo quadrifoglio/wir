@@ -228,11 +228,6 @@ func handleMachineStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if m.State() != shared.StateDown {
-		ErrorResponse(errors.InvalidMachineState).Send(w, r)
-		return
-	}
-
 	err = m.Start()
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
