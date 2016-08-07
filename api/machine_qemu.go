@@ -14,7 +14,6 @@ import (
 
 	"github.com/quadrifoglio/go-qmp"
 
-	"github.com/quadrifoglio/wir/client"
 	"github.com/quadrifoglio/wir/errors"
 	"github.com/quadrifoglio/wir/net"
 	"github.com/quadrifoglio/wir/shared"
@@ -111,7 +110,21 @@ func (m *QemuMachine) Create(img shared.Image, info shared.MachineInfo) error {
 		}
 	}
 
-	return SetupMachineNetwork(m, info.Network)
+	var i int = 0
+	for _, iface := range info.Interfaces {
+		if iface.Mode != shared.NetworkModeNone {
+			m.Interfaces = append(m.Interfaces, iface)
+
+			err := net.SetupInterface(&m.Interfaces[i])
+			if err != nil {
+				return err
+			}
+
+			i++
+		}
+	}
+
+	return nil
 }
 
 func (m *QemuMachine) Update(info shared.MachineInfo) error {
@@ -123,22 +136,67 @@ func (m *QemuMachine) Update(info shared.MachineInfo) error {
 		m.Memory = info.Cores
 	}
 
-	return UpdateMachineNetwork(m, info.Network)
+	if len(info.Interfaces) > 0 {
+		for i, iface := range info.Interfaces {
+			if len(m.Interfaces) > i {
+				miface := &m.Interfaces[i]
+
+				err := net.DeleteInterface(*miface)
+				if err != nil {
+					return err
+				}
+
+				if len(iface.Mode) > 0 && iface.Mode != miface.Mode {
+					miface.Mode = iface.Mode
+				}
+				if len(iface.MAC) > 0 {
+					miface.MAC = iface.MAC
+				}
+				if len(iface.IP) > 0 {
+					miface.IP = iface.IP
+				}
+
+				err = net.SetupInterface(&m.Interfaces[i])
+				if err != nil {
+					return err
+				}
+			} else {
+				m.Interfaces = append(m.Interfaces, iface)
+				err := net.SetupInterface(&m.Interfaces[len(m.Interfaces)-1])
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 func (m *QemuMachine) Delete() error {
-	if m.Network.Mode != shared.NetworkModeNone {
-		tap, err := net.OpenTAP(MachineIfName(m))
-		if err != nil {
-			return fmt.Errorf("open tap: %s", err)
-		}
+	if m.State() != shared.StateDown {
+		return errors.InvalidMachineState
+	}
 
-		err = net.TAPPersist(tap, false)
-		if err != nil {
-			return fmt.Errorf("tap persist: %s", err)
-		}
+	for i, iface := range m.Interfaces {
+		if iface.Mode != shared.NetworkModeNone {
+			err := net.DeleteInterface(iface)
+			if err != nil {
+				return err
+			}
 
-		tap.Close()
+			tap, err := net.OpenTAP(MachineIfName(m, i))
+			if err != nil {
+				return err
+			}
+
+			err = net.TAPPersist(tap, false)
+			if err != nil {
+				return err
+			}
+
+			tap.Close()
+		}
 	}
 
 	if shared.APIConfig.StorageBackend == "zfs" {
@@ -222,36 +280,40 @@ func (m *QemuMachine) Start() error {
 		args = append(args, "checkpoint")
 	}
 
-	if m.Network.Mode == shared.NetworkModeBridge {
-		tap, err := net.OpenTAP(MachineIfName(m))
-		if err != nil {
-			return fmt.Errorf("open tap: %s", err)
-		}
-
-		err = net.TAPPersist(tap, true)
-		if err != nil {
-			return fmt.Errorf("tap persist: %s", err)
-		}
-
-		tap.Close()
-
-		err = net.BridgeAddIf("wir0", MachineIfName(m))
-		if err != nil {
-			return err
-		}
-
-		err = CheckMachineNetwork(m)
-		if err != nil {
-			return err
-		}
-
-		args = append(args, "-netdev")
-		args = append(args, fmt.Sprintf("tap,id=net0,ifname=%s,script=no", MachineIfName(m)))
-		args = append(args, "-device")
-		args = append(args, fmt.Sprintf("driver=virtio-net,netdev=net0,mac=%s", m.Network.MAC))
-	} else {
+	if len(m.Interfaces) == 0 {
 		args = append(args, "-net")
 		args = append(args, "none")
+	}
+
+	for i, iface := range m.Interfaces {
+		if iface.Mode == shared.NetworkModeBridge {
+			tap, err := net.OpenTAP(MachineIfName(m, i))
+			if err != nil {
+				return fmt.Errorf("open tap: %s", err)
+			}
+
+			err = net.TAPPersist(tap, true)
+			if err != nil {
+				return fmt.Errorf("tap persist: %s", err)
+			}
+
+			tap.Close()
+
+			err = net.BridgeAddIf("wir0", MachineIfName(m, i))
+			if err != nil {
+				return err
+			}
+
+			err = net.CheckInterface(iface)
+			if err != nil {
+				return err
+			}
+
+			args = append(args, "-netdev")
+			args = append(args, fmt.Sprintf("tap,id=net0,ifname=%s,script=no", MachineIfName(m, i)))
+			args = append(args, "-device")
+			args = append(args, fmt.Sprintf("driver=virtio-net,netdev=net0,mac=%s", iface.MAC))
+		}
 	}
 
 	cmd := exec.Command("qemu-system-x86_64", args...)
@@ -319,7 +381,7 @@ func (m *QemuMachine) Start() error {
 		}
 	}
 
-	if shared.APIConfig.EnableNetMonitor && m.Network.Mode != shared.NetworkModeNone {
+	if shared.APIConfig.EnableNetMonitor && len(m.Interfaces) > 0 {
 		MonitorNetwork(m)
 	}
 
@@ -579,5 +641,12 @@ func (m *QemuMachine) DeleteCheckpoint() error {
 }
 
 func (m *QemuMachine) MarshalJSON() ([]byte, error) {
-	return json.Marshal(client.MachineResponse{m.MachineInfo, m.Type(), m.State()})
+	type machine struct {
+		QemuMachine
+
+		Type  string
+		State shared.MachineState
+	}
+
+	return json.Marshal(machine{*m, m.Type(), m.State()})
 }

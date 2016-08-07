@@ -8,20 +8,21 @@ const (
 	NetworkModeBridge = "bridge"
 )
 
-type MachineNetwork struct {
+type NetworkDevice struct {
 	Mode string
 	MAC  string
 	IP   string
 }
 
 type MachineInfo struct {
-	Index   uint64
-	Name    string
-	Image   string
-	Cores   int
-	Memory  int
-	Disk    uint64
-	Network MachineNetwork `json:",omitempty"`
+	Index  uint64
+	Name   string
+	Image  string
+	Cores  int
+	Memory int
+	Disk   uint64
+
+	Interfaces []NetworkDevice `json:",omitempty"`
 }
 
 type MachineStats struct {

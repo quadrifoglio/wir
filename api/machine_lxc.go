@@ -13,8 +13,8 @@ import (
 
 	"gopkg.in/lxc/go-lxc.v2"
 
-	"github.com/quadrifoglio/wir/client"
 	"github.com/quadrifoglio/wir/errors"
+	"github.com/quadrifoglio/wir/net"
 	"github.com/quadrifoglio/wir/shared"
 	"github.com/quadrifoglio/wir/utils"
 )
@@ -127,7 +127,21 @@ func (m *LxcMachine) Create(img shared.Image, info shared.MachineInfo) error {
 		return fmt.Errorf("can not write config: %s", err)
 	}
 
-	return SetupMachineNetwork(m, info.Network)
+	var i int = 0
+	for _, iface := range info.Interfaces {
+		if iface.Mode != shared.NetworkModeNone {
+			m.Interfaces = append(m.Interfaces, iface)
+
+			err := net.SetupInterface(&m.Interfaces[i])
+			if err != nil {
+				return err
+			}
+
+			i++
+		}
+	}
+
+	return nil
 }
 
 func (m *LxcMachine) Update(info shared.MachineInfo) error {
@@ -139,7 +153,41 @@ func (m *LxcMachine) Update(info shared.MachineInfo) error {
 		m.Memory = info.Cores
 	}
 
-	return UpdateMachineNetwork(m, info.Network)
+	if len(info.Interfaces) > 0 {
+		for i, iface := range info.Interfaces {
+			if len(m.Interfaces) > i {
+				miface := m.Interfaces[i]
+
+				err := net.DeleteInterface(miface)
+				if err != nil {
+					return err
+				}
+
+				if len(iface.Mode) > 0 && iface.Mode != miface.Mode {
+					miface.Mode = iface.Mode
+				}
+				if len(iface.MAC) > 0 {
+					miface.MAC = iface.MAC
+				}
+				if len(iface.IP) > 0 {
+					miface.IP = iface.IP
+				}
+
+				err = net.SetupInterface(&m.Interfaces[i])
+				if err != nil {
+					return err
+				}
+			} else {
+				m.Interfaces = append(m.Interfaces, iface)
+				err := net.SetupInterface(&m.Interfaces[len(m.Interfaces)-1])
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 func (m *LxcMachine) Delete() error {
@@ -159,6 +207,15 @@ func (m *LxcMachine) Delete() error {
 	err := os.RemoveAll(base)
 	if err != nil {
 		return err
+	}
+
+	for _, iface := range m.Interfaces {
+		if iface.Mode != shared.NetworkModeNone {
+			err := net.DeleteInterface(iface)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
@@ -218,35 +275,39 @@ func (m *LxcMachine) Start() error {
 
 	c.SetVerbosity(lxc.Verbose)
 
-	if m.Network.Mode == shared.NetworkModeBridge {
-		if err := c.SetConfigItem("lxc.network.type", "veth"); err != nil {
-			return err
-		}
-		if err := c.SetConfigItem("lxc.network.veth.pair", MachineIfName(m)); err != nil {
-			return err
-		}
-		if err := c.SetConfigItem("lxc.network.flags", "up"); err != nil {
-			return err
-		}
-		if err := c.SetConfigItem("lxc.network.link", "wir0"); err != nil {
-			return err
-		}
-		if err := c.SetConfigItem("lxc.network.hwaddr", m.Network.MAC); err != nil {
-			return err
-		}
-
-		err = CheckMachineNetwork(m)
-		if err != nil {
-			return err
-		}
-
-		if err := c.SaveConfigFile(fmt.Sprintf("%s/%s/config", path, m.Name)); err != nil {
-			return fmt.Errorf("can not write config: %s", err)
-		}
-	} else {
+	if len(m.Interfaces) == 0 {
 		err := utils.DeleteLinesInFile(fmt.Sprintf("%s/%s/config", path, m.Name), "lxc.network")
 		if err != nil {
 			return err
+		}
+	}
+
+	for i, iface := range m.Interfaces {
+		if iface.Mode == shared.NetworkModeBridge {
+			if err := c.SetConfigItem("lxc.network.type", "veth"); err != nil {
+				return err
+			}
+			if err := c.SetConfigItem("lxc.network.veth.pair", MachineIfName(m, i)); err != nil {
+				return err
+			}
+			if err := c.SetConfigItem("lxc.network.flags", "up"); err != nil {
+				return err
+			}
+			if err := c.SetConfigItem("lxc.network.link", "wir0"); err != nil {
+				return err
+			}
+			if err := c.SetConfigItem("lxc.network.hwaddr", iface.MAC); err != nil {
+				return err
+			}
+
+			err = net.CheckInterface(iface)
+			if err != nil {
+				return err
+			}
+
+			if err := c.SaveConfigFile(fmt.Sprintf("%s/%s/config", path, m.Name)); err != nil {
+				return fmt.Errorf("can not write config: %s", err)
+			}
 		}
 	}
 
@@ -272,7 +333,7 @@ func (m *LxcMachine) Start() error {
 		}
 	}
 
-	if shared.APIConfig.EnableNetMonitor && m.Network.Mode != shared.NetworkModeNone {
+	if shared.APIConfig.EnableNetMonitor && len(m.Interfaces) > 0 {
 		MonitorNetwork(m)
 	}
 
@@ -624,5 +685,12 @@ func (m *LxcMachine) DeleteCheckpoint() error {
 }
 
 func (m *LxcMachine) MarshalJSON() ([]byte, error) {
-	return json.Marshal(client.MachineResponse{m.MachineInfo, m.Type(), m.State()})
+	type machine struct {
+		LxcMachine
+
+		Type  string
+		State shared.MachineState
+	}
+
+	return json.Marshal(machine{*m, m.Type(), m.State()})
 }

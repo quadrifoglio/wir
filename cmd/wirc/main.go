@@ -133,15 +133,18 @@ func main() {
 		listMachines(remote, *cmdMachinesRaw)
 		break
 	case "machine create":
+		ifs := make([]shared.NetworkDevice, 1)
+		ifs[0] = shared.NetworkDevice{*machineCreateNetMode, *machineCreateNetMAC, *machineCreateNetIP}
+
 		createMachine(
 			remote,
 			shared.MachineInfo{
-				Name:    *machineCreateName,
-				Image:   *machineCreateImage,
-				Cores:   *machineCreateCores,
-				Memory:  *machineCreateMem,
-				Disk:    uint64(*machineCreateDisk),
-				Network: shared.MachineNetwork{*machineCreateNetMode, *machineCreateNetMAC, *machineCreateNetIP},
+				Name:       *machineCreateName,
+				Image:      *machineCreateImage,
+				Cores:      *machineCreateCores,
+				Memory:     *machineCreateMem,
+				Disk:       uint64(*machineCreateDisk),
+				Interfaces: ifs,
 			},
 		)
 		break
@@ -149,14 +152,17 @@ func main() {
 		showMachine(remote, *machineShowName)
 		break
 	case "machine update":
+		ifs := make([]shared.NetworkDevice, 1)
+		ifs[0] = shared.NetworkDevice{*machineUpdateNetMode, *machineUpdateNetMAC, *machineUpdateNetIP}
+
 		updateMachine(
 			remote,
 			shared.MachineInfo{
-				Name:    *machineUpdateName,
-				Cores:   *machineUpdateCores,
-				Memory:  *machineUpdateMem,
-				Disk:    uint64(*machineUpdateDisk),
-				Network: shared.MachineNetwork{*machineUpdateNetMode, *machineUpdateNetMAC, *machineUpdateNetIP},
+				Name:       *machineUpdateName,
+				Cores:      *machineUpdateCores,
+				Memory:     *machineUpdateMem,
+				Disk:       uint64(*machineUpdateDisk),
+				Interfaces: ifs,
 			},
 		)
 		break
