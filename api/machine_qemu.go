@@ -363,11 +363,11 @@ func (m *QemuMachine) State() shared.MachineState {
 }
 
 func (m *QemuMachine) Stats() (shared.MachineStats, error) {
-	if m.State() != shared.StateUp {
-		return errors.InvalidMachineState
-	}
-
 	var stats shared.MachineStats
+
+	if m.State() != shared.StateUp {
+		return stats, errors.InvalidMachineState
+	}
 
 	utime1, stime1, err := utils.GetProcessCpuStats(m.PID)
 	if err != nil {
@@ -468,7 +468,7 @@ func (m *QemuMachine) CreateBackup() (shared.MachineBackup, error) {
 	var b shared.MachineBackup
 
 	if m.State() != shared.StateDown {
-		return errors.InvalidMachineState
+		return b, errors.InvalidMachineState
 	}
 
 	disk := fmt.Sprintf("%s/qemu/%s/disk.qcow2", shared.APIConfig.MachinePath, m.Name)
@@ -484,11 +484,11 @@ func (m *QemuMachine) CreateBackup() (shared.MachineBackup, error) {
 }
 
 func (m *QemuMachine) RestoreBackup(name string) error {
-	disk := fmt.Sprintf("%s/qemu/%s/disk.qcow2", shared.APIConfig.MachinePath, m.Name)
-
 	if m.State() != shared.StateDown {
 		return errors.InvalidMachineState
 	}
+
+	disk := fmt.Sprintf("%s/qemu/%s/disk.qcow2", shared.APIConfig.MachinePath, m.Name)
 
 	return utils.RestoreQcow2(disk, fmt.Sprintf("backup_%s", name))
 }
@@ -516,7 +516,7 @@ func (m *QemuMachine) HasCheckpoint() bool {
 
 func (m *QemuMachine) CreateCheckpoint() error {
 	if m.State() != shared.StateUp {
-		return b, errors.InvalidMachineState
+		return errors.InvalidMachineState
 	}
 
 	c, err := qmp.Open("unix", fmt.Sprintf("%s/qemu/%s/qmp.sock", shared.APIConfig.MachinePath, m.Name))

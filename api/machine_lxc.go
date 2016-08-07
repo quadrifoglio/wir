@@ -322,11 +322,11 @@ func (m *LxcMachine) State() shared.MachineState {
 }
 
 func (m *LxcMachine) Stats() (shared.MachineStats, error) {
-	if m.State() != shared.StateUp {
-		return errors.InvalidMachineState
-	}
-
 	var stats shared.MachineStats
+
+	if m.State() != shared.StateUp {
+		return stats, errors.InvalidMachineState
+	}
 
 	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
 
@@ -604,7 +604,7 @@ func (m *LxcMachine) RestoreCheckpoint() error {
 
 	cmd := exec.Command("lxc-checkpoint", "-P", path, "-r", "-D", chk, "-n", m.Name)
 
-	err = cmd.Run()
+	err := cmd.Run()
 	if err != nil {
 		return fmt.Errorf("failed to restore container")
 	}
