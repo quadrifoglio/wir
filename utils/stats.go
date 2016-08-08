@@ -31,7 +31,7 @@ func GetCpuUsage() (CpuUsage, error) {
 
 	file, err := os.Open("/proc/stat")
 	if err != nil {
-		return usage, fmt.Errorf("failed to get cpu stats: %s", err)
+		return usage, fmt.Errorf("get cpu usage: %s", err)
 	}
 
 	defer file.Close()
@@ -39,7 +39,7 @@ func GetCpuUsage() (CpuUsage, error) {
 	r := bufio.NewReader(file)
 	line, _, err := r.ReadLine()
 	if err != nil {
-		return usage, fmt.Errorf("failed to get cpu stats: %s", err)
+		return usage, fmt.Errorf("get cpu usage: %s", err)
 	}
 
 	valuesStr := strings.Split(string(line[5:]), " ")
@@ -48,7 +48,7 @@ func GetCpuUsage() (CpuUsage, error) {
 	for i, v := range valuesStr {
 		vv, err := strconv.Atoi(v)
 		if err != nil {
-			return usage, fmt.Errorf("failed to get cpu stats: %s", err)
+			return usage, fmt.Errorf("get cpu usage: %s", err)
 		}
 
 		values[i] = vv
@@ -64,14 +64,14 @@ func GetCpuUsage() (CpuUsage, error) {
 func GetCpuUsagePercentage() (float32, error) {
 	u1, err := GetCpuUsage()
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("get cpu usage percentage: %s", err)
 	}
 
 	time.Sleep(50 * time.Millisecond)
 
 	u2, err := GetCpuUsage()
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("get cpu usage percentage: %s", err)
 	}
 
 	return float32((u2.Total-u1.Total)-(u2.Idle-u1.Idle)) / float32(u2.Total-u1.Total) * 100, nil
@@ -80,7 +80,7 @@ func GetCpuUsagePercentage() (float32, error) {
 func GetProcessCpuStats(pid int) (int, int, error) {
 	file, err := os.Open(fmt.Sprintf("/proc/%d/stat", pid))
 	if err != nil {
-		return 0, 0, fmt.Errorf("failed to get cpu stats: %s", err)
+		return 0, 0, fmt.Errorf("get process cpu stats: %s", err)
 	}
 
 	defer file.Close()
@@ -88,19 +88,19 @@ func GetProcessCpuStats(pid int) (int, int, error) {
 	r := bufio.NewReader(file)
 	line, _, err := r.ReadLine()
 	if err != nil {
-		return 0, 0, fmt.Errorf("failed to get cpu stats: %s", err)
+		return 0, 0, fmt.Errorf("get process cpu stats: %s", err)
 	}
 
 	values := strings.Split(string(line), " ")
 
 	utime, err := strconv.Atoi(values[13])
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, fmt.Errorf("get process cpu stats: %s", err)
 	}
 
 	stime, err := strconv.Atoi(values[14])
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, fmt.Errorf("get process cpu stats: %s", err)
 	}
 
 	return utime, stime, nil
@@ -111,7 +111,7 @@ func GetRamUsage() (uint64, uint64, error) {
 
 	f, err := os.Open("/proc/meminfo")
 	if err != nil {
-		return 0, 0, err
+		return 0, 0, fmt.Errorf("get ram usage: %s", err)
 	}
 
 	defer f.Close()
@@ -131,7 +131,7 @@ func GetRamUsage() (uint64, uint64, error) {
 
 		value, err := strconv.ParseUint(vstr, 10, 64)
 		if err != nil {
-			return 0, 0, fmt.Errorf("failed to parse /proc/meminfo: %s")
+			return 0, 0, fmt.Errorf("get ram usage: /proc/meminfo: %s", err)
 		}
 
 		switch key {
@@ -152,7 +152,7 @@ func GetRamUsage() (uint64, uint64, error) {
 	}
 
 	if total == 0 || free == 0 || buffers == 0 || cached == 0 {
-		return 0, 0, fmt.Errorf("failed to parse /proc/meminfo: missing values")
+		return 0, 0, fmt.Errorf("get ram usage: /proc/meminfo: missing values")
 	}
 
 	return (total - (free + buffers + cached)) / mib, total / mib, nil
@@ -163,7 +163,7 @@ func GetProcessRamUsage(pid int) (uint64, error) {
 
 	f, err := os.Open(fmt.Sprintf("/proc/%d/smaps", pid))
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("get process ram usage: %s", err)
 	}
 
 	defer f.Close()
@@ -177,7 +177,7 @@ func GetProcessRamUsage(pid int) (uint64, error) {
 
 			mem, err := strconv.Atoi(str)
 			if err != nil {
-				return 0, err
+				return 0, fmt.Errorf("get process ram usage: %s", err)
 			}
 
 			result = uint64(mem / 1000)
@@ -194,7 +194,7 @@ func GetFreeSpace(dir string) (uint64, error) {
 
 	err := syscall.Statfs(dir, &s)
 	if err != nil {
-		return 0, fmt.Errorf("failed to get free space: %s", err)
+		return 0, fmt.Errorf("get free space: %s", err)
 	}
 
 	return (s.Bavail * uint64(s.Bsize)) / gib, nil

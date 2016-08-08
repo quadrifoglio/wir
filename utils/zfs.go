@@ -11,7 +11,7 @@ func ZfsCreate(path, mountpoint string) error {
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("zfs: %s", out)
+		return fmt.Errorf("zfs: %s", OneLine(out))
 	}
 
 	return nil
@@ -22,7 +22,7 @@ func ZfsListSnapshots(path string) ([]string, error) {
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return nil, fmt.Errorf("zfs: %s", out)
+		return nil, fmt.Errorf("zfs: %s", OneLine(out))
 	}
 
 	var snaps []string
@@ -57,7 +57,7 @@ func ZfsSnapshot(path, snap string) error {
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("zfs: %s", out)
+		return fmt.Errorf("zfs: %s", OneLine(out))
 	}
 
 	return nil
@@ -68,7 +68,7 @@ func ZfsRestore(path, snap string) error {
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("zfs: %s", out)
+		return fmt.Errorf("zfs: %s", OneLine(out))
 	}
 
 	return nil
@@ -79,7 +79,7 @@ func ZfsDeleteSnapshot(path, snap string) error {
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("zfs: %s", out)
+		return fmt.Errorf("zfs: %s", OneLine(out))
 	}
 
 	return nil
@@ -95,7 +95,7 @@ func ZfsClone(path, new string) error {
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("zfs: %s", out)
+		return fmt.Errorf("zfs: %s", OneLine(out))
 	}
 
 	err = ZfsDeleteSnapshot(path, "clone")
@@ -111,7 +111,7 @@ func ZfsSet(path, key, value string) error {
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("zfs: %s", out)
+		return fmt.Errorf("zfs: %s", OneLine(out))
 	}
 
 	return nil
@@ -139,7 +139,7 @@ func ZfsMount(path string) error {
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("zfs: %s", out)
+		return fmt.Errorf("zfs: %s", OneLine(out))
 	}
 
 	return nil
@@ -150,7 +150,7 @@ func ZfsUnmount(path string) error {
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("zfs: %s", out)
+		return fmt.Errorf("zfs: %s", OneLine(out))
 	}
 
 	return nil
@@ -161,7 +161,7 @@ func ZfsDestroy(path string) error {
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("zfs: %s", out)
+		return fmt.Errorf("zfs: %s", OneLine(out))
 	}
 
 	return nil

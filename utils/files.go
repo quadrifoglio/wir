@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"strings"
@@ -19,8 +18,7 @@ func TarDirectory(path, output string) error {
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Printf("failed to tar directory: %s", string(out))
-		return err
+		return fmt.Errorf("tar directory: %s", OneLine(out))
 	}
 
 	return nil
@@ -31,8 +29,7 @@ func UntarDirectory(input, path string) error {
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Printf("failed to untar directory: %s", string(out))
-		return err
+		return fmt.Errorf("untar directory: %s", OneLine(out))
 	}
 
 	return nil
@@ -43,8 +40,7 @@ func MakeRemoteDirectories(dst shared.Remote, dstDir string) error {
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Printf("failed to create remote directory: %s", string(out))
-		return err
+		return fmt.Errorf("create remote dir: %s", OneLine(out))
 	}
 
 	return nil
@@ -56,8 +52,7 @@ func SCP(srcFile string, dst shared.Remote, dstFile string) error {
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		log.Printf("scp failed: %s", string(out))
-		return err
+		return fmt.Errorf("scp to remote: %s", OneLine(out))
 	}
 
 	return nil
@@ -68,7 +63,7 @@ func CopyFolder(src, dst string) error {
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("%s", string(out))
+		return fmt.Errorf("copy folder: %s", OneLine(out))
 	}
 
 	return nil
@@ -77,21 +72,21 @@ func CopyFolder(src, dst string) error {
 func CopyFile(src, dst string) error {
 	f1, err := os.Open(src)
 	if err != nil {
-		return err
+		return fmt.Errorf("copy file: %s", err)
 	}
 
 	defer f1.Close()
 
 	f2, err := os.Create(dst)
 	if err != nil {
-		return err
+		return fmt.Errorf("copy file: %s", err)
 	}
 
 	defer f2.Close()
 
 	_, err = io.Copy(f2, f1)
 	if err != nil {
-		return err
+		return fmt.Errorf("copy file: %s", err)
 	}
 
 	return nil
@@ -100,14 +95,14 @@ func CopyFile(src, dst string) error {
 func RewriteFile(path string, data []byte) error {
 	f, err := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC, 0777)
 	if err != nil {
-		return fmt.Errorf("rewrite-file: open %s: %s", path, err)
+		return fmt.Errorf("rewrite %s: %s", path, err)
 	}
 
 	defer f.Close()
 
 	_, err = f.Write(data)
 	if err != nil {
-		return fmt.Errorf("rewrite-file: write to %s: %s", path, err)
+		return fmt.Errorf("rewrite %s: %s", path, err)
 	}
 
 	return nil
@@ -116,18 +111,23 @@ func RewriteFile(path string, data []byte) error {
 func ReplaceInFile(path, search, replace string) error {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
-		return fmt.Errorf("can not read file: %s", err)
+		return fmt.Errorf("replace in %s: %s", path, err)
 	}
 
 	newData := strings.Replace(string(data), search, replace, -1)
 
-	return RewriteFile(path, []byte(newData))
+	err = RewriteFile(path, []byte(newData))
+	if err != nil {
+		return fmt.Errorf("replace in %s: %s", path, err)
+	}
+
+	return nil
 }
 
 func DeleteLinesInFile(path, prefix string) error {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
-		return fmt.Errorf("can not read file: %s", err)
+		return fmt.Errorf("delete lines in %s: %s", path, err)
 	}
 
 	var newData []byte
@@ -137,27 +137,37 @@ func DeleteLinesInFile(path, prefix string) error {
 		}
 	}
 
-	return RewriteFile(path, []byte(newData))
+	err = RewriteFile(path, []byte(newData))
+	if err != nil {
+		return fmt.Errorf("delete lines in %s: %s", path, err)
+	}
+
+	return nil
 }
 
 func ChangeHostname(hostnamePath, hostname string) error {
-	return RewriteFile(hostnamePath, []byte(hostname))
+	err := RewriteFile(hostnamePath, []byte(hostname))
+	if err != nil {
+		return fmt.Errorf("change hostname: %s", err)
+	}
+
+	return nil
 }
 
 func ChangeRootPassword(shadowPath, root string) error {
 	data, err := ioutil.ReadFile(shadowPath)
 	if err != nil {
-		return fmt.Errorf("root-password: can not read entire file: %s", err)
+		return fmt.Errorf("change root passwd: %s", err)
 	}
 
 	n := strings.Index(string(data), ":")
 	if n == -1 {
-		return fmt.Errorf("root-password: invalid file (no ':' char)")
+		return fmt.Errorf("change root passwd: no ':' char in /etc/shadow")
 	}
 
 	nn := strings.Index(string(data[n+1:]), ":")
 	if n == -1 {
-		return fmt.Errorf("root-password: invalid file (no second ':' char)")
+		return fmt.Errorf("change root passwd: no second ':' char in /etc/shadow")
 	}
 
 	n = n + nn + 1
@@ -165,7 +175,7 @@ func ChangeRootPassword(shadowPath, root string) error {
 
 	str, err := crypt.Crypt(root, fmt.Sprintf("$6$%s$", string(salt[:8])))
 	if err != nil {
-		return fmt.Errorf("can not crypt password: %s", err)
+		return fmt.Errorf("change root passwd: crypt: %s", err)
 	}
 
 	str = "root:" + str
@@ -176,7 +186,7 @@ func ChangeRootPassword(shadowPath, root string) error {
 
 	err = RewriteFile(shadowPath, newData)
 	if err != nil {
-		return err
+		return fmt.Errorf("change root passwd: %s", err)
 	}
 
 	return nil
