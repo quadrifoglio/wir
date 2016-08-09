@@ -474,17 +474,15 @@ func (m *LxcMachine) Clone(name string) error {
 }
 
 func (m *LxcMachine) ListVolumes() ([]shared.Volume, error) {
-	vols := make([]shared.Volume, 0)
-
-	return vols, nil
+	return nil, fmt.Errorf("volumes not supported for lxc machines")
 }
 
 func (m *LxcMachine) CreateVolume(shared.Volume) error {
-	return nil
+	return fmt.Errorf("volumes not supported for lxc machines")
 }
 
 func (m *LxcMachine) DeleteVolume(name string) error {
-	return nil
+	return fmt.Errorf("volumes not supported for lxc machines")
 }
 
 func (m *LxcMachine) ListBackups() ([]shared.MachineBackup, error) {
