@@ -23,6 +23,28 @@ type Partition struct {
 	Filesystem string
 }
 
+func CreateQcow2(file, base string) error {
+	cmd := exec.Command("qemu-img", "create", "-b", base, "-f", "qcow2", file)
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("create qcow2: %s", OneLine(out))
+	}
+
+	return nil
+}
+
+func RebaseQcow2(file, base string) error {
+	cmd := exec.Command("qemu-img", "rebase", "-b", base, file)
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("rebase qcow2: %s", OneLine(out))
+	}
+
+	return nil
+}
+
 func SizeQcow2(file string) (uint64, error) {
 	var size uint64
 

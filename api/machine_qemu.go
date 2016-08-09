@@ -73,17 +73,16 @@ func (m *QemuMachine) Create(img shared.Image, info shared.MachineInfo) error {
 		}
 	}
 
-	var cmd *exec.Cmd
-
 	if _, err := os.Stat(disk); os.IsNotExist(err) {
-		cmd = exec.Command("qemu-img", "create", "-b", img.Source, "-f", "qcow2", disk)
+		err = utils.CreateQcow2(disk, img.Source)
+		if err != nil {
+			return err
+		}
 	} else {
-		cmd = exec.Command("qemu-img", "rebase", "-b", img.Source, disk)
-	}
-
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("%s", out)
+		err := utils.RebaseQcow2(disk, img.Source)
+		if err != nil {
+			return err
+		}
 	}
 
 	imgSize, err := utils.SizeQcow2(img.Source)
