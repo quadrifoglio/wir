@@ -473,6 +473,20 @@ func (m *LxcMachine) Clone(name string) error {
 	return nil
 }
 
+func (m *LxcMachine) ListVolumes() ([]shared.Volume, error) {
+	vols := make([]shared.Volume, 0)
+
+	return vols, nil
+}
+
+func (m *LxcMachine) CreateVolume(shared.Volume) error {
+	return nil
+}
+
+func (m *LxcMachine) DeleteVolume(name string) error {
+	return nil
+}
+
 func (m *LxcMachine) ListBackups() ([]shared.MachineBackup, error) {
 	bks := make([]shared.MachineBackup, 0)
 

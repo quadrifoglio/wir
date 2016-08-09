@@ -29,6 +29,10 @@ type Machine interface {
 
 	Clone(name string) error
 
+	ListVolumes() ([]shared.Volume, error)
+	CreateVolume(shared.Volume) error
+	DeleteVolume(name string) error
+
 	ListCheckpoints() ([]string, error)
 	HasCheckpoint(name string) bool
 	CreateCheckpoint(name string) error

@@ -312,6 +312,78 @@ func handleMachineListCheckpoints(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(chks).Send(w, r)
 }
 
+func handleMachineListVolumes(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
+	vars := mux.Vars(r)
+	name := vars["name"]
+
+	m, err := DBGetMachine(name)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	vols, err := m.ListVolumes()
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	SuccessResponse(vols).Send(w, r)
+}
+
+func handleMachineCreateVolume(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
+	vars := mux.Vars(r)
+	name := vars["name"]
+
+	var vol shared.Volume
+
+	m, err := DBGetMachine(name)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	err = json.NewDecoder(r.Body).Decode(&vol)
+	if err != nil {
+		ErrorResponse(errors.BadRequest).Send(w, r)
+		return
+	}
+
+	err = m.CreateVolume(vol)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	SuccessResponse(vol).Send(w, r)
+}
+
+func handleMachineDeleteVolume(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
+	vars := mux.Vars(r)
+	name := vars["name"]
+	vol := vars["vol"]
+
+	m, err := DBGetMachine(name)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	err = m.DeleteVolume(vol)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	SuccessResponse(nil).Send(w, r)
+}
+
 func handleMachineCreateCheckpoint(w http.ResponseWriter, r *http.Request) {
 	PrepareResponse(w, r)
 

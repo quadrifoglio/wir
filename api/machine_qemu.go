@@ -493,6 +493,20 @@ func (m *QemuMachine) Clone(name string) error {
 	return nil
 }
 
+func (m *QemuMachine) ListVolumes() ([]shared.Volume, error) {
+	vols := make([]shared.Volume, 0)
+
+	return vols, nil
+}
+
+func (m *QemuMachine) CreateVolume(shared.Volume) error {
+	return nil
+}
+
+func (m *QemuMachine) DeleteVolume(name string) error {
+	return nil
+}
+
 func (m *QemuMachine) ListCheckpoints() ([]string, error) {
 	path := fmt.Sprintf("%s/qemu/%s/disk.qcow2", shared.APIConfig.MachinePath, m.Name)
 

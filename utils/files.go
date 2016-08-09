@@ -114,11 +114,13 @@ func ReplaceInFile(path, search, replace string) error {
 		return fmt.Errorf("replace in %s: %s", path, err)
 	}
 
-	newData := strings.Replace(string(data), search, replace, -1)
+	if strings.Contains(string(data), search) {
+		newData := strings.Replace(string(data), search, replace, -1)
 
-	err = RewriteFile(path, []byte(newData))
-	if err != nil {
-		return fmt.Errorf("replace in %s: %s", path, err)
+		err = RewriteFile(path, []byte(newData))
+		if err != nil {
+			return fmt.Errorf("replace in %s: %s", path, err)
+		}
 	}
 
 	return nil

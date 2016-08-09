@@ -8,6 +8,12 @@ const (
 	NetworkModeBridge = "bridge"
 )
 
+// Aditional sotrag disk
+type Volume struct {
+	Name string
+	Size uint64
+}
+
 type NetworkDevice struct {
 	Mode string
 	MAC  string
