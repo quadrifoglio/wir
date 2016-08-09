@@ -302,6 +302,11 @@ func (m *QemuMachine) Start() error {
 		}
 	}
 
+	for _, vol := range m.ListVolumes() {
+		args = append(args, "-drive")
+		args = append(args, fmt.Sprintf("file=%s/qemu/%s/volume_%s.qcow2", shared.MachinePath, m.Name, vol.Name))
+	}
+
 	cmd := exec.Command("qemu-system-x86_64", args...)
 	cmd.SysProcAttr = new(syscall.SysProcAttr)
 	cmd.SysProcAttr.Setsid = true
