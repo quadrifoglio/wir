@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -59,9 +60,10 @@ func (m *QemuMachine) Create(img shared.Image, info shared.MachineInfo) error {
 		}
 	}
 
-	// If this is not a migration
 	mig := fmt.Sprintf("%s/%s.tar.gz", shared.APIConfig.MigrationPath, m.Name)
-	if _, err := os.Stat(mig); err == nil {
+
+	// If the migration archive exists, extract it and then remove it
+	if utils.FileExists(mig) {
 		err := utils.UntarDirectory(mig, path)
 		if err != nil {
 			return err
@@ -73,23 +75,28 @@ func (m *QemuMachine) Create(img shared.Image, info shared.MachineInfo) error {
 		}
 	}
 
-	if _, err := os.Stat(disk); os.IsNotExist(err) {
-		err = utils.CreateQcow2(disk, img.Source)
+	// If the disk file already exists, it means that this is a migration
+	// In that case, we should rebase the disk to correspond to the local image
+	if utils.FileExists(disk) {
+		err := utils.RebaseQcow2(disk, img.Source)
 		if err != nil {
 			return err
 		}
 	} else {
-		err := utils.RebaseQcow2(disk, img.Source)
+		err := utils.CreateQcow2(disk, img.Source)
 		if err != nil {
 			return err
 		}
 	}
 
+	// Check the image's size
 	imgSize, err := utils.SizeQcow2(img.Source)
 	if err != nil {
 		return err
 	}
 
+	// If the machine should have a disk space limit, and that limit is greater than
+	// the image size, then resize the disk and it's main partition to fit the limit
 	if m.Disk != 0 && m.Disk > imgSize {
 		err = utils.ResizeQcow2(disk, m.Disk)
 		if err != nil {
@@ -494,15 +501,50 @@ func (m *QemuMachine) Clone(name string) error {
 
 func (m *QemuMachine) ListVolumes() ([]shared.Volume, error) {
 	vols := make([]shared.Volume, 0)
+	path := fmt.Sprintf("%s/qemu/%s", shared.APIConfig.MachinePath, m.Name)
+
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, f := range files {
+		if strings.HasPrefix(f.Name(), "volume_") && len(f.Name()) > 7 {
+			size, err := utils.SizeQcow2(fmt.Sprintf("%s/%s", path, f.Name()))
+			if err != nil {
+				return nil, err
+			}
+
+			var vol shared.Volume
+			vol.Name = f.Name()[7:]
+			vol.Size = size
+
+			vols = append(vols, vol)
+		}
+	}
 
 	return vols, nil
 }
 
-func (m *QemuMachine) CreateVolume(shared.Volume) error {
+func (m *QemuMachine) CreateVolume(vol shared.Volume) error {
+	path := fmt.Sprintf("%s/qemu/%s/volume_%s.qcow2", shared.APIConfig.MachinePath, m.Name, vol.Name)
+
+	err := utils.CreateBaseQcow2(path, vol.Size)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (m *QemuMachine) DeleteVolume(name string) error {
+	path := fmt.Sprintf("%s/qemu/%s/volume_%s.qcow2", shared.APIConfig.MachinePath, m.Name, name)
+
+	err := os.Remove(path)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

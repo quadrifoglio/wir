@@ -13,6 +13,15 @@ import (
 	"github.com/quadrifoglio/wir/shared"
 )
 
+func FileExists(path string) bool {
+	_, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+
+	return true
+}
+
 func TarDirectory(path, output string) error {
 	cmd := exec.Command("tar", "cf", output, "--numeric-owner", "-C", path, ".")
 

@@ -23,6 +23,17 @@ type Partition struct {
 	Filesystem string
 }
 
+func CreateBaseQcow2(file string, size uint64) error {
+	cmd := exec.Command("qemu-img", "create", "-f", "qcow2", file, strconv.FormatUint(size, 10))
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("create qcow2: %s", OneLine(out))
+	}
+
+	return nil
+}
+
 func CreateQcow2(file, base string) error {
 	cmd := exec.Command("qemu-img", "create", "-b", base, "-f", "qcow2", file)
 
