@@ -537,6 +537,10 @@ func (m *QemuMachine) ListVolumes() ([]shared.Volume, error) {
 }
 
 func (m *QemuMachine) CreateVolume(vol shared.Volume) error {
+	if m.State() != shared.StateDown {
+		return errors.InvalidMachineState
+	}
+
 	path := fmt.Sprintf("%s/qemu/%s/volume_%s.qcow2", shared.APIConfig.MachinePath, m.Name, vol.Name)
 
 	err := utils.CreateBaseQcow2(path, vol.Size)
@@ -548,6 +552,10 @@ func (m *QemuMachine) CreateVolume(vol shared.Volume) error {
 }
 
 func (m *QemuMachine) DeleteVolume(name string) error {
+	if m.State() != shared.StateDown {
+		return errors.InvalidMachineState
+	}
+
 	path := fmt.Sprintf("%s/qemu/%s/volume_%s.qcow2", shared.APIConfig.MachinePath, m.Name, name)
 
 	err := os.Remove(path)

@@ -94,6 +94,21 @@ var (
 	backupDelete        = cmdBackup.Command("delete", "Delete a backup")
 	backupDeleteMachine = backupDelete.Arg("machine", "Machine name").Required().String()
 	backupDeleteName    = backupDelete.Arg("name", "Backup name").Required().String()
+
+	cmdVolumes        = kingpin.Command("volumes", "List volumes")
+	cmdVolumesRaw     = cmdVolumes.Flag("raw", "Raw listing (no table)").Bool()
+	cmdVolumesMachine = cmdVolumes.Arg("machine", "Machine name").Required().String()
+
+	cmdVolume = kingpin.Command("volume", "Create or delete a volume")
+
+	volumeCreate        = cmdVolume.Command("create", "Create a volume")
+	volumeCreateMachine = volumeCreate.Arg("machine", "Machine name").Required().String()
+	volumeCreateName    = volumeCreate.Arg("name", "Volume name").Required().String()
+	volumeCreateSize    = volumeCreate.Arg("size", "Volume size").Required().Uint64()
+
+	volumeDelete        = cmdVolume.Command("delete", "Delete a volume")
+	volumeDeleteMachine = volumeDelete.Arg("machine", "Machine name").Required().String()
+	volumeDeleteName    = volumeDelete.Arg("name", "Volume name").Required().String()
 )
 
 func fatal(err error) {
@@ -197,6 +212,15 @@ func main() {
 		break
 	case "backup delete":
 		deleteBackup(remote, *backupDeleteMachine, *backupDeleteName)
+		break
+	case "volumes":
+		listVolumes(remote, *cmdVolumesMachine, *cmdVolumesRaw)
+		break
+	case "volume create":
+		createVolume(remote, *volumeCreateMachine, *volumeCreateName, *volumeCreateSize)
+		break
+	case "volume delete":
+		deleteVolume(remote, *volumeDeleteMachine, *volumeDeleteName)
 		break
 	}
 }

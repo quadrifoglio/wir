@@ -22,7 +22,7 @@ func ListImages(target shared.Remote) ([]shared.Image, error) {
 
 	err = json.Unmarshal(data, &r)
 	if err != nil {
-		return nil, fmt.Errorf("JSON: %s", err)
+		return nil, fmt.Errorf("json: %s", err)
 	}
 
 	return r.Content, apiError(r.ResponseBase)
@@ -38,7 +38,7 @@ func CreateImage(target shared.Remote, i shared.Image) (shared.Image, error) {
 
 	data, err := json.Marshal(i)
 	if err != nil {
-		return r.Content, fmt.Errorf("JSON: %s", err)
+		return r.Content, fmt.Errorf("json: %s", err)
 	}
 
 	data, err = apiRequest(target, "POST", "/images", data)
@@ -48,7 +48,7 @@ func CreateImage(target shared.Remote, i shared.Image) (shared.Image, error) {
 
 	err = json.Unmarshal(data, &r)
 	if err != nil {
-		return r.Content, fmt.Errorf("JSON: %s", err)
+		return r.Content, fmt.Errorf("json: %s", err)
 	}
 
 	return r.Content, apiError(r.ResponseBase)
@@ -69,7 +69,7 @@ func GetImage(target shared.Remote, name string) (shared.Image, error) {
 
 	err = json.Unmarshal(data, &r)
 	if err != nil {
-		return r.Content, fmt.Errorf("JSON: %s", err)
+		return r.Content, fmt.Errorf("json: %s", err)
 	}
 
 	return r.Content, apiError(r.ResponseBase)
@@ -90,7 +90,7 @@ func DeleteImage(target shared.Remote, name string) error {
 
 	err = json.Unmarshal(data, &r)
 	if err != nil {
-		return fmt.Errorf("JSON: %s", err)
+		return fmt.Errorf("json: %s", err)
 	}
 
 	return apiError(r.ResponseBase)
