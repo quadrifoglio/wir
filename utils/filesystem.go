@@ -67,13 +67,13 @@ func SizeQcow2(file string) (uint64, error) {
 	}
 
 	for _, l := range strings.Split(string(out), "\n") {
-		if !strings.Contains(l, ":") {
+		if !strings.Contains(l, "virtual size") {
 			continue
 		}
 
-		r := regexp.MustCompile("\\(([0-9]+)\\)")
+		r := regexp.MustCompile("\\([0-9]+")
 		if d := r.Find([]byte(l)); d != nil {
-			s, err := strconv.ParseInt(string(d), 10, 64)
+			s, err := strconv.ParseInt(string(d[1:]), 10, 64)
 			if err != nil {
 				return 0, fmt.Errorf("get qcow2 size: %s", err)
 			}

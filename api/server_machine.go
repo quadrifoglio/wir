@@ -367,7 +367,7 @@ func handleMachineDeleteVolume(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	name := vars["name"]
-	vol := vars["vol"]
+	vol := vars["volume"]
 
 	m, err := DBGetMachine(name)
 	if err != nil {

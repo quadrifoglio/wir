@@ -302,9 +302,14 @@ func (m *QemuMachine) Start() error {
 		}
 	}
 
-	for _, vol := range m.ListVolumes() {
+	vols, err := m.ListVolumes()
+	if err != nil {
+		return err
+	}
+
+	for _, vol := range vols {
 		args = append(args, "-drive")
-		args = append(args, fmt.Sprintf("file=%s/qemu/%s/volume_%s.qcow2", shared.MachinePath, m.Name, vol.Name))
+		args = append(args, fmt.Sprintf("file=%s/qemu/%s/volume_%s.qcow2", shared.APIConfig.MachinePath, m.Name, vol.Name))
 	}
 
 	cmd := exec.Command("qemu-system-x86_64", args...)
@@ -521,7 +526,7 @@ func (m *QemuMachine) ListVolumes() ([]shared.Volume, error) {
 			}
 
 			var vol shared.Volume
-			vol.Name = f.Name()[7:]
+			vol.Name = f.Name()[7 : len(f.Name())-6]
 			vol.Size = size
 
 			vols = append(vols, vol)
