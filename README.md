@@ -4,8 +4,6 @@
 
 Self-hosted virtualization platform.
 
-![screenshot](misc/screenshot.png)
-
 ## Features
 
 * Create, and manage virtual machines easily
@@ -29,3 +27,9 @@ Self-hosted virtualization platform.
 * ebtables
 * nbd kernel module, qemu-nbd, partx (util-linux), parted
 * for lxc live migration (optional): criu
+
+### Debian packages
+
+```
+pkg-config qemu-system-x86 qemu-kvm qemu-utils lxc lxc-dev ebtables bridge-utils util-linux parted zfsutils-linux
+```

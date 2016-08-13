@@ -149,6 +149,68 @@ func handleMachineUpdate(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(nil).Send(w, r)
 }
 
+func handleMachineMigrate(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
+	type Request struct {
+		Target shared.Remote
+		Live   bool
+	}
+
+	var req Request
+
+	vars := mux.Vars(r)
+	name := vars["name"]
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		ErrorResponse(errors.BadRequest).Send(w, r)
+		return
+	}
+
+	m, err := DBGetMachine(name)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	i, err := DBGetImage(m.Info().Image)
+	if err != nil {
+		ErrorResponse(errors.ImageNotFound).Send(w, r)
+		return
+	}
+
+	if (req.Live && m.State() != shared.StateUp) || (!req.Live && m.State() != shared.StateDown) {
+		ErrorResponse(errors.InvalidMachineState).Send(w, r)
+		return
+	}
+
+	if req.Live {
+		err = LiveMigrateMachine(m, i, shared.Remote{shared.APIConfig.Address, "root", shared.APIConfig.Port}, req.Target)
+	} else {
+		err = MigrateMachine(m, i, shared.Remote{shared.APIConfig.Address, "root", shared.APIConfig.Port}, req.Target)
+	}
+
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	err = m.Delete()
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	err = DBDeleteMachine(name)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	SuccessResponse(nil).Send(w, r)
+}
+
 func handleMachineDelete(w http.ResponseWriter, r *http.Request) {
 	PrepareResponse(w, r)
 
@@ -291,11 +353,12 @@ func handleMachineStats(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(stats).Send(w, r)
 }
 
-func handleMachineListCheckpoints(w http.ResponseWriter, r *http.Request) {
+func handleMachineClone(w http.ResponseWriter, r *http.Request) {
 	PrepareResponse(w, r)
 
 	vars := mux.Vars(r)
 	name := vars["name"]
+	clone := vars["clone"]
 
 	m, err := DBGetMachine(name)
 	if err != nil {
@@ -303,13 +366,13 @@ func handleMachineListCheckpoints(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	chks, err := m.ListCheckpoints()
+	err = m.Clone(clone)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
 	}
 
-	SuccessResponse(chks).Send(w, r)
+	SuccessResponse(nil).Send(w, r)
 }
 
 func handleMachineListVolumes(w http.ResponseWriter, r *http.Request) {
@@ -382,6 +445,27 @@ func handleMachineDeleteVolume(w http.ResponseWriter, r *http.Request) {
 	}
 
 	SuccessResponse(nil).Send(w, r)
+}
+
+func handleMachineListCheckpoints(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
+	vars := mux.Vars(r)
+	name := vars["name"]
+
+	m, err := DBGetMachine(name)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	chks, err := m.ListCheckpoints()
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	SuccessResponse(chks).Send(w, r)
 }
 
 func handleMachineCreateCheckpoint(w http.ResponseWriter, r *http.Request) {
@@ -528,68 +612,6 @@ func handleMachineDeleteBackup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = m.DeleteBackup(bk)
-	if err != nil {
-		ErrorResponse(err).Send(w, r)
-		return
-	}
-
-	SuccessResponse(nil).Send(w, r)
-}
-
-func handleMachineMigrate(w http.ResponseWriter, r *http.Request) {
-	PrepareResponse(w, r)
-
-	type Request struct {
-		Target shared.Remote
-		Live   bool
-	}
-
-	var req Request
-
-	vars := mux.Vars(r)
-	name := vars["name"]
-
-	err := json.NewDecoder(r.Body).Decode(&req)
-	if err != nil {
-		ErrorResponse(errors.BadRequest).Send(w, r)
-		return
-	}
-
-	m, err := DBGetMachine(name)
-	if err != nil {
-		ErrorResponse(err).Send(w, r)
-		return
-	}
-
-	i, err := DBGetImage(m.Info().Image)
-	if err != nil {
-		ErrorResponse(errors.ImageNotFound).Send(w, r)
-		return
-	}
-
-	if (req.Live && m.State() != shared.StateUp) || (!req.Live && m.State() != shared.StateDown) {
-		ErrorResponse(errors.InvalidMachineState).Send(w, r)
-		return
-	}
-
-	if req.Live {
-		err = LiveMigrateMachine(m, i, shared.Remote{shared.APIConfig.Address, "root", shared.APIConfig.Port}, req.Target)
-	} else {
-		err = MigrateMachine(m, i, shared.Remote{shared.APIConfig.Address, "root", shared.APIConfig.Port}, req.Target)
-	}
-
-	if err != nil {
-		ErrorResponse(err).Send(w, r)
-		return
-	}
-
-	err = m.Delete()
-	if err != nil {
-		ErrorResponse(err).Send(w, r)
-		return
-	}
-
-	err = DBDeleteMachine(name)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
