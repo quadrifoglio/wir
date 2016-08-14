@@ -2,6 +2,7 @@ package shared
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 )
 
@@ -43,6 +44,10 @@ func ReadAPIConfig(file string) error {
 	}
 
 	return nil
+}
+
+func MachinePath(backend string) string {
+	return fmt.Sprintf("%s/%s", APIConfig.MachinePath, backend)
 }
 
 func IsStorage(s string) bool {

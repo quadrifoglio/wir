@@ -38,7 +38,7 @@ func (m *LxcMachine) Create(img shared.Image, info shared.MachineInfo) error {
 	m.Memory = info.Memory
 	m.Disk = info.Disk
 
-	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
+	path := shared.MachinePath("lxc")
 	rootfs := fmt.Sprintf("%s/%s/rootfs", path, m.Name)
 
 	err := os.MkdirAll(path, 0777)
@@ -70,24 +70,24 @@ func (m *LxcMachine) Create(img shared.Image, info shared.MachineInfo) error {
 	basePath := fmt.Sprintf("%s/%s", path, m.Name)
 	mig := fmt.Sprintf("%s/%s.tar.gz", shared.APIConfig.MigrationPath, m.Name)
 
-	// If this is not a migration
-	if _, err := os.Stat(mig); os.IsNotExist(err) {
-		err = utils.UntarDirectory(img.Source, basePath)
-		if err != nil {
-			return err
-		}
-
-		err := utils.ReplaceInFile(fmt.Sprintf("%s/config", basePath), "LXC_TEMPLATE_CONFIG", "/usr/share/lxc/config")
-		if err != nil {
-			return err
-		}
-	} else {
+	if utils.FileExists(mig) {
+		// Tthis is a migration
 		err := utils.UntarDirectory(mig, basePath)
 		if err != nil {
 			return err
 		}
 
 		err = os.Remove(mig)
+		if err != nil {
+			return err
+		}
+	} else {
+		err = utils.UntarDirectory(img.Source, basePath)
+		if err != nil {
+			return err
+		}
+
+		err := utils.ReplaceInFile(fmt.Sprintf("%s/config", basePath), "LXC_TEMPLATE_CONFIG", "/usr/share/lxc/config")
 		if err != nil {
 			return err
 		}
@@ -195,7 +195,7 @@ func (m *LxcMachine) Delete() error {
 		return errors.InvalidMachineState
 	}
 
-	base := fmt.Sprintf("%s/lxc/%s", shared.APIConfig.MachinePath, m.Name)
+	base := fmt.Sprintf("%s/%s", shared.MachinePath("lxc"), m.Name)
 
 	if shared.IsStorage("zfs") {
 		err := utils.ZfsDestroy(fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name))
@@ -226,7 +226,7 @@ func (m *LxcMachine) Sysprep(os, hostname, root string) error {
 		return errors.InvalidMachineState
 	}
 
-	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
+	path := shared.MachinePath("lxc")
 
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {
@@ -266,7 +266,7 @@ func (m *LxcMachine) Start() error {
 		}
 	}
 
-	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
+	path := shared.MachinePath("lxc")
 
 	err := utils.DeleteLinesInFile(fmt.Sprintf("%s/%s/config", path, m.Name), "lxc.network")
 	if err != nil {
@@ -343,7 +343,7 @@ func (m *LxcMachine) Stop() error {
 		return errors.InvalidMachineState
 	}
 
-	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
+	path := shared.MachinePath("lxc")
 
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {
@@ -361,7 +361,7 @@ func (m *LxcMachine) Stop() error {
 }
 
 func (m *LxcMachine) State() shared.MachineState {
-	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
+	path := shared.MachinePath("lxc")
 
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {
@@ -383,7 +383,7 @@ func (m *LxcMachine) Stats() (shared.MachineStats, error) {
 		return stats, errors.InvalidMachineState
 	}
 
-	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
+	path := shared.MachinePath("lxc")
 
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {
@@ -445,7 +445,7 @@ func (m *LxcMachine) ListBackups() ([]shared.MachineBackup, error) {
 	bks := make([]shared.MachineBackup, 0)
 
 	if shared.IsStorage("dir") {
-		path := fmt.Sprintf("%s/lxc/%s", shared.APIConfig.MachinePath, m.Name)
+		path := fmt.Sprintf("%s/%s", shared.MachinePath("lxc"), m.Name)
 
 		files, err := ioutil.ReadDir(path)
 		if err != nil {
@@ -496,7 +496,7 @@ func (m *LxcMachine) CreateBackup() (shared.MachineBackup, error) {
 	t := time.Now().Unix()
 
 	if shared.IsStorage("dir") {
-		path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
+		path := shared.MachinePath("lxc")
 		now := time.Now().Unix()
 
 		src := fmt.Sprintf("%s/%s/rootfs", path, m.Name)
@@ -524,7 +524,7 @@ func (m *LxcMachine) RestoreBackup(name string) error {
 	}
 
 	if shared.IsStorage("dir") {
-		path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
+		path := shared.MachinePath("lxc")
 		rootfs := fmt.Sprintf("%s/%s/rootfs", path, m.Name)
 
 		err := os.RemoveAll(rootfs)
@@ -549,7 +549,7 @@ func (m *LxcMachine) RestoreBackup(name string) error {
 }
 
 func (m *LxcMachine) DeleteBackup(name string) error {
-	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
+	path := shared.MachinePath("lxc")
 
 	if shared.IsStorage("dir") {
 		err := os.RemoveAll(fmt.Sprintf("%s/%s_backup_%s", path, m.Name, name))
@@ -569,7 +569,7 @@ func (m *LxcMachine) DeleteBackup(name string) error {
 }
 
 func (m *LxcMachine) ListCheckpoints() ([]string, error) {
-	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
+	path := shared.MachinePath("lxc")
 
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
@@ -589,13 +589,13 @@ func (m *LxcMachine) ListCheckpoints() ([]string, error) {
 }
 
 func (m *LxcMachine) HasCheckpoint(name string) bool {
-	path := fmt.Sprintf("%s/lxc/%s/checkpoint_%s", shared.APIConfig.MachinePath, m.Name, name)
+	path := fmt.Sprintf("%s/%s/checkpoint_%s", shared.MachinePath("lxc"), m.Name, name)
 
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return false
+	if utils.FileExists(path) {
+		return true
 	}
 
-	return true
+	return false
 }
 
 func (m *LxcMachine) CreateCheckpoint(name string) error {
@@ -603,7 +603,7 @@ func (m *LxcMachine) CreateCheckpoint(name string) error {
 		return errors.InvalidMachineState
 	}
 
-	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
+	path := shared.MachinePath("lxc")
 
 	c, err := lxc.NewContainer(m.Name, path)
 	if err != nil {
@@ -619,13 +619,13 @@ func (m *LxcMachine) CreateCheckpoint(name string) error {
 
 	path = fmt.Sprintf("%s/%s/checkpoint_%s", path, m.Name, name)
 
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		err := os.MkdirAll(path, 0777)
+	if utils.FileExists(path) {
+		err := os.RemoveAll(path)
 		if err != nil {
 			return err
 		}
 	} else {
-		err := os.RemoveAll(path)
+		err := os.MkdirAll(path, 0777)
 		if err != nil {
 			return err
 		}
@@ -653,7 +653,7 @@ func (m *LxcMachine) RestoreCheckpoint(name string) error {
 		return fmt.Errorf("checkpoint does not exists")
 	}
 
-	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
+	path := shared.MachinePath("lxc")
 	chk := fmt.Sprintf("%s/%s/checkpoint_%s", path, m.Name, name)
 
 	cmd := exec.Command("lxc-checkpoint", "-P", path, "-r", "-D", chk, "-n", m.Name)
@@ -672,7 +672,7 @@ func (m *LxcMachine) RestoreCheckpoint(name string) error {
 }
 
 func (m *LxcMachine) DeleteCheckpoint(name string) error {
-	path := fmt.Sprintf("%s/lxc/%s/checkpoint_%s", shared.APIConfig.MachinePath, m.Name, name)
+	path := fmt.Sprintf("%s/%s/checkpoint_%s", shared.MachinePath("lxc"), m.Name, name)
 	return os.RemoveAll(path)
 }
 

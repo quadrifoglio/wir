@@ -50,7 +50,7 @@ func MigrateMachine(m Machine, i shared.Image, src, dst shared.Remote) error {
 	}
 
 	mi := m.Info()
-	basePath := fmt.Sprintf("%s/%s/%s", shared.APIConfig.MachinePath, i.Type, mi.Name)
+	basePath := fmt.Sprintf("%s/%s", shared.MachinePath(i.Type), mi.Name)
 	srcPath := fmt.Sprintf("/tmp/%s.tar.gz", mi.Name)
 	dstPath := fmt.Sprintf("%s/%s.tar.gz", conf.MigrationPath, mi.Name)
 
