@@ -46,7 +46,7 @@ func (m *LxcMachine) Create(img shared.Image, info shared.MachineInfo) error {
 		return err
 	}
 
-	if shared.APIConfig.StorageBackend == "zfs" {
+	if shared.IsStorage("zfs") {
 		ds := fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name)
 
 		err := utils.ZfsCreate(ds, rootfs)
@@ -60,7 +60,7 @@ func (m *LxcMachine) Create(img shared.Image, info shared.MachineInfo) error {
 				return err
 			}
 		}
-	} else if shared.APIConfig.StorageBackend == "dir" {
+	} else if shared.IsStorage("dir") {
 		err := os.MkdirAll(rootfs, 0775)
 		if err != nil {
 			return err
@@ -197,7 +197,7 @@ func (m *LxcMachine) Delete() error {
 
 	base := fmt.Sprintf("%s/lxc/%s", shared.APIConfig.MachinePath, m.Name)
 
-	if shared.APIConfig.StorageBackend == "zfs" {
+	if shared.IsStorage("zfs") {
 		err := utils.ZfsDestroy(fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name))
 		if err != nil {
 			return err
@@ -252,7 +252,7 @@ func (m *LxcMachine) Start() error {
 
 	fs := fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name)
 
-	if shared.APIConfig.StorageBackend == "zfs" {
+	if shared.IsStorage("zfs") {
 		mounted, err := utils.ZfsIsMounted(fs)
 		if err != nil {
 			return err
@@ -444,7 +444,7 @@ func (m *LxcMachine) DeleteVolume(name string) error {
 func (m *LxcMachine) ListBackups() ([]shared.MachineBackup, error) {
 	bks := make([]shared.MachineBackup, 0)
 
-	if shared.APIConfig.StorageBackend == "dir" {
+	if shared.IsStorage("dir") {
 		path := fmt.Sprintf("%s/lxc/%s", shared.APIConfig.MachinePath, m.Name)
 
 		files, err := ioutil.ReadDir(path)
@@ -465,7 +465,7 @@ func (m *LxcMachine) ListBackups() ([]shared.MachineBackup, error) {
 				bks = append(bks, shared.MachineBackup(b))
 			}
 		}
-	} else if shared.APIConfig.StorageBackend == "zfs" {
+	} else if shared.IsStorage("zfs") {
 		ds := fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name)
 
 		sns, err := utils.ZfsListSnapshots(ds)
@@ -495,7 +495,7 @@ func (m *LxcMachine) CreateBackup() (shared.MachineBackup, error) {
 
 	t := time.Now().Unix()
 
-	if shared.APIConfig.StorageBackend == "dir" {
+	if shared.IsStorage("dir") {
 		path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
 		now := time.Now().Unix()
 
@@ -506,7 +506,7 @@ func (m *LxcMachine) CreateBackup() (shared.MachineBackup, error) {
 		if err != nil {
 			return b, err
 		}
-	} else if shared.APIConfig.StorageBackend == "zfs" {
+	} else if shared.IsStorage("zfs") {
 		ds := fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name)
 
 		err := utils.ZfsSnapshot(ds, strconv.FormatInt(t, 10))
@@ -523,7 +523,7 @@ func (m *LxcMachine) RestoreBackup(name string) error {
 		return errors.InvalidMachineState
 	}
 
-	if shared.APIConfig.StorageBackend == "dir" {
+	if shared.IsStorage("dir") {
 		path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
 		rootfs := fmt.Sprintf("%s/%s/rootfs", path, m.Name)
 
@@ -536,7 +536,7 @@ func (m *LxcMachine) RestoreBackup(name string) error {
 		if err != nil {
 			return err
 		}
-	} else if shared.APIConfig.StorageBackend == "zfs" {
+	} else if shared.IsStorage("zfs") {
 		ds := fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name)
 
 		err := utils.ZfsRestore(ds, name)
@@ -551,12 +551,12 @@ func (m *LxcMachine) RestoreBackup(name string) error {
 func (m *LxcMachine) DeleteBackup(name string) error {
 	path := fmt.Sprintf("%s/lxc", shared.APIConfig.MachinePath)
 
-	if shared.APIConfig.StorageBackend == "dir" {
+	if shared.IsStorage("dir") {
 		err := os.RemoveAll(fmt.Sprintf("%s/%s_backup_%s", path, m.Name, name))
 		if err != nil {
 			return err
 		}
-	} else if shared.APIConfig.StorageBackend == "zfs" {
+	} else if shared.IsStorage("zfs") {
 		ds := fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name)
 
 		err := utils.ZfsDeleteSnapshot(ds, name)

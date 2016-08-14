@@ -46,14 +46,14 @@ func (m *QemuMachine) Create(img shared.Image, info shared.MachineInfo) error {
 	path := fmt.Sprintf("%s/qemu/%s", shared.APIConfig.MachinePath, m.Name)
 	disk := fmt.Sprintf("%s/disk.qcow2", path)
 
-	if shared.APIConfig.StorageBackend == "zfs" {
+	if shared.IsStorage("zfs") {
 		ds := fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name)
 
 		err := utils.ZfsCreate(ds, path)
 		if err != nil {
 			return err
 		}
-	} else if shared.APIConfig.StorageBackend == "dir" {
+	} else if shared.IsStorage("dir") {
 		err := os.MkdirAll(path, 0775)
 		if err != nil {
 			return err
@@ -184,12 +184,12 @@ func (m *QemuMachine) Delete() error {
 		return errors.InvalidMachineState
 	}
 
-	if shared.APIConfig.StorageBackend == "zfs" {
+	if shared.IsStorage("zfs") {
 		err := utils.ZfsDestroy(fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name))
 		if err != nil {
 			return err
 		}
-	} else if shared.APIConfig.StorageBackend == "dir" {
+	} else if shared.IsStorage("dir") {
 		err := os.RemoveAll(fmt.Sprintf("%s/qemu/%s", shared.APIConfig.MachinePath, m.Name))
 		if err != nil {
 			return err

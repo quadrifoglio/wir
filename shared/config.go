@@ -44,3 +44,7 @@ func ReadAPIConfig(file string) error {
 
 	return nil
 }
+
+func IsStorage(s string) bool {
+	return APIConfig.StorageBackend == s
+}
