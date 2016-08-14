@@ -27,8 +27,6 @@ type Machine interface {
 	State() shared.MachineState
 	Stats() (shared.MachineStats, error)
 
-	Clone(name string) error
-
 	ListVolumes() ([]shared.Volume, error)
 	CreateVolume(shared.Volume) error
 	DeleteVolume(name string) error

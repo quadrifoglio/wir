@@ -476,39 +476,6 @@ func (m *QemuMachine) Stats() (shared.MachineStats, error) {
 	return stats, nil
 }
 
-func (m *QemuMachine) Clone(name string) error {
-	if m.State() != shared.StateDown {
-		return errors.InvalidMachineState
-	}
-
-	path := fmt.Sprintf("%s/qemu", shared.APIConfig.MachinePath)
-
-	if shared.APIConfig.StorageBackend == "dir" {
-		src := fmt.Sprintf("%s/%s", path, m.Name)
-		dst := fmt.Sprintf("%s/%s", path, name)
-
-		err := os.MkdirAll(dst, 0775)
-		if err != nil {
-			return err
-		}
-
-		err = utils.CopyFolder(src, dst)
-		if err != nil {
-			return err
-		}
-	} else if shared.APIConfig.StorageBackend == "zfs" {
-		src := fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, m.Name)
-		dst := fmt.Sprintf("%s/%s", shared.APIConfig.ZfsPool, name)
-
-		err := utils.ZfsClone(src, dst)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func (m *QemuMachine) ListVolumes() ([]shared.Volume, error) {
 	vols := make([]shared.Volume, 0)
 	path := fmt.Sprintf("%s/qemu/%s", shared.APIConfig.MachinePath, m.Name)

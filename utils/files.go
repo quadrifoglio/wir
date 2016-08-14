@@ -148,7 +148,7 @@ func DeleteLinesInFile(path, prefix string) error {
 		}
 	}
 
-	err = RewriteFile(path, []byte(newData))
+	err = RewriteFile(path, newData)
 	if err != nil {
 		return fmt.Errorf("delete lines in %s: %s", path, err)
 	}

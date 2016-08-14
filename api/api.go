@@ -110,8 +110,6 @@ func Start() error {
 	r.HandleFunc("/machines/{name}", handleMachineMigrate).Methods("MIGRATE")
 	r.HandleFunc("/machines/{name}", handleMachineDelete).Methods("DELETE")
 
-	r.HandleFunc("/machines/{name}/{clone}", handleMachineClone).Methods("CLONE")
-
 	r.HandleFunc("/machines/{name}/volumes", handleMachineListVolumes).Methods("GET")
 	r.HandleFunc("/machines/{name}/volumes", handleMachineCreateVolume).Methods("POST")
 	r.HandleFunc("/machines/{name}/volumes/{volume}", handleMachineDeleteVolume).Methods("DELETE")

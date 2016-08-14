@@ -353,28 +353,6 @@ func handleMachineStats(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(stats).Send(w, r)
 }
 
-func handleMachineClone(w http.ResponseWriter, r *http.Request) {
-	PrepareResponse(w, r)
-
-	vars := mux.Vars(r)
-	name := vars["name"]
-	clone := vars["clone"]
-
-	m, err := DBGetMachine(name)
-	if err != nil {
-		ErrorResponse(err).Send(w, r)
-		return
-	}
-
-	err = m.Clone(clone)
-	if err != nil {
-		ErrorResponse(err).Send(w, r)
-		return
-	}
-
-	SuccessResponse(nil).Send(w, r)
-}
-
 func handleMachineListVolumes(w http.ResponseWriter, r *http.Request) {
 	PrepareResponse(w, r)
 
