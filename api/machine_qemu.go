@@ -1,7 +1,6 @@
 package api
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -150,6 +149,11 @@ func (m *QemuMachine) Update(info shared.MachineInfo) error {
 				err := net.DeleteInterface(*miface)
 				if err != nil {
 					return err
+				}
+
+				if iface.Mode == shared.NetworkModeNone {
+					// TODO: Delete interface
+					continue
 				}
 
 				if len(iface.Mode) > 0 && iface.Mode != miface.Mode {
@@ -316,29 +320,10 @@ func (m *QemuMachine) Start() error {
 	cmd.SysProcAttr = new(syscall.SysProcAttr)
 	cmd.SysProcAttr.Setsid = true
 
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return fmt.Errorf("qemu's stdout: %s", err)
-	}
-
-	go func() {
-		in := bufio.NewScanner(stdout)
-		for in.Scan() {
-			log.Printf("error in qemu machine %s: %s\n", m.Name, in.Text())
-		}
-	}()
-
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
 		return fmt.Errorf("qemu's stderr: %s", err)
 	}
-
-	go func() {
-		in := bufio.NewScanner(stderr)
-		for in.Scan() {
-			log.Printf("error in qemu machine %s: %s\n", m.Name, in.Text())
-		}
-	}()
 
 	err = cmd.Start()
 	if err != nil {
@@ -355,6 +340,11 @@ func (m *QemuMachine) Start() error {
 			errs = err.Error()
 		} else {
 			errs = "exit status 0"
+		}
+
+		data, err := ioutil.ReadAll(stderr)
+		if err == nil {
+			log.Println(utils.OneLine(data))
 		}
 
 		log.Printf("qemu machine %s: process exited: %s", m.Name, errs)
