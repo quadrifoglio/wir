@@ -1,6 +1,10 @@
 {
 	"NodeID": 1,
-	"AdminEmail": "admin@olivier.com",
+
+	"MailServer": "mail.newco.com",
+	"MailPassword": "wir",
+	"MailSource": "wir@newco.com",
+	"MailDestination": "admin@newco.com",
 
 	"Address": "127.0.0.1",
 	"Port": 1997,
@@ -10,7 +14,7 @@
 	"ZfsPool": "wir",
 
 	"BridgeIface": "eth0",
-	"EnableNetMonitor": false,
+	"EnableNetMonitor": true,
 	"PPSAlert": 70000,
 	"PPSStop": 90000,
 

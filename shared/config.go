@@ -7,8 +7,12 @@ import (
 )
 
 type APIConfigStruct struct {
-	NodeID     byte // (0-255)
-	AdminEmail string
+	NodeID byte // (0-255)
+
+	MailServer      string
+	MailPassword    string
+	MailSource      string
+	MailDestination string
 
 	Address string
 	Port    int

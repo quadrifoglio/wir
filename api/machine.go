@@ -8,6 +8,7 @@ import (
 
 	"github.com/quadrifoglio/wir/net"
 	"github.com/quadrifoglio/wir/shared"
+	"github.com/quadrifoglio/wir/utils"
 )
 
 type Machine interface {
@@ -64,30 +65,49 @@ func MonitorNetwork(m Machine) {
 				break
 			}
 
+			var alerted bool
+
 			for i, _ := range m.Info().Interfaces {
 				a := net.MonitorInterface(MachineIfName(m, i), "rx")
+				fmt.Println("mdr ", MachineIfName(m, i), a)
 
 				if a == net.MonitorCancel {
 					break
 				}
 				if a == net.MonitorAlert {
-					// TODO: Send email
+					msg := fmt.Sprintf("Machine %s has reached the 'alert' level number of pps.", m.Info().Name)
+
+					err := utils.SendAlertMail(msg)
+					if err != nil {
+						log.Printf("iface monitor %s: %s\n", MachineIfName(m, i), err)
+					}
+
+					alerted = true
 				}
 				if a == net.MonitorStop {
-					// TODO: Send email
-
-					log.Println("iface monitor %s: shuting down (to many pps)", MachineIfName(m, i))
+					log.Printf("iface monitor %s: shuting down (to many pps)\n", MachineIfName(m, i))
 
 					err := m.Stop()
 					if err != nil {
 						log.Println(err)
 					}
 
+					msg := fmt.Sprintf("Machine %s has reached the 'stop' level number of pps. Shutting down.", m.Info().Name)
+					err = utils.SendAlertMail(msg)
+					if err != nil {
+						log.Printf("iface monitor %s: %s\n", MachineIfName(m, i), err)
+					}
+
 					break
 				}
 			}
 
-			time.Sleep(10 * time.Second)
+			if alerted {
+				time.Sleep(15 * time.Minute)
+				alerted = false
+			} else {
+				time.Sleep(10 * time.Second)
+			}
 		}
 	}(m)
 }
