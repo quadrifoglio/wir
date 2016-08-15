@@ -30,6 +30,10 @@ type Machine interface {
 	State() shared.MachineState
 	Stats() (shared.MachineStats, error)
 
+	ListInterfaces() []shared.NetworkDevice
+	CreateInterface(shared.NetworkDevice) error
+	DeleteInterface(index int) error
+
 	ListVolumes() ([]shared.Volume, error)
 	CreateVolume(shared.Volume) error
 	DeleteVolume(name string) error
@@ -69,7 +73,7 @@ func MonitorNetwork(m Machine) {
 
 			var alerted bool
 
-			for i, _ := range m.Info().Interfaces {
+			for i, _ := range m.ListInterfaces() {
 				a := net.MonitorInterface(MachineIfName(m, i), "rx")
 
 				if a == net.MonitorCancel {

@@ -8,16 +8,17 @@ const (
 	NetworkModeBridge = "bridge"
 )
 
-// Aditional sotrag disk
+// Aditional sotrage disk
 type Volume struct {
 	Name string
 	Size uint64
 }
 
 type NetworkDevice struct {
-	Mode string
-	MAC  string
-	IP   string
+	Index int
+	Mode  string
+	MAC   string
+	IP    string
 }
 
 type MachineInfo struct {
@@ -27,8 +28,6 @@ type MachineInfo struct {
 	Cores  int
 	Memory int
 	Disk   uint64
-
-	Interfaces []NetworkDevice `json:",omitempty"`
 }
 
 type MachineStats struct {

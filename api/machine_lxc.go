@@ -21,6 +21,8 @@ import (
 
 type LxcMachine struct {
 	shared.MachineInfo
+
+	Interfaces []shared.NetworkDevice
 }
 
 func (m *LxcMachine) Info() *shared.MachineInfo {
@@ -127,20 +129,6 @@ func (m *LxcMachine) Create(img shared.Image, info shared.MachineInfo) error {
 		return fmt.Errorf("can not write config: %s", err)
 	}
 
-	var i int = 0
-	for _, iface := range info.Interfaces {
-		if iface.Mode != shared.NetworkModeNone {
-			m.Interfaces = append(m.Interfaces, iface)
-
-			err := net.SetupInterface(&m.Interfaces[i])
-			if err != nil {
-				return err
-			}
-
-			i++
-		}
-	}
-
 	return nil
 }
 
@@ -149,42 +137,8 @@ func (m *LxcMachine) Update(info shared.MachineInfo) error {
 		m.Cores = info.Cores
 	}
 
-	if info.Memory != 0 && info.Cores != m.Cores {
-		m.Memory = info.Cores
-	}
-
-	if len(info.Interfaces) > 0 {
-		for i, iface := range info.Interfaces {
-			if len(m.Interfaces) > i {
-				miface := m.Interfaces[i]
-
-				err := net.DeleteInterface(miface)
-				if err != nil {
-					return err
-				}
-
-				if len(iface.Mode) > 0 && iface.Mode != miface.Mode {
-					miface.Mode = iface.Mode
-				}
-				if len(iface.MAC) > 0 {
-					miface.MAC = iface.MAC
-				}
-				if len(iface.IP) > 0 {
-					miface.IP = iface.IP
-				}
-
-				err = net.SetupInterface(&m.Interfaces[i])
-				if err != nil {
-					return err
-				}
-			} else {
-				m.Interfaces = append(m.Interfaces, iface)
-				err := net.SetupInterface(&m.Interfaces[len(m.Interfaces)-1])
-				if err != nil {
-					return err
-				}
-			}
-		}
+	if info.Memory != 0 && info.Memory != m.Memory {
+		m.Memory = info.Memory
 	}
 
 	return nil
@@ -209,12 +163,10 @@ func (m *LxcMachine) Delete() error {
 		return err
 	}
 
-	for _, iface := range m.Interfaces {
-		if iface.Mode != shared.NetworkModeNone {
-			err := net.DeleteInterface(iface)
-			if err != nil {
-				return err
-			}
+	for _, iface := range m.ListInterfaces() {
+		err := net.DeleteInterface(iface)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -278,7 +230,7 @@ func (m *LxcMachine) Start() error {
 		return err
 	}
 
-	for i, iface := range m.Interfaces {
+	for i, iface := range m.ListInterfaces() {
 		if iface.Mode == shared.NetworkModeBridge {
 			if err := c.SetConfigItem("lxc.network.type", "veth"); err != nil {
 				return err
@@ -427,6 +379,36 @@ func (m *LxcMachine) Stats() (shared.MachineStats, error) {
 	stats.RAMFree = uint64(m.Memory) - stats.RAMUsed
 
 	return stats, nil
+}
+
+func (m *LxcMachine) ListInterfaces() []shared.NetworkDevice {
+	return m.Interfaces
+}
+
+func (m *LxcMachine) CreateInterface(iface shared.NetworkDevice) error {
+	iface.Index = len(m.Interfaces)
+
+	err := net.SetupInterface(&iface)
+	if err != nil {
+		return err
+	}
+
+	m.Interfaces = append(m.Interfaces, iface)
+	return nil
+}
+
+func (m *LxcMachine) DeleteInterface(index int) error {
+	if index >= len(m.Interfaces) {
+		return fmt.Errorf("interface index %d dost not exist", index)
+	}
+
+	err := net.DeleteInterface(m.Interfaces[index])
+	if err != nil {
+		return err
+	}
+
+	m.Interfaces = append(m.Interfaces[:index], m.Interfaces[index+1:]...)
+	return nil
 }
 
 func (m *LxcMachine) ListVolumes() ([]shared.Volume, error) {

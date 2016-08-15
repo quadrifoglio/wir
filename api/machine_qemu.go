@@ -23,8 +23,9 @@ import (
 type QemuMachine struct {
 	shared.MachineInfo
 
-	PID      int
-	MainPart string
+	Interfaces []shared.NetworkDevice
+	MainPart   string
+	PID        int
 }
 
 func (m *QemuMachine) Info() *shared.MachineInfo {
@@ -41,6 +42,7 @@ func (m *QemuMachine) Create(img shared.Image, info shared.MachineInfo) error {
 	m.Cores = info.Cores
 	m.Memory = info.Memory
 	m.Disk = info.Disk
+	m.Interfaces = make([]shared.NetworkDevice, 0)
 
 	path := fmt.Sprintf("%s/%s", shared.MachinePath("qemu"), m.Name)
 	disk := fmt.Sprintf("%s/disk.qcow2", path)
@@ -115,20 +117,6 @@ func (m *QemuMachine) Create(img shared.Image, info shared.MachineInfo) error {
 		}
 	}
 
-	var i int = 0
-	for _, iface := range info.Interfaces {
-		if iface.Mode != shared.NetworkModeNone {
-			m.Interfaces = append(m.Interfaces, iface)
-
-			err := net.SetupInterface(&m.Interfaces[i])
-			if err != nil {
-				return err
-			}
-
-			i++
-		}
-	}
-
 	return nil
 }
 
@@ -137,47 +125,8 @@ func (m *QemuMachine) Update(info shared.MachineInfo) error {
 		m.Cores = info.Cores
 	}
 
-	if info.Memory != 0 && info.Cores != m.Cores {
-		m.Memory = info.Cores
-	}
-
-	if len(info.Interfaces) > 0 {
-		for i, iface := range info.Interfaces {
-			if len(m.Interfaces) > i {
-				miface := &m.Interfaces[i]
-
-				err := net.DeleteInterface(*miface)
-				if err != nil {
-					return err
-				}
-
-				if iface.Mode == shared.NetworkModeNone {
-					// TODO: Delete interface
-					continue
-				}
-
-				if len(iface.Mode) > 0 && iface.Mode != miface.Mode {
-					miface.Mode = iface.Mode
-				}
-				if len(iface.MAC) > 0 {
-					miface.MAC = iface.MAC
-				}
-				if len(iface.IP) > 0 {
-					miface.IP = iface.IP
-				}
-
-				err = net.SetupInterface(&m.Interfaces[i])
-				if err != nil {
-					return err
-				}
-			} else {
-				m.Interfaces = append(m.Interfaces, iface)
-				err := net.SetupInterface(&m.Interfaces[len(m.Interfaces)-1])
-				if err != nil {
-					return err
-				}
-			}
-		}
+	if info.Memory != 0 && info.Memory != m.Memory {
+		m.Memory = info.Memory
 	}
 
 	return nil
@@ -195,6 +144,13 @@ func (m *QemuMachine) Delete() error {
 		}
 	} else if shared.IsStorage("dir") {
 		err := os.RemoveAll(fmt.Sprintf("%s/%s", shared.MachinePath("qemu"), m.Name))
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, iface := range m.ListInterfaces() {
+		err := net.DeleteInterface(iface)
 		if err != nil {
 			return err
 		}
@@ -274,7 +230,7 @@ func (m *QemuMachine) Start() error {
 		args = append(args, "none")
 	}
 
-	for i, iface := range m.Interfaces {
+	for i, iface := range m.ListInterfaces() {
 		if iface.Mode == shared.NetworkModeBridge {
 			tap, err := net.OpenTAP(MachineIfName(m, i))
 			if err != nil {
@@ -464,6 +420,36 @@ func (m *QemuMachine) Stats() (shared.MachineStats, error) {
 	stats.RAMUsed = ram
 
 	return stats, nil
+}
+
+func (m *QemuMachine) ListInterfaces() []shared.NetworkDevice {
+	return m.Interfaces
+}
+
+func (m *QemuMachine) CreateInterface(iface shared.NetworkDevice) error {
+	iface.Index = len(m.Interfaces)
+
+	err := net.SetupInterface(&iface)
+	if err != nil {
+		return err
+	}
+
+	m.Interfaces = append(m.Interfaces, iface)
+	return nil
+}
+
+func (m *QemuMachine) DeleteInterface(index int) error {
+	if index >= len(m.Interfaces) {
+		return fmt.Errorf("interface index %d dost not exist", index)
+	}
+
+	err := net.DeleteInterface(m.Interfaces[index])
+	if err != nil {
+		return err
+	}
+
+	m.Interfaces = append(m.Interfaces[:index], m.Interfaces[index+1:]...)
+	return nil
 }
 
 func (m *QemuMachine) ListVolumes() ([]shared.Volume, error) {
