@@ -1,7 +1,8 @@
 package api
 
 import (
-	"encoding/json"
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"strings"
 
@@ -34,12 +35,15 @@ func DBStoreImage(i shared.Image) error {
 			return err
 		}
 
-		data, err := json.Marshal(i)
+		buf := bytes.NewBuffer(nil)
+		enc := gob.NewEncoder(buf)
+
+		err = enc.Encode(i)
 		if err != nil {
 			return err
 		}
 
-		err = bucket.Put([]byte(i.Name), data)
+		err = bucket.Put([]byte(i.Name), buf.Bytes())
 		if err != nil {
 			return err
 		}
@@ -62,7 +66,10 @@ func DBListImages() ([]shared.Image, error) {
 		b.ForEach(func(_, v []byte) error {
 			var i shared.Image
 
-			err := json.Unmarshal(v, &i)
+			buf := bytes.NewBuffer(v)
+			dec := gob.NewDecoder(buf)
+
+			err := dec.Decode(&i)
 			if err != nil {
 				return err
 			}
@@ -91,7 +98,10 @@ func DBGetImage(name string) (shared.Image, error) {
 			return errors.NotFound
 		}
 
-		err := json.Unmarshal(data, &img)
+		buf := bytes.NewBuffer(data)
+		dec := gob.NewDecoder(buf)
+
+		err := dec.Decode(&img)
 		if err != nil {
 			return err
 		}
@@ -159,10 +169,16 @@ func DBStoreMachine(m Machine) error {
 			m.Info().Index = n
 		}
 
-		data, err := json.Marshal(m)
+		buf := bytes.NewBuffer(nil)
+		enc := gob.NewEncoder(buf)
+
+		err = enc.Encode(m)
 		if err != nil {
 			return err
 		}
+
+		data := []byte(fmt.Sprintf("%s:", m.Type()))
+		data = append(data, buf.Bytes()...)
 
 		err = bucket.Put([]byte(m.Info().Name), data)
 		if err != nil {
@@ -175,6 +191,17 @@ func DBStoreMachine(m Machine) error {
 	return err
 }
 
+func DBMachineType(data []byte) string {
+	var t string
+
+	i := strings.Index(string(data), ":")
+	if i > 0 {
+		t = string(data[:i])
+	}
+
+	return t
+}
+
 func DBListMachines() (Machines, error) {
 	var ms []Machine = make([]Machine, 0)
 
@@ -185,24 +212,33 @@ func DBListMachines() (Machines, error) {
 		}
 
 		b.ForEach(func(_, v []byte) error {
-			if strings.Contains(string(v), "\"Type\":\"qemu\"") {
+			t := DBMachineType(v)
+			if len(t) == 0 {
+				return fmt.Errorf("database: no machine type stored")
+			}
+
+			if t == "qemu" {
 				m := new(QemuMachine)
+				dec := gob.NewDecoder(bytes.NewBuffer(v[len(t)+1:]))
 
-				err := json.Unmarshal(v, m)
+				err := dec.Decode(m)
 				if err != nil {
 					return err
 				}
 
 				ms = append(ms, m)
-			} else if strings.Contains(string(v), "\"Type\":\"lxc\"") {
+			} else if t == "lxc" {
 				m := new(LxcMachine)
+				dec := gob.NewDecoder(bytes.NewBuffer(v[len(t)+1:]))
 
-				err := json.Unmarshal(v, m)
+				err := dec.Decode(m)
 				if err != nil {
 					return err
 				}
 
 				ms = append(ms, m)
+			} else {
+				return fmt.Errorf("database: invalid machine type: %s", t)
 			}
 
 			return nil
@@ -229,24 +265,33 @@ func DBGetMachine(name string) (Machine, error) {
 			return errors.NotFound
 		}
 
-		if strings.Contains(string(data), "\"Type\":\"qemu\"") {
+		t := DBMachineType(data)
+		if len(t) == 0 {
+			return fmt.Errorf("database: no machine type stored")
+		}
+
+		if t == "qemu" {
 			mm := new(QemuMachine)
+			dec := gob.NewDecoder(bytes.NewBuffer(data[len(t)+1:]))
 
-			err := json.Unmarshal(data, mm)
+			err := dec.Decode(mm)
 			if err != nil {
 				return err
 			}
 
 			m = mm
-		} else if strings.Contains(string(data), "\"Type\":\"lxc\"") {
+		} else if t == "lxc" {
 			mm := new(LxcMachine)
+			dec := gob.NewDecoder(bytes.NewBuffer(data[len(t)+1:]))
 
-			err := json.Unmarshal(data, mm)
+			err := dec.Decode(mm)
 			if err != nil {
 				return err
 			}
 
 			m = mm
+		} else {
+			return fmt.Errorf("database: invalid machine type: %s", t)
 		}
 
 		return nil

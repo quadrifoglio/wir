@@ -12,6 +12,8 @@ import (
 )
 
 type Machine interface {
+	// Used for sending a representaion of the machine
+	// To the clinets
 	json.Marshaler
 
 	Create(img shared.Image, info shared.MachineInfo) error
@@ -69,7 +71,6 @@ func MonitorNetwork(m Machine) {
 
 			for i, _ := range m.Info().Interfaces {
 				a := net.MonitorInterface(MachineIfName(m, i), "rx")
-				fmt.Println("mdr ", MachineIfName(m, i), a)
 
 				if a == net.MonitorCancel {
 					break
