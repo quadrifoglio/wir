@@ -15,10 +15,9 @@ type Volume struct {
 }
 
 type NetworkDevice struct {
-	Index int
-	Mode  string
-	MAC   string
-	IP    string
+	Mode string
+	MAC  string
+	IP   string
 }
 
 type MachineInfo struct {

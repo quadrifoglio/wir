@@ -31,7 +31,7 @@ type Machine interface {
 	Stats() (shared.MachineStats, error)
 
 	ListInterfaces() []shared.NetworkDevice
-	CreateInterface(shared.NetworkDevice) error
+	CreateInterface(shared.NetworkDevice) (shared.NetworkDevice, error)
 	DeleteInterface(index int) error
 
 	ListVolumes() ([]shared.Volume, error)

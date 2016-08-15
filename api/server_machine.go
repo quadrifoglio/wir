@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strconv"
 
 	"github.com/gorilla/mux"
 
@@ -333,6 +334,91 @@ func handleMachineStats(w http.ResponseWriter, r *http.Request) {
 	}
 
 	SuccessResponse(stats).Send(w, r)
+}
+
+func handleMachineListInterfaces(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
+	vars := mux.Vars(r)
+	name := vars["name"]
+
+	m, err := DBGetMachine(name)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	ifaces := m.ListInterfaces()
+	SuccessResponse(ifaces).Send(w, r)
+}
+
+func handleMachineCreateInterface(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
+	vars := mux.Vars(r)
+	name := vars["name"]
+
+	var iface shared.NetworkDevice
+
+	m, err := DBGetMachine(name)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	err = json.NewDecoder(r.Body).Decode(&iface)
+	if err != nil {
+		ErrorResponse(errors.BadRequest).Send(w, r)
+		return
+	}
+
+	iface, err = m.CreateInterface(iface)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	err = DBStoreMachine(m)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	SuccessResponse(iface).Send(w, r)
+}
+
+func handleMachineDeleteInterface(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
+	vars := mux.Vars(r)
+	name := vars["name"]
+	iface := vars["interface"]
+
+	index, err := strconv.Atoi(iface)
+	if err != nil {
+		ErrorResponse(errors.BadRequest).Send(w, r)
+		return
+	}
+
+	m, err := DBGetMachine(name)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	err = m.DeleteInterface(index)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	err = DBStoreMachine(m)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	SuccessResponse(nil).Send(w, r)
 }
 
 func handleMachineListVolumes(w http.ResponseWriter, r *http.Request) {

@@ -385,16 +385,14 @@ func (m *LxcMachine) ListInterfaces() []shared.NetworkDevice {
 	return m.Interfaces
 }
 
-func (m *LxcMachine) CreateInterface(iface shared.NetworkDevice) error {
-	iface.Index = len(m.Interfaces)
-
+func (m *LxcMachine) CreateInterface(iface shared.NetworkDevice) (shared.NetworkDevice, error) {
 	err := net.SetupInterface(&iface)
 	if err != nil {
-		return err
+		return iface, err
 	}
 
 	m.Interfaces = append(m.Interfaces, iface)
-	return nil
+	return iface, nil
 }
 
 func (m *LxcMachine) DeleteInterface(index int) error {
