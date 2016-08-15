@@ -360,15 +360,20 @@ func handleMachineCreateInterface(w http.ResponseWriter, r *http.Request) {
 
 	var iface shared.NetworkDevice
 
-	m, err := DBGetMachine(name)
+	err := json.NewDecoder(r.Body).Decode(&iface)
 	if err != nil {
-		ErrorResponse(err).Send(w, r)
+		ErrorResponse(errors.BadRequest).Send(w, r)
 		return
 	}
 
-	err = json.NewDecoder(r.Body).Decode(&iface)
+	if iface.Mode != shared.NetworkModeBridge {
+		ErrorResponse(fmt.Errorf("only bridge mode supported at the moment"))
+		return
+	}
+
+	m, err := DBGetMachine(name)
 	if err != nil {
-		ErrorResponse(errors.BadRequest).Send(w, r)
+		ErrorResponse(err).Send(w, r)
 		return
 	}
 
@@ -385,6 +390,53 @@ func handleMachineCreateInterface(w http.ResponseWriter, r *http.Request) {
 	}
 
 	SuccessResponse(iface).Send(w, r)
+}
+
+func handleMachineUpdateInterface(w http.ResponseWriter, r *http.Request) {
+	PrepareResponse(w, r)
+
+	vars := mux.Vars(r)
+	name := vars["name"]
+	ifaceName := vars["interface"]
+
+	index, err := strconv.Atoi(ifaceName)
+	if err != nil {
+		ErrorResponse(errors.BadRequest).Send(w, r)
+		return
+	}
+
+	var iface shared.NetworkDevice
+
+	err = json.NewDecoder(r.Body).Decode(&iface)
+	if err != nil {
+		ErrorResponse(errors.BadRequest).Send(w, r)
+		return
+	}
+
+	if iface.Mode != shared.NetworkModeBridge {
+		ErrorResponse(fmt.Errorf("only bridge mode supported at the moment"))
+		return
+	}
+
+	m, err := DBGetMachine(name)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	err = m.UpdateInterface(index, iface)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	err = DBStoreMachine(m)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	SuccessResponse(nil).Send(w, r)
 }
 
 func handleMachineDeleteInterface(w http.ResponseWriter, r *http.Request) {

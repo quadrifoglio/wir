@@ -112,6 +112,7 @@ func Start() error {
 
 	r.HandleFunc("/machines/{name}/interfaces", handleMachineListInterfaces).Methods("GET")
 	r.HandleFunc("/machines/{name}/interfaces", handleMachineCreateInterface).Methods("POST")
+	r.HandleFunc("/machines/{name}/interfaces/{interface}", handleMachineUpdateInterface).Methods("POST")
 	r.HandleFunc("/machines/{name}/interfaces/{interface}", handleMachineDeleteInterface).Methods("DELETE")
 
 	r.HandleFunc("/machines/{name}/volumes", handleMachineListVolumes).Methods("GET")

@@ -395,6 +395,33 @@ func (m *LxcMachine) CreateInterface(iface shared.NetworkDevice) (shared.Network
 	return iface, nil
 }
 
+func (m *LxcMachine) UpdateInterface(index int, iface shared.NetworkDevice) error {
+	if index >= len(m.Interfaces) {
+		return fmt.Errorf("interface index %d dost not exist", index)
+	}
+
+	miface := &m.Interfaces[index]
+
+	if len(iface.IP) > 0 && iface.IP != miface.IP {
+		miface.IP = iface.IP
+	}
+	if len(iface.MAC) > 0 && iface.MAC != miface.MAC {
+		miface.MAC = iface.MAC
+	}
+
+	err := net.DeleteInterface(*miface)
+	if err != nil {
+		return err
+	}
+
+	err = net.SetupInterface(miface)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (m *LxcMachine) DeleteInterface(index int) error {
 	if index >= len(m.Interfaces) {
 		return fmt.Errorf("interface index %d dost not exist", index)
