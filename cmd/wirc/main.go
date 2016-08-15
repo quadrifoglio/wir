@@ -37,15 +37,12 @@ var (
 
 	cmdMachine = kingpin.Command("machine", "Machine management")
 
-	machineCreate        = cmdMachine.Command("create", "Create a new machine based on an existing image")
-	machineCreateName    = machineCreate.Flag("name", "Name of the machine (will be generated if not specified)").Short('n').String()
-	machineCreateCores   = machineCreate.Flag("cpus", "Number of CPU cores to use").Short('c').Default("1").Int()
-	machineCreateMem     = machineCreate.Flag("memory", "Memory limit in MiB").Short('m').Default("512").Int()
-	machineCreateDisk    = machineCreate.Flag("disk", "Disk space limit in bytes").Short('d').Uint()
-	machineCreateNetMode = machineCreate.Flag("net", "Network setup to use").String()
-	machineCreateNetMAC  = machineCreate.Flag("mac", "MAC address to use").String()
-	machineCreateNetIP   = machineCreate.Flag("ip", "IP address to use").String()
-	machineCreateImage   = machineCreate.Arg("image", "Name of image to use").Required().String()
+	machineCreate      = cmdMachine.Command("create", "Create a new machine based on an existing image")
+	machineCreateName  = machineCreate.Flag("name", "Name of the machine (will be generated if not specified)").Short('n').String()
+	machineCreateCores = machineCreate.Flag("cpus", "Number of CPU cores to use").Short('c').Default("1").Int()
+	machineCreateMem   = machineCreate.Flag("memory", "Memory limit in MiB").Short('m').Default("512").Int()
+	machineCreateDisk  = machineCreate.Flag("disk", "Disk space limit in bytes").Short('d').Uint()
+	machineCreateImage = machineCreate.Arg("image", "Name of image to use").Required().String()
 
 	machineShow     = cmdMachine.Command("show", "Show machine details")
 	machineShowName = machineShow.Arg("name", "Machine name").Required().String()
