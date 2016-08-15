@@ -7,15 +7,15 @@ import (
 	"github.com/quadrifoglio/wir/shared"
 )
 
-func CreateInterface(target shared.Remote, machine, mode, mac, ip string) (shared.NetworkDevice, error) {
+func CreateInterface(target shared.Remote, machine, mode, mac, ip string) (shared.NetDev, error) {
 	type Response struct {
 		ResponseBase
-		Content shared.NetworkDevice
+		Content shared.NetDev
 	}
 
 	var r Response
 
-	data, err := json.Marshal(shared.NetworkDevice{mode, mac, ip})
+	data, err := json.Marshal(shared.NetDev{mode, mac, ip})
 	if err != nil {
 		return r.Content, fmt.Errorf("json: %s", err)
 	}
@@ -33,15 +33,15 @@ func CreateInterface(target shared.Remote, machine, mode, mac, ip string) (share
 	return r.Content, apiError(r.ResponseBase)
 }
 
-func UpdateInterface(target shared.Remote, machine string, index int, mode, mac, ip string) (shared.NetworkDevice, error) {
+func UpdateInterface(target shared.Remote, machine string, index int, mode, mac, ip string) (shared.NetDev, error) {
 	type Response struct {
 		ResponseBase
-		Content shared.NetworkDevice
+		Content shared.NetDev
 	}
 
 	var r Response
 
-	data, err := json.Marshal(shared.NetworkDevice{mode, mac, ip})
+	data, err := json.Marshal(shared.NetDev{mode, mac, ip})
 	if err != nil {
 		return r.Content, fmt.Errorf("json: %s", err)
 	}
@@ -59,10 +59,10 @@ func UpdateInterface(target shared.Remote, machine string, index int, mode, mac,
 	return r.Content, apiError(r.ResponseBase)
 }
 
-func ListInterfaces(target shared.Remote, name string) ([]shared.NetworkDevice, error) {
+func ListInterfaces(target shared.Remote, name string) ([]shared.NetDev, error) {
 	type Response struct {
 		ResponseBase
-		Content []shared.NetworkDevice
+		Content []shared.NetDev
 	}
 
 	var r Response

@@ -358,7 +358,7 @@ func handleMachineCreateInterface(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	name := vars["name"]
 
-	var iface shared.NetworkDevice
+	var iface shared.NetDev
 
 	err := json.NewDecoder(r.Body).Decode(&iface)
 	if err != nil {
@@ -405,7 +405,7 @@ func handleMachineUpdateInterface(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var iface shared.NetworkDevice
+	var iface shared.NetDev
 
 	err = json.NewDecoder(r.Body).Decode(&iface)
 	if err != nil {

@@ -22,7 +22,7 @@ import (
 type LxcMachine struct {
 	shared.MachineInfo
 
-	Interfaces []shared.NetworkDevice
+	Interfaces []shared.NetDev
 }
 
 func (m *LxcMachine) Info() *shared.MachineInfo {
@@ -381,11 +381,11 @@ func (m *LxcMachine) Stats() (shared.MachineStats, error) {
 	return stats, nil
 }
 
-func (m *LxcMachine) ListInterfaces() []shared.NetworkDevice {
+func (m *LxcMachine) ListInterfaces() []shared.NetDev {
 	return m.Interfaces
 }
 
-func (m *LxcMachine) CreateInterface(iface shared.NetworkDevice) (shared.NetworkDevice, error) {
+func (m *LxcMachine) CreateInterface(iface shared.NetDev) (shared.NetDev, error) {
 	err := net.SetupInterface(&iface)
 	if err != nil {
 		return iface, err
@@ -395,7 +395,7 @@ func (m *LxcMachine) CreateInterface(iface shared.NetworkDevice) (shared.Network
 	return iface, nil
 }
 
-func (m *LxcMachine) UpdateInterface(index int, iface shared.NetworkDevice) (shared.NetworkDevice, error) {
+func (m *LxcMachine) UpdateInterface(index int, iface shared.NetDev) (shared.NetDev, error) {
 	if index >= len(m.Interfaces) {
 		return iface, fmt.Errorf("interface index %d dost not exist", index)
 	}

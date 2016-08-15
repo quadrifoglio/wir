@@ -14,7 +14,7 @@ type Volume struct {
 	Size uint64
 }
 
-type NetworkDevice struct {
+type NetDev struct {
 	Mode string
 	MAC  string
 	IP   string

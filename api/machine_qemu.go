@@ -23,7 +23,7 @@ import (
 type QemuMachine struct {
 	shared.MachineInfo
 
-	Interfaces []shared.NetworkDevice
+	Interfaces []shared.NetDev
 	MainPart   string
 	PID        int
 }
@@ -42,7 +42,7 @@ func (m *QemuMachine) Create(img shared.Image, info shared.MachineInfo) error {
 	m.Cores = info.Cores
 	m.Memory = info.Memory
 	m.Disk = info.Disk
-	m.Interfaces = make([]shared.NetworkDevice, 0)
+	m.Interfaces = make([]shared.NetDev, 0)
 
 	path := fmt.Sprintf("%s/%s", shared.MachinePath("qemu"), m.Name)
 	disk := fmt.Sprintf("%s/disk.qcow2", path)
@@ -422,11 +422,11 @@ func (m *QemuMachine) Stats() (shared.MachineStats, error) {
 	return stats, nil
 }
 
-func (m *QemuMachine) ListInterfaces() []shared.NetworkDevice {
+func (m *QemuMachine) ListInterfaces() []shared.NetDev {
 	return m.Interfaces
 }
 
-func (m *QemuMachine) CreateInterface(iface shared.NetworkDevice) (shared.NetworkDevice, error) {
+func (m *QemuMachine) CreateInterface(iface shared.NetDev) (shared.NetDev, error) {
 	err := net.SetupInterface(&iface)
 	if err != nil {
 		return iface, err
@@ -436,7 +436,7 @@ func (m *QemuMachine) CreateInterface(iface shared.NetworkDevice) (shared.Networ
 	return iface, nil
 }
 
-func (m *QemuMachine) UpdateInterface(index int, iface shared.NetworkDevice) (shared.NetworkDevice, error) {
+func (m *QemuMachine) UpdateInterface(index int, iface shared.NetDev) (shared.NetDev, error) {
 	if index >= len(m.Interfaces) {
 		return iface, fmt.Errorf("interface index %d dost not exist", index)
 	}

@@ -30,9 +30,9 @@ type Machine interface {
 	State() shared.MachineState
 	Stats() (shared.MachineStats, error)
 
-	ListInterfaces() []shared.NetworkDevice
-	CreateInterface(iface shared.NetworkDevice) (shared.NetworkDevice, error)
-	UpdateInterface(index int, iface shared.NetworkDevice) (shared.NetworkDevice, error)
+	ListInterfaces() []shared.NetDev
+	CreateInterface(iface shared.NetDev) (shared.NetDev, error)
+	UpdateInterface(index int, iface shared.NetDev) (shared.NetDev, error)
 	DeleteInterface(index int) error
 
 	ListVolumes() ([]shared.Volume, error)

@@ -4,7 +4,7 @@ import (
 	"github.com/quadrifoglio/wir/shared"
 )
 
-func SetupInterface(iface *shared.NetworkDevice) error {
+func SetupInterface(iface *shared.NetDev) error {
 	var err error
 
 	if len(iface.Mode) > 0 {
@@ -31,7 +31,7 @@ func SetupInterface(iface *shared.NetworkDevice) error {
 	return err
 }
 
-func CheckInterface(iface shared.NetworkDevice) error {
+func CheckInterface(iface shared.NetDev) error {
 	if iface.Mode == shared.NetworkModeNone || len(iface.MAC) == 0 {
 		return nil
 	}
@@ -65,7 +65,7 @@ func CheckInterface(iface shared.NetworkDevice) error {
 	return nil
 }
 
-func DeleteInterface(iface shared.NetworkDevice) error {
+func DeleteInterface(iface shared.NetDev) error {
 	if len(iface.MAC) > 0 {
 		err := DenyTraffic(iface.MAC, "0.0.0.0")
 		if err != nil {
