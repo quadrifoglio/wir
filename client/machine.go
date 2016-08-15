@@ -87,27 +87,6 @@ func GetMachine(target shared.Remote, name string) (MachineResponse, error) {
 	return r.Content, apiError(r.ResponseBase)
 }
 
-func ListMachineInterfaces(target shared.Remote, name string) ([]shared.NetworkDevice, error) {
-	type Response struct {
-		ResponseBase
-		Content []shared.NetworkDevice
-	}
-
-	var r Response
-
-	data, err := apiRequest(target, "GET", fmt.Sprintf("/machines/%s/interfaces", name), nil)
-	if err != nil {
-		return r.Content, err
-	}
-
-	err = json.Unmarshal(data, &r)
-	if err != nil {
-		return r.Content, fmt.Errorf("json: %s", err)
-	}
-
-	return r.Content, apiError(r.ResponseBase)
-}
-
 func UpdateMachine(target shared.Remote, name string, i shared.MachineInfo) error {
 	var r ResponseBase
 

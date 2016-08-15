@@ -19,6 +19,7 @@ var (
 	remotePort = kingpin.Flag("remote-port", "Port of the remote server").Default("1997").Int()
 	remoteUser = kingpin.Flag("remote-user", "Username to use in SSH-related actions").Default("root").String()
 
+	// Image management
 	imageCreate         = cmdImage.Command("create", "Create an image from the specified source")
 	imageCreateType     = imageCreate.Flag("type", "Image type (qemu, lxc, openvz)").Short('t').Default("qemu").String()
 	imageCreateName     = imageCreate.Arg("name", "Image name").Required().String()
@@ -32,6 +33,7 @@ var (
 	imageDelete     = cmdImage.Command("delete", "Delete an image")
 	imageDeleteName = imageDelete.Arg("name", "Image name").Required().String()
 
+	// Machine management
 	cmdMachines    = kingpin.Command("machines", "List machines")
 	cmdMachinesRaw = cmdMachines.Flag("raw", "Raw listing (no table)").Bool()
 
@@ -75,6 +77,7 @@ var (
 	machineDelete     = cmdMachine.Command("delete", "Delete a machine")
 	machineDeleteName = machineDelete.Arg("name", "Machine name").Required().String()
 
+	// Backup management
 	cmdBackups        = kingpin.Command("backups", "List backups")
 	cmdBackupsRaw     = cmdBackups.Flag("raw", "Raw listing (no table)").Bool()
 	cmdBackupsMachine = cmdBackups.Arg("machine", "Machine name").Required().String()
@@ -92,6 +95,24 @@ var (
 	backupDeleteMachine = backupDelete.Arg("machine", "Machine name").Required().String()
 	backupDeleteName    = backupDelete.Arg("name", "Backup name").Required().String()
 
+	// Interface management
+	cmdInterfaces        = kingpin.Command("interfaces", "List network interfaces")
+	cmdInterfacesRaw     = cmdInterfaces.Flag("raw", "Raw listing (no table)").Bool()
+	cmdInterfacesMachine = cmdInterfaces.Arg("machine", "Machine name").Required().String()
+
+	cmdInterface = kingpin.Command("interface", "Create or delete a network interface")
+
+	interfaceCreate        = cmdInterface.Command("create", "Create a network interface")
+	interfaceCreateMachine = interfaceCreate.Arg("machine", "Machine name").Required().String()
+	interfaceCreateMode    = interfaceCreate.Flag("mode", "Network mode (can only be bridge at the moment)").String()
+	interfaceCreateMAC     = interfaceCreate.Flag("mac", "Interface's MAC address").String()
+	interfaceCreateIP      = interfaceCreate.Flag("ip", "Interface's IP address").String()
+
+	interfaceDelete        = cmdInterface.Command("delete", "Delete a network interface")
+	interfaceDeleteMachine = interfaceDelete.Arg("machine", "Machine name").Required().String()
+	interfaceDeleteIndex   = interfaceDelete.Arg("index", "Index of the interface (0-indexed)").Required().Int()
+
+	// Volume management
 	cmdVolumes        = kingpin.Command("volumes", "List volumes")
 	cmdVolumesRaw     = cmdVolumes.Flag("raw", "Raw listing (no table)").Bool()
 	cmdVolumesMachine = cmdVolumes.Arg("machine", "Machine name").Required().String()
@@ -201,6 +222,21 @@ func main() {
 		break
 	case "backup delete":
 		deleteBackup(remote, *backupDeleteMachine, *backupDeleteName)
+		break
+	case "interfaces":
+		listInterfaces(remote, *cmdInterfacesMachine, *cmdInterfacesRaw)
+		break
+	case "interface create":
+		createInterface(
+			remote,
+			*interfaceCreateMachine,
+			*interfaceCreateMode,
+			*interfaceCreateMAC,
+			*interfaceCreateIP,
+		)
+		break
+	case "interface delete":
+		deleteInterface(remote, *interfaceDeleteMachine, *interfaceDeleteIndex)
 		break
 	case "volumes":
 		listVolumes(remote, *cmdVolumesMachine, *cmdVolumesRaw)

@@ -24,7 +24,7 @@ func listMachines(target shared.Remote, raw bool) {
 				var macs string
 				var ips string
 
-				ifaces, err := client.ListMachineInterfaces(target, m.Name)
+				ifaces, err := client.ListInterfaces(target, m.Name)
 				if err == nil {
 					for _, iface := range ifaces {
 						macs += fmt.Sprintf("%s, ", iface.MAC)
@@ -45,7 +45,7 @@ func listMachines(target shared.Remote, raw bool) {
 				var macs string
 				var ips string
 
-				ifaces, err := client.ListMachineInterfaces(target, m.Name)
+				ifaces, err := client.ListInterfaces(target, m.Name)
 				if err == nil {
 					for _, iface := range ifaces {
 						macs += fmt.Sprintf("%s, ", iface.MAC)
