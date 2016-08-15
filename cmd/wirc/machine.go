@@ -21,46 +21,44 @@ func listMachines(target shared.Remote, raw bool) {
 	if len(ms) > 0 {
 		if raw {
 			for _, m := range ms {
-				var macs string
 				var ips string
 
 				ifaces, err := client.ListInterfaces(target, m.Name)
 				if err == nil {
 					for _, iface := range ifaces {
-						macs += fmt.Sprintf("%s, ", iface.MAC)
-						ips += fmt.Sprintf("%s, ", iface.IP)
+						if len(iface.IP) > 0 {
+							ips += fmt.Sprintf("%s, ", iface.IP)
+						}
 					}
 
-					macs = macs[:len(macs)-2]
-					ips = ips[:len(ips)-2]
-				}
-
-				fmt.Println(strconv.Itoa(int(m.Index)), m.Name, m.Type, m.Image, shared.StateToString(m.State), macs, ips)
-			}
-		} else {
-			table := tablewriter.NewWriter(os.Stdout)
-			table.SetHeader([]string{"Index", "Name", "Type", "Image", "State", "MAC", "IP"})
-
-			for _, m := range ms {
-				var macs string
-				var ips string
-
-				ifaces, err := client.ListInterfaces(target, m.Name)
-				if err == nil {
-					for _, iface := range ifaces {
-						macs += fmt.Sprintf("%s, ", iface.MAC)
-						ips += fmt.Sprintf("%s, ", iface.IP)
-					}
-
-					if len(macs) > 0 {
-						macs = macs[:len(macs)-2]
-					}
 					if len(ips) > 0 {
 						ips = ips[:len(ips)-2]
 					}
 				}
 
-				table.Append([]string{strconv.Itoa(int(m.Index)), m.Name, m.Type, m.Image, shared.StateToString(m.State), macs, ips})
+				fmt.Println(strconv.Itoa(int(m.Index)), m.Name, m.Type, m.Image, shared.StateToString(m.State), ips)
+			}
+		} else {
+			table := tablewriter.NewWriter(os.Stdout)
+			table.SetHeader([]string{"Index", "Name", "Type", "Image", "State", "IP"})
+
+			for _, m := range ms {
+				var ips string
+
+				ifaces, err := client.ListInterfaces(target, m.Name)
+				if err == nil {
+					for _, iface := range ifaces {
+						if len(iface.IP) > 0 {
+							ips += fmt.Sprintf("%s, ", iface.IP)
+						}
+					}
+
+					if len(ips) > 0 {
+						ips = ips[:len(ips)-2]
+					}
+				}
+
+				table.Append([]string{strconv.Itoa(int(m.Index)), m.Name, m.Type, m.Image, shared.StateToString(m.State), ips})
 			}
 
 			table.Render()
