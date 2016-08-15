@@ -25,18 +25,6 @@ func handleMachineList(w http.ResponseWriter, r *http.Request) {
 
 	sort.Sort(ms)
 
-	for i, _ := range ms {
-		prevState := ms[i].State()
-
-		if ms[i].State() != prevState {
-			err = DBStoreMachine(ms[i])
-			if err != nil {
-				ErrorResponse(err).Send(w, r)
-				return
-			}
-		}
-	}
-
 	SuccessResponse(ms).Send(w, r)
 }
 
@@ -47,12 +35,6 @@ func handleMachineGet(w http.ResponseWriter, r *http.Request) {
 	name := vars["name"]
 
 	m, err := DBGetMachine(name)
-	if err != nil {
-		ErrorResponse(err).Send(w, r)
-		return
-	}
-
-	err = DBStoreMachine(m)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
