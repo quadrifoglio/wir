@@ -108,6 +108,13 @@ var (
 	interfaceCreateMAC     = interfaceCreate.Flag("mac", "Interface's MAC address").String()
 	interfaceCreateIP      = interfaceCreate.Flag("ip", "Interface's IP address").String()
 
+	interfaceUpdate        = cmdInterface.Command("update", "Update a network interface")
+	interfaceUpdateMachine = interfaceUpdate.Arg("machine", "Machine name").Required().String()
+	interfaceUpdateIndex   = interfaceUpdate.Arg("index", "Interface index (0-indexed)").Required().Int()
+	interfaceUpdateMode    = interfaceUpdate.Flag("mode", "Network mode (can only be bridge at the moment)").String()
+	interfaceUpdateMAC     = interfaceUpdate.Flag("mac", "Interface's MAC address").String()
+	interfaceUpdateIP      = interfaceUpdate.Flag("ip", "Interface's IP address").String()
+
 	interfaceDelete        = cmdInterface.Command("delete", "Delete a network interface")
 	interfaceDeleteMachine = interfaceDelete.Arg("machine", "Machine name").Required().String()
 	interfaceDeleteIndex   = interfaceDelete.Arg("index", "Index of the interface (0-indexed)").Required().Int()
@@ -233,6 +240,16 @@ func main() {
 			*interfaceCreateMode,
 			*interfaceCreateMAC,
 			*interfaceCreateIP,
+		)
+		break
+	case "interface update":
+		updateInterface(
+			remote,
+			*interfaceUpdateMachine,
+			*interfaceUpdateIndex,
+			*interfaceUpdateMode,
+			*interfaceUpdateMAC,
+			*interfaceUpdateIP,
 		)
 		break
 	case "interface delete":

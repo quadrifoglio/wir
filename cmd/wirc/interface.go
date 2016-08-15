@@ -44,6 +44,13 @@ func listInterfaces(target shared.Remote, machine string, raw bool) {
 	}
 }
 
+func updateInterface(target shared.Remote, machine string, index int, mode, mac, ip string) {
+	_, err := client.UpdateInterface(target, machine, index, mode, mac, ip)
+	if err != nil {
+		fatal(err)
+	}
+}
+
 func deleteInterface(target shared.Remote, machine string, index int) {
 	err := client.DeleteInterface(target, machine, index)
 	if err != nil {

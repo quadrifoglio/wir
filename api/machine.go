@@ -32,7 +32,7 @@ type Machine interface {
 
 	ListInterfaces() []shared.NetworkDevice
 	CreateInterface(iface shared.NetworkDevice) (shared.NetworkDevice, error)
-	UpdateInterface(index int, iface shared.NetworkDevice) error
+	UpdateInterface(index int, iface shared.NetworkDevice) (shared.NetworkDevice, error)
 	DeleteInterface(index int) error
 
 	ListVolumes() ([]shared.Volume, error)

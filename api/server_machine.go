@@ -367,7 +367,7 @@ func handleMachineCreateInterface(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if iface.Mode != shared.NetworkModeBridge {
-		ErrorResponse(fmt.Errorf("only bridge mode supported at the moment"))
+		ErrorResponse(fmt.Errorf("only bridge mode supported at the moment")).Send(w, r)
 		return
 	}
 
@@ -413,8 +413,8 @@ func handleMachineUpdateInterface(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if iface.Mode != shared.NetworkModeBridge {
-		ErrorResponse(fmt.Errorf("only bridge mode supported at the moment"))
+	if len(iface.Mode) > 0 && iface.Mode != shared.NetworkModeBridge {
+		ErrorResponse(fmt.Errorf("only bridge mode supported at the moment")).Send(w, r)
 		return
 	}
 
@@ -424,7 +424,7 @@ func handleMachineUpdateInterface(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = m.UpdateInterface(index, iface)
+	iface, err = m.UpdateInterface(index, iface)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
@@ -436,7 +436,7 @@ func handleMachineUpdateInterface(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	SuccessResponse(nil).Send(w, r)
+	SuccessResponse(iface).Send(w, r)
 }
 
 func handleMachineDeleteInterface(w http.ResponseWriter, r *http.Request) {
