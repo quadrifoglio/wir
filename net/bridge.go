@@ -4,8 +4,15 @@ import (
 	gonet "net"
 
 	"fmt"
+	"unicode"
+
 	"github.com/milosgajdos83/tenus"
 )
+
+func BridgeName(name string) string {
+	// TODO: Limit name length
+	return fmt.Sprintf("wir%s%s", unicode.ToUpper(rune(name[:1][0])), name[1:])
+}
 
 func CreateBridge(name string) error {
 	br, err := tenus.BridgeFromName(name)

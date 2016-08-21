@@ -15,6 +15,7 @@ var (
 	Database *bolt.DB
 
 	ImagesBucket   = []byte("images")
+	NetworksBucket = []byte("networks")
 	MachinesBucket = []byte("machines")
 )
 
@@ -115,6 +116,108 @@ func DBGetImage(name string) (shared.Image, error) {
 func DBDeleteImage(name string) error {
 	err := Database.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists(ImagesBucket)
+		if err != nil {
+			return err
+		}
+
+		err = bucket.Delete([]byte(name))
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return err
+}
+
+func DBStoreNetwork(i shared.Network) error {
+	err := Database.Update(func(tx *bolt.Tx) error {
+		bucket, err := tx.CreateBucketIfNotExists(NetworksBucket)
+		if err != nil {
+			return err
+		}
+
+		buf := bytes.NewBuffer(nil)
+		enc := gob.NewEncoder(buf)
+
+		err = enc.Encode(i)
+		if err != nil {
+			return err
+		}
+
+		err = bucket.Put([]byte(i.Name), buf.Bytes())
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return err
+}
+
+func DBListNetworks() ([]shared.Network, error) {
+	netws := make([]shared.Network, 0)
+
+	Database.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket(NetworksBucket)
+		if b == nil {
+			return nil
+		}
+
+		b.ForEach(func(_, v []byte) error {
+			var i shared.Network
+
+			buf := bytes.NewBuffer(v)
+			dec := gob.NewDecoder(buf)
+
+			err := dec.Decode(&i)
+			if err != nil {
+				return err
+			}
+
+			netws = append(netws, i)
+			return nil
+		})
+
+		return nil
+	})
+
+	return netws, nil
+}
+
+func DBGetNetwork(name string) (shared.Network, error) {
+	var netw shared.Network
+
+	err := Database.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(NetworksBucket)
+		if bucket == nil {
+			return errors.NotFound
+		}
+
+		data := bucket.Get([]byte(name))
+		if data == nil {
+			return errors.NotFound
+		}
+
+		buf := bytes.NewBuffer(data)
+		dec := gob.NewDecoder(buf)
+
+		err := dec.Decode(&netw)
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	return netw, err
+}
+
+func DBDeleteNetwork(name string) error {
+	err := Database.Update(func(tx *bolt.Tx) error {
+		bucket, err := tx.CreateBucketIfNotExists(NetworksBucket)
 		if err != nil {
 			return err
 		}
