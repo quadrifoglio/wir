@@ -49,14 +49,11 @@ var (
 	machineShow     = cmdMachine.Command("show", "Show machine details")
 	machineShowName = machineShow.Arg("name", "Machine name").Required().String()
 
-	machineUpdate        = cmdMachine.Command("update", "Update a machine")
-	machineUpdateCores   = machineUpdate.Flag("cpus", "Number of CPU cores to use").Short('c').Int()
-	machineUpdateMem     = machineUpdate.Flag("memory", "Amount of memory to use").Short('m').Int()
-	machineUpdateDisk    = machineUpdate.Flag("disk", "Disk space limit in bytes").Short('d').Default("1073741824").Int()
-	machineUpdateNetMode = machineUpdate.Flag("net", "Network setup to use").String()
-	machineUpdateNetMAC  = machineUpdate.Flag("mac", "MAC address to use").String()
-	machineUpdateNetIP   = machineUpdate.Flag("ip", "IP address to use").String()
-	machineUpdateName    = machineUpdate.Arg("name", "Name of the machine to update").Required().String()
+	machineUpdate      = cmdMachine.Command("update", "Update a machine")
+	machineUpdateCores = machineUpdate.Flag("cpus", "Number of CPU cores to use").Short('c').Int()
+	machineUpdateMem   = machineUpdate.Flag("memory", "Amount of memory to use").Short('m').Int()
+	machineUpdateDisk  = machineUpdate.Flag("disk", "Disk space limit in bytes").Short('d').Default("1073741824").Int()
+	machineUpdateName  = machineUpdate.Arg("name", "Name of the machine to update").Required().String()
 
 	machineLinuxSysprep           = cmdMachine.Command("linux-sysprep", "Prepare machine for cloning")
 	machineLinuxSysprepHostname   = machineLinuxSysprep.Flag("hostname", "Machine hostname").String()
@@ -104,14 +101,14 @@ var (
 
 	interfaceCreate        = cmdInterface.Command("create", "Create a network interface")
 	interfaceCreateMachine = interfaceCreate.Arg("machine", "Machine name").Required().String()
-	interfaceCreateMode    = interfaceCreate.Flag("mode", "Network mode (can only be bridge at the moment)").String()
+	interfaceCreateNetwork = interfaceCreate.Flag("network", "Network to attach the interface to").String()
 	interfaceCreateMAC     = interfaceCreate.Flag("mac", "Interface's MAC address").String()
 	interfaceCreateIP      = interfaceCreate.Flag("ip", "Interface's IP address").String()
 
 	interfaceUpdate        = cmdInterface.Command("update", "Update a network interface")
 	interfaceUpdateMachine = interfaceUpdate.Arg("machine", "Machine name").Required().String()
 	interfaceUpdateIndex   = interfaceUpdate.Arg("index", "Interface index (0-indexed)").Required().Int()
-	interfaceUpdateMode    = interfaceUpdate.Flag("mode", "Network mode (can only be bridge at the moment)").String()
+	interfaceUpdateNetwork = interfaceUpdate.Flag("network", "Network to attach the interface to").String()
 	interfaceUpdateMAC     = interfaceUpdate.Flag("mac", "Interface's MAC address").String()
 	interfaceUpdateIP      = interfaceUpdate.Flag("ip", "Interface's IP address").String()
 
@@ -237,7 +234,7 @@ func main() {
 		createInterface(
 			remote,
 			*interfaceCreateMachine,
-			*interfaceCreateMode,
+			*interfaceCreateNetwork,
 			*interfaceCreateMAC,
 			*interfaceCreateIP,
 		)
@@ -247,7 +244,7 @@ func main() {
 			remote,
 			*interfaceUpdateMachine,
 			*interfaceUpdateIndex,
-			*interfaceUpdateMode,
+			*interfaceUpdateNetwork,
 			*interfaceUpdateMAC,
 			*interfaceUpdateIP,
 		)

@@ -21,7 +21,6 @@ type APIConfigStruct struct {
 	StorageBackend string
 	ZfsPool        string
 
-	BridgeIface      string
 	EnableNetMonitor bool
 	PPSAlert         uint64
 	PPSStop          uint64

@@ -4,28 +4,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"net"
-
-	"github.com/quadrifoglio/wir/shared"
 )
-
-func Init() error {
-	err := CreateBridge("wir0")
-	if err != nil {
-		return err
-	}
-
-	err = BridgeAddIf("wir0", shared.APIConfig.BridgeIface)
-	if err != nil {
-		return err
-	}
-
-	err = InitEbtables()
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
 
 func InterfaceExists(iface string) bool {
 	_, err := net.InterfaceByName(iface)

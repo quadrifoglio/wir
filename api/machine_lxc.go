@@ -231,31 +231,29 @@ func (m *LxcMachine) Start() error {
 	}
 
 	for i, iface := range m.ListInterfaces() {
-		if iface.Mode == shared.NetworkModeBridge {
-			if err := c.SetConfigItem("lxc.network.type", "veth"); err != nil {
-				return err
-			}
-			if err := c.SetConfigItem("lxc.network.veth.pair", MachineIfName(m, i)); err != nil {
-				return err
-			}
-			if err := c.SetConfigItem("lxc.network.flags", "up"); err != nil {
-				return err
-			}
-			if err := c.SetConfigItem("lxc.network.link", "wir0"); err != nil {
-				return err
-			}
-			if err := c.SetConfigItem("lxc.network.hwaddr", iface.MAC); err != nil {
-				return err
-			}
+		if err := c.SetConfigItem("lxc.network.type", "veth"); err != nil {
+			return err
+		}
+		if err := c.SetConfigItem("lxc.network.veth.pair", MachineIfName(m, i)); err != nil {
+			return err
+		}
+		if err := c.SetConfigItem("lxc.network.flags", "up"); err != nil {
+			return err
+		}
+		if err := c.SetConfigItem("lxc.network.link", "wir0"); err != nil {
+			return err
+		}
+		if err := c.SetConfigItem("lxc.network.hwaddr", iface.MAC); err != nil {
+			return err
+		}
 
-			err = net.CheckInterface(iface)
-			if err != nil {
-				return err
-			}
+		err = net.CheckInterface(iface)
+		if err != nil {
+			return err
+		}
 
-			if err := c.SaveConfigFile(fmt.Sprintf("%s/%s/config", path, m.Name)); err != nil {
-				return fmt.Errorf("can not write config: %s", err)
-			}
+		if err := c.SaveConfigFile(fmt.Sprintf("%s/%s/config", path, m.Name)); err != nil {
+			return fmt.Errorf("can not write config: %s", err)
 		}
 	}
 

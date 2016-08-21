@@ -29,14 +29,14 @@ func listInterfaces(target shared.Remote, machine string, raw bool) {
 	if len(ifaces) > 0 {
 		if raw {
 			for i, iface := range ifaces {
-				fmt.Println(i, iface.Mode, iface.MAC, iface.IP)
+				fmt.Println(i, iface.Network, iface.MAC, iface.IP)
 			}
 		} else {
 			table := tablewriter.NewWriter(os.Stdout)
-			table.SetHeader([]string{"Index", "Mode", "MAC", "IP"})
+			table.SetHeader([]string{"Index", "Network", "MAC", "IP"})
 
 			for i, iface := range ifaces {
-				table.Append([]string{strconv.Itoa(i), iface.Mode, iface.MAC, iface.IP})
+				table.Append([]string{strconv.Itoa(i), iface.Network, iface.MAC, iface.IP})
 			}
 
 			table.Render()

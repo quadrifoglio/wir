@@ -231,35 +231,28 @@ func (m *QemuMachine) Start() error {
 	}
 
 	for i, iface := range m.ListInterfaces() {
-		if iface.Mode == shared.NetworkModeBridge {
-			tap, err := net.OpenTAP(MachineIfName(m, i))
-			if err != nil {
-				return fmt.Errorf("open tap: %s", err)
-			}
-
-			err = net.TAPPersist(tap, true)
-			if err != nil {
-				tap.Close()
-				return fmt.Errorf("tap persist: %s", err)
-			}
-
-			tap.Close()
-
-			err = net.BridgeAddIf("wir0", MachineIfName(m, i))
-			if err != nil {
-				return err
-			}
-
-			err = net.CheckInterface(iface)
-			if err != nil {
-				return err
-			}
-
-			args = append(args, "-netdev")
-			args = append(args, fmt.Sprintf("tap,id=net0,ifname=%s,script=no", MachineIfName(m, i)))
-			args = append(args, "-device")
-			args = append(args, fmt.Sprintf("driver=virtio-net,netdev=net0,mac=%s", iface.MAC))
+		tap, err := net.OpenTAP(MachineIfName(m, i))
+		if err != nil {
+			return fmt.Errorf("open tap: %s", err)
 		}
+
+		err = net.TAPPersist(tap, true)
+		if err != nil {
+			tap.Close()
+			return fmt.Errorf("tap persist: %s", err)
+		}
+
+		tap.Close()
+
+		err = net.CheckInterface(iface)
+		if err != nil {
+			return err
+		}
+
+		args = append(args, "-netdev")
+		args = append(args, fmt.Sprintf("tap,id=net0,ifname=%s,script=no", MachineIfName(m, i)))
+		args = append(args, "-device")
+		args = append(args, fmt.Sprintf("driver=virtio-net,netdev=net0,mac=%s", iface.MAC))
 	}
 
 	vols, err := m.ListVolumes()

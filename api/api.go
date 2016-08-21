@@ -86,7 +86,7 @@ func Start() error {
 		return err
 	}
 
-	err = net.Init()
+	err = net.InitEbtables()
 	if err != nil {
 		return err
 	}

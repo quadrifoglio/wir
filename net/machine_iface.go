@@ -7,24 +7,22 @@ import (
 func SetupInterface(iface *shared.NetDev) error {
 	var err error
 
-	if len(iface.Mode) > 0 {
-		if len(iface.MAC) == 0 {
-			iface.MAC, err = GenerateMAC(shared.APIConfig.NodeID)
-			if err != nil {
-				return err
-			}
-		}
-
-		err = GrantTraffic(iface.MAC, "0.0.0.0")
+	if len(iface.MAC) == 0 {
+		iface.MAC, err = GenerateMAC(shared.APIConfig.NodeID)
 		if err != nil {
 			return err
 		}
+	}
 
-		if len(iface.IP) > 0 {
-			err := GrantTraffic(iface.MAC, iface.IP)
-			if err != nil {
-				return err
-			}
+	err = GrantTraffic(iface.MAC, "0.0.0.0")
+	if err != nil {
+		return err
+	}
+
+	if len(iface.IP) > 0 {
+		err := GrantTraffic(iface.MAC, iface.IP)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -32,7 +30,7 @@ func SetupInterface(iface *shared.NetDev) error {
 }
 
 func CheckInterface(iface shared.NetDev) error {
-	if iface.Mode == shared.NetworkModeNone || len(iface.MAC) == 0 {
+	if len(iface.MAC) == 0 {
 		return nil
 	}
 

@@ -366,10 +366,7 @@ func handleMachineCreateInterface(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if iface.Mode != shared.NetworkModeBridge {
-		ErrorResponse(fmt.Errorf("only bridge mode supported at the moment")).Send(w, r)
-		return
-	}
+	// TODO: Check network existance
 
 	m, err := DBGetMachine(name)
 	if err != nil {
@@ -413,10 +410,7 @@ func handleMachineUpdateInterface(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(iface.Mode) > 0 && iface.Mode != shared.NetworkModeBridge {
-		ErrorResponse(fmt.Errorf("only bridge mode supported at the moment")).Send(w, r)
-		return
-	}
+	// TODO: Check network existance
 
 	m, err := DBGetMachine(name)
 	if err != nil {

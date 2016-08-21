@@ -3,9 +3,6 @@ package shared
 const (
 	StateDown = 0
 	StateUp   = 1
-
-	NetworkModeNone   = ""
-	NetworkModeBridge = "bridge"
 )
 
 // Aditional sotrage disk
@@ -15,9 +12,9 @@ type Volume struct {
 }
 
 type NetDev struct {
-	Mode string
-	MAC  string
-	IP   string
+	Network string
+	MAC     string
+	IP      string
 }
 
 type MachineInfo struct {
