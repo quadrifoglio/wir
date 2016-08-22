@@ -10,7 +10,10 @@ import (
 )
 
 func BridgeName(name string) string {
-	// TODO: Limit name length
+	if len(name) >= 12 {
+		name = name[:12]
+	}
+
 	return fmt.Sprintf("wir%s%s", strings.ToUpper(name[:1]), name[1:])
 }
 

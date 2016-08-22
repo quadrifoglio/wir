@@ -1,6 +1,8 @@
 package api
 
 import (
+	gonet "net"
+
 	"encoding/json"
 	"net/http"
 
@@ -28,6 +30,11 @@ func handleNetworkCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(netw.Gateway) > 0 && !net.InterfaceExists(netw.Gateway) {
+		ErrorResponse(errors.BadRequest).Send(w, r)
+		return
+	}
+
+	if len(netw.Addr) > 0 && gonet.ParseIP(netw.Addr) == nil {
 		ErrorResponse(errors.BadRequest).Send(w, r)
 		return
 	}
