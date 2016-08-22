@@ -27,11 +27,11 @@ func listNetworks(target shared.Remote, raw bool) {
 					net = fmt.Sprintf("%s/%d", n.Addr, n.Mask)
 				}
 
-				fmt.Println(n.Name, net, n.Gateway)
+				fmt.Println(n.Name, net, n.Router, n.Gateway)
 			}
 		} else {
 			table := tablewriter.NewWriter(os.Stdout)
-			table.SetHeader([]string{"Name", "Address", "Gateway"})
+			table.SetHeader([]string{"Name", "Address", "Router", "Gateway"})
 
 			for _, n := range netws {
 				var net string
@@ -40,7 +40,7 @@ func listNetworks(target shared.Remote, raw bool) {
 					net = fmt.Sprintf("%s/%d", n.Addr, n.Mask)
 				}
 
-				table.Append([]string{n.Name, net, n.Gateway})
+				table.Append([]string{n.Name, net, n.Router, n.Gateway})
 			}
 
 			table.Render()
@@ -48,9 +48,10 @@ func listNetworks(target shared.Remote, raw bool) {
 	}
 }
 
-func createNetwork(target shared.Remote, name, gateway, addr string) {
+func createNetwork(target shared.Remote, name, addr, router, gateway string) {
 	var req shared.Network
 	req.Name = name
+	req.Router = router
 	req.Gateway = gateway
 
 	if len(addr) > 0 {

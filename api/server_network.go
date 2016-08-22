@@ -33,8 +33,11 @@ func handleNetworkCreate(w http.ResponseWriter, r *http.Request) {
 		ErrorResponse(errors.BadRequest).Send(w, r)
 		return
 	}
-
 	if len(netw.Addr) > 0 && gonet.ParseIP(netw.Addr) == nil {
+		ErrorResponse(errors.BadRequest).Send(w, r)
+		return
+	}
+	if len(netw.Router) > 0 && gonet.ParseIP(netw.Router) == nil {
 		ErrorResponse(errors.BadRequest).Send(w, r)
 		return
 	}

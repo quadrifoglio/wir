@@ -41,8 +41,9 @@ var (
 
 	networkCreate        = cmdNetwork.Command("create", "Create a network")
 	networkCreateName    = networkCreate.Arg("name", "Network name").Required().String()
-	networkCreateGateway = networkCreate.Flag("gateway", "Network gateway interface").String()
 	networkCreateAddr    = networkCreate.Flag("address", "Network address (<ip>/<mask>)").String()
+	networkCreateRouter  = networkCreate.Flag("router", "Network router's ip address").String()
+	networkCreateGateway = networkCreate.Flag("gateway", "Network gateway interface").String()
 
 	networkDelete     = cmdNetwork.Command("delete", "Delete an network")
 	networkDeleteName = networkDelete.Arg("name", "Network name").Required().String()
@@ -187,8 +188,9 @@ func main() {
 		createNetwork(
 			remote,
 			*networkCreateName,
-			*networkCreateGateway,
 			*networkCreateAddr,
+			*networkCreateRouter,
+			*networkCreateGateway,
 		)
 		break
 	case "network delete":
