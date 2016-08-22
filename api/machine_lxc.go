@@ -247,6 +247,11 @@ func (m *LxcMachine) Start() error {
 			return err
 		}
 
+		err = net.AddBridgeIf(net.BridgeName(iface.Network), MachineIfName(m, i))
+		if err != nil {
+			return err
+		}
+
 		err = net.CheckInterface(iface)
 		if err != nil {
 			return err

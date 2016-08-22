@@ -15,12 +15,14 @@ func BridgeName(name string) string {
 }
 
 func CreateBridge(name string) error {
-	br, err := tenus.BridgeFromName(name)
+	_, err := tenus.BridgeFromName(name)
+	if err == nil {
+		return fmt.Errorf("create bridge: already exists")
+	}
+
+	br, err := tenus.NewBridgeWithName(name)
 	if err != nil {
-		br, err = tenus.NewBridgeWithName(name)
-		if err != nil {
-			return fmt.Errorf("create bridge: %s", err)
-		}
+		return fmt.Errorf("create bridge: %s", err)
 	}
 
 	if err = br.SetLinkUp(); err != nil {

@@ -27,9 +27,20 @@ func handleNetworkCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(netw.Gateway) > 0 && !net.InterfaceExists(netw.Gateway) {
+		ErrorResponse(errors.BadRequest).Send(w, r)
+		return
+	}
+
 	netw.Bridge = net.BridgeName(netw.Name)
 
 	err = net.CreateBridge(netw.Bridge)
+	if err != nil {
+		ErrorResponse(err).Send(w, r)
+		return
+	}
+
+	err = net.AddBridgeIf(netw.Bridge, netw.Gateway)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return

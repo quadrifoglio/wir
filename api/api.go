@@ -99,6 +99,11 @@ func Start() error {
 	r.HandleFunc("/images/{name}", handleImageGet).Methods("GET")
 	r.HandleFunc("/images/{name}", handleImageDelete).Methods("DELETE")
 
+	r.HandleFunc("/networks", handleNetworkList).Methods("GET")
+	r.HandleFunc("/networks", handleNetworkCreate).Methods("POST")
+	r.HandleFunc("/networks/{name}", handleNetworkGet).Methods("GET")
+	r.HandleFunc("/networks/{name}", handleNetworkDelete).Methods("DELETE")
+
 	r.HandleFunc("/machines", handleMachineList).Methods("GET")
 	r.HandleFunc("/machines", handleMachineCreate).Methods("POST")
 	r.HandleFunc("/machines/{name}", handleMachineUpdate).Methods("POST")
