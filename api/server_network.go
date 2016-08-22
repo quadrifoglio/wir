@@ -22,7 +22,7 @@ func handleNetworkCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(netw.Name) > 0 {
+	if len(netw.Name) == 0 {
 		ErrorResponse(errors.BadRequest).Send(w, r)
 		return
 	}
@@ -32,16 +32,16 @@ func handleNetworkCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	netw.Bridge = net.BridgeName(netw.Name)
+	br := net.BridgeName(netw.Name)
 
-	err = net.CreateBridge(netw.Bridge)
+	err = net.CreateBridge(br)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
 	}
 
 	if len(netw.Gateway) > 0 {
-		err = net.AddBridgeIf(netw.Bridge, netw.Gateway)
+		err = net.AddBridgeIf(br, netw.Gateway)
 		if err != nil {
 			ErrorResponse(err).Send(w, r)
 			return
@@ -96,7 +96,7 @@ func handleNetworkDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = net.DeleteBridge(net.BridgeName(netw.Bridge))
+	err = net.DeleteBridge(net.BridgeName(netw.Name))
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return

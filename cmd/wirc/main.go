@@ -10,16 +10,16 @@ import (
 )
 
 var (
-	cmdImages    = kingpin.Command("images", "List images")
-	cmdImagesRaw = cmdImages.Flag("raw", "Raw listing (no table)").Bool()
-
-	cmdImage = kingpin.Command("image", "Image management")
-
 	remoteAddr = kingpin.Flag("remote-addr", "IP address of the remote server").Default("127.0.0.1").String()
 	remotePort = kingpin.Flag("remote-port", "Port of the remote server").Default("1997").Int()
 	remoteUser = kingpin.Flag("remote-user", "Username to use in SSH-related actions").Default("root").String()
 
 	// Image management
+	cmdImages    = kingpin.Command("images", "List images")
+	cmdImagesRaw = cmdImages.Flag("raw", "Raw listing (no table)").Bool()
+
+	cmdImage = kingpin.Command("image", "Image management")
+
 	imageCreate         = cmdImage.Command("create", "Create an image from the specified source")
 	imageCreateType     = imageCreate.Flag("type", "Image type (qemu, lxc, openvz)").Short('t').Default("qemu").String()
 	imageCreateName     = imageCreate.Arg("name", "Image name").Required().String()
@@ -32,6 +32,19 @@ var (
 
 	imageDelete     = cmdImage.Command("delete", "Delete an image")
 	imageDeleteName = imageDelete.Arg("name", "Image name").Required().String()
+
+	// Network management
+	cmdNetworks    = kingpin.Command("networks", "List networks")
+	cmdNetworksRaw = cmdNetworks.Flag("raw", "Raw listing (no table)").Bool()
+
+	cmdNetwork = kingpin.Command("network", "Network management")
+
+	networkCreate        = cmdNetwork.Command("create", "Create a network")
+	networkCreateName    = networkCreate.Arg("name", "Network name").Required().String()
+	networkCreateGateway = networkCreate.Flag("gateway", "Network gateway interface").String()
+
+	networkDelete     = cmdNetwork.Command("delete", "Delete an network")
+	networkDeleteName = networkDelete.Arg("name", "Network name").Required().String()
 
 	// Machine management
 	cmdMachines    = kingpin.Command("machines", "List machines")
@@ -165,6 +178,19 @@ func main() {
 		break
 	case "image delete":
 		deleteImage(remote, *imageDeleteName)
+		break
+	case "networks":
+		listNetworks(remote, *cmdNetworksRaw)
+		break
+	case "network create":
+		createNetwork(
+			remote,
+			*networkCreateName,
+			*networkCreateGateway,
+		)
+		break
+	case "network delete":
+		deleteNetwork(remote, *networkDeleteName)
 		break
 	case "machines":
 		listMachines(remote, *cmdMachinesRaw)
