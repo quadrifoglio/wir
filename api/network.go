@@ -7,6 +7,19 @@ import (
 	"github.com/quadrifoglio/wir/shared"
 )
 
+func InitNetworks() error {
+	nets, err := DBListNetworks()
+	if err != nil {
+		return err
+	}
+
+	for _, n := range nets {
+		go StartNetworkDHCP(n)
+	}
+
+	return nil
+}
+
 func StartNetworkDHCP(netw shared.Network) error {
 	cb := func(mac, ip string) {
 		m, err := DBGetMachineByMAC(mac)
