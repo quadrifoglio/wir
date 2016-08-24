@@ -353,6 +353,23 @@ func DBListMachines() (Machines, error) {
 	return Machines(ms), nil
 }
 
+func DBGetMachineByMAC(mac string) (Machine, error) {
+	ms, err := DBListMachines()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, m := range ms {
+		for _, i := range m.ListInterfaces() {
+			if i.MAC == mac {
+				return m, nil
+			}
+		}
+	}
+
+	return nil, errors.NotFound
+}
+
 func DBGetMachine(name string) (Machine, error) {
 	var m Machine
 

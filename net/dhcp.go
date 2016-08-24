@@ -32,9 +32,13 @@ type DHCPServer struct {
 	Leases        map[int]DHCPLease
 
 	Options dhcp.Options
+
+	Callback DHCPCallback
 }
 
-func NewDHCPServer(addr string, startIp string, leaseRange int, opts DHCPOptions) DHCPServer {
+type DHCPCallback func(string, string)
+
+func NewDHCPServer(addr string, startIp string, leaseRange int, opts DHCPOptions, cb DHCPCallback) DHCPServer {
 	var serv DHCPServer
 	serv.IP = net.ParseIP(addr)
 	serv.StartIP = net.ParseIP(startIp)
@@ -49,7 +53,13 @@ func NewDHCPServer(addr string, startIp string, leaseRange int, opts DHCPOptions
 		dhcp.OptionDomainNameServer: []byte(net.ParseIP(opts.DNS)),
 	}
 
+	serv.Callback = cb
+
 	return serv
+}
+
+func (s *DHCPServer) Start(iface string) error {
+	return dhcp.ListenAndServeIf(iface, s)
 }
 
 func (s *DHCPServer) ServeDHCP(p dhcp.Packet, typ dhcp.MessageType, options dhcp.Options) dhcp.Packet {
@@ -89,7 +99,9 @@ func (s *DHCPServer) ServeDHCP(p dhcp.Packet, typ dhcp.MessageType, options dhcp
 				if l, exists := s.Leases[leaseNum]; !exists || l.NIC == p.CHAddr().String() {
 					s.Leases[leaseNum] = DHCPLease{p.CHAddr().String(), time.Now().Add(s.LeaseDuration)}
 
-					return dhcp.ReplyPacket(p, dhcp.ACK, s.IP, net.IP(options[dhcp.OptionRequestedIPAddress]), s.LeaseDuration,
+					s.Callback(p.CHAddr().String(), reqIP.String())
+
+					return dhcp.ReplyPacket(p, dhcp.ACK, s.IP, reqIP, s.LeaseDuration,
 						s.Options.SelectOrderOrAll(options[dhcp.OptionParameterRequestList]))
 				}
 			}
