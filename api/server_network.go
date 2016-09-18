@@ -64,8 +64,6 @@ func handleNetworkCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go StartNetworkDHCP(netw)
-
 	SuccessResponse(netw).Send(w, r)
 }
 
