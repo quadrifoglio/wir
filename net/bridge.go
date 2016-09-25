@@ -17,6 +17,15 @@ func BridgeName(name string) string {
 	return fmt.Sprintf("wir%s%s", strings.ToUpper(name[:1]), name[1:])
 }
 
+func BridgeExists(name string) bool {
+	_, err := tenus.BridgeFromName(name)
+	if err == nil {
+		return true
+	}
+
+	return false
+}
+
 func CreateBridge(name string) error {
 	_, err := tenus.BridgeFromName(name)
 	if err == nil {

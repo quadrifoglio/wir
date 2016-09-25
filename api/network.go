@@ -2,25 +2,67 @@ package api
 
 import (
 	"encoding/binary"
+	"fmt"
 	"log"
-	"net"
+	gonet "net"
 
 	"github.com/quadrifoglio/go-dhcp"
+
+	"github.com/quadrifoglio/wir/net"
+	"github.com/quadrifoglio/wir/shared"
 )
 
-func InitNetworks() error {
+func InitNetworks() {
+	nets, err := DBListNetworks()
+	if err != nil {
+		log.Println("init networks:", err)
+		return
+	}
+
+	for _, netw := range nets {
+		err := StartNetwork(netw)
+		if err != nil {
+			log.Println("init networks:", err)
+		}
+	}
+
 	server, err := dhcp.NewServer()
 	if err != nil {
-		return err
+		log.Println("init networks:", err)
+		return
 	}
 
 	server.HandleDiscover(HandleDHCPDiscover)
 	server.HandleRequest(HandleDHCPRequest)
 
-	return server.ListenAndServe()
+	err = server.ListenAndServe()
+	if err != nil {
+		log.Println("init networks:", err)
+		return
+	}
 }
 
-func HandleDHCPDiscover(s *dhcp.Server, id uint32, mac net.HardwareAddr) {
+func StartNetwork(netw shared.Network) error {
+	br := net.BridgeName(netw.Name)
+
+	if !net.BridgeExists(br) {
+		err := net.CreateBridge(br)
+		if err != nil {
+			return fmt.Errorf("start network: %s", err)
+		}
+
+		if len(netw.Gateway) > 0 {
+			err = net.AddBridgeIf(br, netw.Gateway)
+			if err != nil {
+				return fmt.Errorf("start network: %s", err)
+			}
+		}
+	}
+
+	return nil
+}
+
+func HandleDHCPDiscover(s *dhcp.Server, id uint32, mac gonet.HardwareAddr) {
 	m, err := DBGetMachineByMAC(mac.String())
 	if err != nil {
 		log.Println("dhcp discover: no nic with address", mac)
@@ -50,15 +92,17 @@ func HandleDHCPDiscover(s *dhcp.Server, id uint32, mac net.HardwareAddr) {
 		leaseTime := make([]byte, 4)
 		binary.BigEndian.PutUint32(leaseTime, 86400) // 1 day lease
 
-		message := dhcp.NewMessage(dhcp.DHCPTypeOffer, id, srv, net.ParseIP(nic.IP), mac)
-		message.SetOption(dhcp.OptionSubnetMask, net.CIDRMask(netw.Mask, 32))
-		message.SetOption(dhcp.OptionRouter, net.ParseIP(netw.Router))
+		message := dhcp.NewMessage(dhcp.DHCPTypeOffer, id, srv, gonet.ParseIP(nic.IP).To4(), mac)
+		message.SetOption(dhcp.OptionSubnetMask, gonet.CIDRMask(netw.Mask, 32))
+		message.SetOption(dhcp.OptionRouter, gonet.ParseIP(netw.Router).To4())
 		message.SetOption(dhcp.OptionServerIdentifier, srv)
 		message.SetOption(dhcp.OptionIPAddressLeaseTime, leaseTime)
+
+		s.BroadcastPacket(message.GetFrame())
 	}
 }
 
-func HandleDHCPRequest(s *dhcp.Server, id uint32, mac net.HardwareAddr, requestedIp net.IP) {
+func HandleDHCPRequest(s *dhcp.Server, id uint32, mac gonet.HardwareAddr, requestedIp gonet.IP) {
 	m, err := DBGetMachineByMAC(mac.String())
 	if err != nil {
 		log.Println("dhcp request: no nic with address", mac)
@@ -77,7 +121,7 @@ func HandleDHCPRequest(s *dhcp.Server, id uint32, mac net.HardwareAddr, requeste
 			log.Println("dhcp request: no ip assigned to nic")
 			return
 		}
-		if !net.ParseIP(nic.IP).Equal(requestedIp) {
+		if !gonet.ParseIP(nic.IP).Equal(requestedIp) {
 			// TODO: Send DHCP NACK
 			log.Println("dhcp request: invalid requested ip")
 			return
@@ -93,10 +137,12 @@ func HandleDHCPRequest(s *dhcp.Server, id uint32, mac net.HardwareAddr, requeste
 		leaseTime := make([]byte, 4)
 		binary.BigEndian.PutUint32(leaseTime, 86400) // 1 day lease
 
-		message := dhcp.NewMessage(dhcp.DHCPTypeACK, id, srv, net.ParseIP(nic.IP), mac)
-		message.SetOption(dhcp.OptionSubnetMask, net.CIDRMask(netw.Mask, 32))
-		message.SetOption(dhcp.OptionRouter, net.ParseIP(netw.Router))
+		message := dhcp.NewMessage(dhcp.DHCPTypeACK, id, srv, gonet.ParseIP(nic.IP).To4(), mac)
+		message.SetOption(dhcp.OptionSubnetMask, gonet.CIDRMask(netw.Mask, 32))
+		message.SetOption(dhcp.OptionRouter, gonet.ParseIP(netw.Router).To4())
 		message.SetOption(dhcp.OptionServerIdentifier, srv)
 		message.SetOption(dhcp.OptionIPAddressLeaseTime, leaseTime)
+
+		s.BroadcastPacket(message.GetFrame())
 	}
 }

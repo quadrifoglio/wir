@@ -42,20 +42,10 @@ func handleNetworkCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	br := net.BridgeName(netw.Name)
-
-	err = net.CreateBridge(br)
+	err = StartNetwork(netw)
 	if err != nil {
 		ErrorResponse(err).Send(w, r)
 		return
-	}
-
-	if len(netw.Gateway) > 0 {
-		err = net.AddBridgeIf(br, netw.Gateway)
-		if err != nil {
-			ErrorResponse(err).Send(w, r)
-			return
-		}
 	}
 
 	err = DBStoreNetwork(netw)

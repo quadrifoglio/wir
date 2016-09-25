@@ -91,10 +91,7 @@ func Start() error {
 		return err
 	}
 
-	err = InitNetworks()
-	if err != nil {
-		return err
-	}
+	go InitNetworks()
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", handleIndex).Methods("GET")
