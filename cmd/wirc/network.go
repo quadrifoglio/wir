@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/olekukonko/tablewriter"
 
@@ -21,26 +20,18 @@ func listNetworks(target shared.Remote, raw bool) {
 	if len(netws) > 0 {
 		if raw {
 			for _, n := range netws {
-				var net string
-
-				if len(n.Addr) > 0 {
-					net = fmt.Sprintf("%s/%d", n.Addr, n.Mask)
+				if n.UseDHCP {
+					fmt.Println(n.Name, n.Gateway, n.Addr, n.Mask, n.Router, n.StartIP, n.NumIP)
+				} else {
+					fmt.Println(n.Name, n.Gateway, n.Addr, n.Mask)
 				}
-
-				fmt.Println(n.Name, net, n.Router, n.Gateway)
 			}
 		} else {
 			table := tablewriter.NewWriter(os.Stdout)
-			table.SetHeader([]string{"Name", "Address", "Router", "Gateway"})
+			table.SetHeader([]string{"Name", "Gateway", "Address", "Netmask", "Router", "Start IP", "Number of leases"})
 
 			for _, n := range netws {
-				var net string
-
-				if len(n.Addr) > 0 {
-					net = fmt.Sprintf("%s/%d", n.Addr, n.Mask)
-				}
-
-				table.Append([]string{n.Name, net, n.Router, n.Gateway})
+				table.Append([]string{n.Name, n.Gateway, n.Addr, n.Mask, n.Router, n.StartIP, strconv.Itoa(n.NumIP)})
 			}
 
 			table.Render()
@@ -48,29 +39,8 @@ func listNetworks(target shared.Remote, raw bool) {
 	}
 }
 
-func createNetwork(target shared.Remote, name, addr, router, gateway string) {
-	var req shared.Network
-	req.Name = name
-	req.Router = router
-	req.Gateway = gateway
-
-	if len(addr) > 0 {
-		pts := strings.Split(addr, "/")
-		if len(pts) != 2 {
-			fatal(fmt.Errorf("network address must be <ip>/<mask>"))
-		}
-
-		req.Addr = pts[0]
-
-		mask, err := strconv.Atoi(pts[1])
-		if err != nil {
-			fatal(fmt.Errorf("invalid network mask"))
-		}
-
-		req.Mask = mask
-	}
-
-	_, err := client.CreateNetwork(target, req)
+func createNetwork(target shared.Remote, netw shared.Network) {
+	_, err := client.CreateNetwork(target, netw)
 	if err != nil {
 		fatal(err)
 	}

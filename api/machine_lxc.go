@@ -411,7 +411,11 @@ func (m *LxcMachine) UpdateInterface(index int, iface shared.NetDev) (shared.Net
 	}
 
 	if len(iface.IP) > 0 && iface.IP != miface.IP {
-		miface.IP = iface.IP
+		if iface.IP == "none" {
+			miface.IP = ""
+		} else {
+			miface.IP = iface.IP
+		}
 	}
 	if len(iface.MAC) > 0 && iface.MAC != miface.MAC {
 		miface.MAC = iface.MAC

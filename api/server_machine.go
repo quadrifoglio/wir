@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"sort"
 	"strconv"
@@ -406,6 +407,16 @@ func handleMachineUpdateInterface(w http.ResponseWriter, r *http.Request) {
 
 	err = json.NewDecoder(r.Body).Decode(&iface)
 	if err != nil {
+		ErrorResponse(errors.BadRequest).Send(w, r)
+		return
+	}
+
+	_, err = net.ParseMAC(iface.MAC)
+	if err != nil && len(iface.MAC) > 0 {
+		ErrorResponse(errors.BadRequest).Send(w, r)
+		return
+	}
+	if len(iface.IP) > 0 && net.ParseIP(iface.IP) == nil && iface.IP != "none" {
 		ErrorResponse(errors.BadRequest).Send(w, r)
 		return
 	}

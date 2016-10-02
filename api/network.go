@@ -93,7 +93,7 @@ func HandleDHCPDiscover(s *dhcp.Server, id uint32, mac gonet.HardwareAddr) {
 		binary.BigEndian.PutUint32(leaseTime, 86400) // 1 day lease
 
 		message := dhcp.NewMessage(dhcp.DHCPTypeOffer, id, srv, gonet.ParseIP(nic.IP).To4(), mac)
-		message.SetOption(dhcp.OptionSubnetMask, gonet.CIDRMask(netw.Mask, 32))
+		message.SetOption(dhcp.OptionSubnetMask, net.ParseMask(netw.Mask))
 		message.SetOption(dhcp.OptionRouter, gonet.ParseIP(netw.Router).To4())
 		message.SetOption(dhcp.OptionServerIdentifier, srv)
 		message.SetOption(dhcp.OptionIPAddressLeaseTime, leaseTime)
@@ -138,7 +138,7 @@ func HandleDHCPRequest(s *dhcp.Server, id uint32, mac gonet.HardwareAddr, reques
 		binary.BigEndian.PutUint32(leaseTime, 86400) // 1 day lease
 
 		message := dhcp.NewMessage(dhcp.DHCPTypeACK, id, srv, gonet.ParseIP(nic.IP).To4(), mac)
-		message.SetOption(dhcp.OptionSubnetMask, gonet.CIDRMask(netw.Mask, 32))
+		message.SetOption(dhcp.OptionSubnetMask, net.ParseMask(netw.Mask))
 		message.SetOption(dhcp.OptionRouter, gonet.ParseIP(netw.Router).To4())
 		message.SetOption(dhcp.OptionServerIdentifier, srv)
 		message.SetOption(dhcp.OptionIPAddressLeaseTime, leaseTime)

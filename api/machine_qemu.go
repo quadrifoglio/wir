@@ -443,11 +443,16 @@ func (m *QemuMachine) UpdateInterface(index int, iface shared.NetDev) (shared.Ne
 
 	err := net.DeleteInterface(*miface)
 	if err != nil {
-		return iface, err
+		// Continue, no problems (no ebtables rules where present, so ne need to delete them)
+		log.Println(err, "but continuing")
 	}
 
 	if len(iface.IP) > 0 && iface.IP != miface.IP {
-		miface.IP = iface.IP
+		if iface.IP == "none" {
+			miface.IP = ""
+		} else {
+			miface.IP = iface.IP
+		}
 	}
 	if len(iface.MAC) > 0 && iface.MAC != miface.MAC {
 		miface.MAC = iface.MAC
