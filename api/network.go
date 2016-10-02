@@ -69,23 +69,40 @@ func HandleDHCPDiscover(s *dhcp.Server, id uint32, mac gonet.HardwareAddr) {
 		return
 	}
 
-	for _, nic := range m.ListInterfaces() {
+	for index, nic := range m.ListInterfaces() {
 		if len(nic.Network) == 0 {
 			continue
 		}
 		if nic.MAC != mac.String() {
 			continue
 		}
-		if len(nic.IP) == 0 {
-			// TODO: Pick an IP address from pool
-			log.Println("dhcp discover: no ip assigned to nic")
-			return
-		}
 
 		netw, err := DBGetNetwork(nic.Network)
 		if err != nil {
 			log.Println("dhcp discover: network", nic.Network, "not found")
 			return
+		}
+
+		if len(nic.IP) == 0 {
+			ip, err := FreeLease(netw)
+			if err != nil {
+				log.Println("dhcp discover: get free lease:", err)
+				return
+			}
+
+			nic.IP = ip.String()
+
+			_, err = m.UpdateInterface(index, nic)
+			if err != nil {
+				log.Println("dhcp discover: update interface ip:", err)
+				return
+			}
+
+			err = DBStoreMachine(m)
+			if err != nil {
+				log.Println("dhcp discover: failed to save machine:", err)
+				return
+			}
 		}
 
 		srv := []byte{0, 0, 0, 0}
@@ -99,6 +116,7 @@ func HandleDHCPDiscover(s *dhcp.Server, id uint32, mac gonet.HardwareAddr) {
 		message.SetOption(dhcp.OptionIPAddressLeaseTime, leaseTime)
 
 		s.BroadcastPacket(message.GetFrame())
+		break
 	}
 }
 
@@ -117,13 +135,12 @@ func HandleDHCPRequest(s *dhcp.Server, id uint32, mac gonet.HardwareAddr, reques
 			continue
 		}
 		if len(nic.IP) == 0 {
-			// TODO: Pick an IP address from pool
 			log.Println("dhcp request: no ip assigned to nic")
 			return
 		}
 		if !gonet.ParseIP(nic.IP).Equal(requestedIp) {
 			// TODO: Send DHCP NACK
-			log.Println("dhcp request: invalid requested ip")
+			log.Println("dhcp request: invalid requested ip (mismatch)")
 			return
 		}
 
@@ -144,5 +161,47 @@ func HandleDHCPRequest(s *dhcp.Server, id uint32, mac gonet.HardwareAddr, reques
 		message.SetOption(dhcp.OptionIPAddressLeaseTime, leaseTime)
 
 		s.BroadcastPacket(message.GetFrame())
+		break
 	}
+}
+
+func FreeLease(netw shared.Network) (gonet.IP, error) {
+	var ip gonet.IP
+
+	ms, err := DBListMachinesOnNetwork(netw.Name)
+	if err != nil {
+		return ip, err
+	}
+
+	ips := make([]string, 0)
+	for _, m := range ms {
+		for _, i := range m.ListInterfaces() {
+			if i.Network == netw.Name {
+				ips = append(ips, i.IP)
+			}
+		}
+	}
+
+	ip = gonet.ParseIP(netw.StartIP).To4()
+	ip.Mask(net.ParseMask(netw.Mask))
+
+	for i := 0; i < netw.NumIP; i++ {
+		if !contains(ip.To4().String(), ips) {
+			return ip.To4(), nil
+		}
+
+		ip[3]++
+	}
+
+	return ip, fmt.Errorf("no lease available")
+}
+
+func contains(s string, arr []string) bool {
+	for _, v := range arr {
+		if v == s {
+			return true
+		}
+	}
+
+	return false
 }

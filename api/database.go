@@ -353,6 +353,26 @@ func DBListMachines() (Machines, error) {
 	return Machines(ms), nil
 }
 
+func DBListMachinesOnNetwork(network string) ([]Machine, error) {
+	list := make([]Machine, 0)
+
+	ms, err := DBListMachines()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, m := range ms {
+		for _, i := range m.ListInterfaces() {
+			if i.Network == network {
+				list = append(list, m)
+				break
+			}
+		}
+	}
+
+	return list, nil
+}
+
 func DBGetMachineByMAC(mac string) (Machine, error) {
 	ms, err := DBListMachines()
 	if err != nil {
