@@ -198,7 +198,7 @@ func FreeLease(netw shared.Network) (gonet.IP, error) {
 			return ip.To4(), nil
 		}
 
-		ip[3]++
+		increment(ip)
 	}
 
 	return ip, fmt.Errorf("no lease available")
@@ -212,4 +212,14 @@ func contains(s string, arr []string) bool {
 	}
 
 	return false
+}
+
+func increment(ip gonet.IP) {
+	for j := len(ip) - 1; j >= 0; j-- {
+		ip[j]++
+
+		if ip[j] > 0 {
+			break
+		}
+	}
 }
