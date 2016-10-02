@@ -12,6 +12,5 @@ func UniqueID(nodeId byte) string {
 	binary.LittleEndian.PutUint64(b[1:], uint64(nano))
 
 	b[0] = nodeId
-
 	return hex.EncodeToString(b)
 }

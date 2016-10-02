@@ -74,6 +74,29 @@ var (
 	machineUpdateDisk  = machineUpdate.Flag("disk", "Disk space limit in bytes").Short('d').Default("1073741824").Int()
 	machineUpdateName  = machineUpdate.Arg("name", "Name of the machine to update").Required().String()
 
+	machineInterfaces     = cmdMachine.Command("interfaces", "List network interfaces")
+	machineInterfacesRaw  = machineInterfaces.Flag("raw", "Raw listing (no table)").Bool()
+	machineInterfacesName = machineInterfaces.Arg("name", "Machine name").Required().String()
+
+	machineInterface = cmdMachine.Command("interface", "Create or delete a network interface")
+
+	machineInterfaceCreate        = machineInterface.Command("create", "Create a network interface")
+	machineInterfaceCreateName    = machineInterfaceCreate.Arg("name", "Machine name").Required().String()
+	machineInterfaceCreateNetwork = machineInterfaceCreate.Flag("network", "Network to attach the interface to").String()
+	machineInterfaceCreateMAC     = machineInterfaceCreate.Flag("mac", "Interface's MAC address").String()
+	machineInterfaceCreateIP      = machineInterfaceCreate.Flag("ip", "Interface's IP address").String()
+
+	machineInterfaceUpdate        = machineInterface.Command("update", "Update a network interface")
+	machineInterfaceUpdateName    = machineInterfaceUpdate.Arg("name", "Machine name").Required().String()
+	machineInterfaceUpdateIndex   = machineInterfaceUpdate.Arg("index", "Interface index (0-indexed)").Required().Int()
+	machineInterfaceUpdateNetwork = machineInterfaceUpdate.Flag("network", "Network to attach the interface to").String()
+	machineInterfaceUpdateMAC     = machineInterfaceUpdate.Flag("mac", "Interface's MAC address").String()
+	machineInterfaceUpdateIP      = machineInterfaceUpdate.Flag("ip", "Interface's IP address").String()
+
+	machineInterfaceDelete      = machineInterface.Command("delete", "Delete a network interface")
+	machineInterfaceDeleteName  = machineInterfaceDelete.Arg("name", "Machine name").Required().String()
+	machineInterfaceDeleteIndex = machineInterfaceDelete.Arg("index", "Index of the interface (0-indexed)").Required().Int()
+
 	machineLinuxSysprep           = cmdMachine.Command("linux-sysprep", "Prepare machine for cloning")
 	machineLinuxSysprepHostname   = machineLinuxSysprep.Flag("hostname", "Machine hostname").String()
 	machineLinuxSysprepRootPasswd = machineLinuxSysprep.Flag("root-password", "Root password").String()
@@ -110,30 +133,6 @@ var (
 	backupDelete        = cmdBackup.Command("delete", "Delete a backup")
 	backupDeleteMachine = backupDelete.Arg("machine", "Machine name").Required().String()
 	backupDeleteName    = backupDelete.Arg("name", "Backup name").Required().String()
-
-	// Interface management
-	cmdInterfaces        = kingpin.Command("interfaces", "List network interfaces")
-	cmdInterfacesRaw     = cmdInterfaces.Flag("raw", "Raw listing (no table)").Bool()
-	cmdInterfacesMachine = cmdInterfaces.Arg("machine", "Machine name").Required().String()
-
-	cmdInterface = kingpin.Command("interface", "Create or delete a network interface")
-
-	interfaceCreate        = cmdInterface.Command("create", "Create a network interface")
-	interfaceCreateMachine = interfaceCreate.Arg("machine", "Machine name").Required().String()
-	interfaceCreateNetwork = interfaceCreate.Flag("network", "Network to attach the interface to").String()
-	interfaceCreateMAC     = interfaceCreate.Flag("mac", "Interface's MAC address").String()
-	interfaceCreateIP      = interfaceCreate.Flag("ip", "Interface's IP address").String()
-
-	interfaceUpdate        = cmdInterface.Command("update", "Update a network interface")
-	interfaceUpdateMachine = interfaceUpdate.Arg("machine", "Machine name").Required().String()
-	interfaceUpdateIndex   = interfaceUpdate.Arg("index", "Interface index (0-indexed)").Required().Int()
-	interfaceUpdateNetwork = interfaceUpdate.Flag("network", "Network to attach the interface to").String()
-	interfaceUpdateMAC     = interfaceUpdate.Flag("mac", "Interface's MAC address").String()
-	interfaceUpdateIP      = interfaceUpdate.Flag("ip", "Interface's IP address").String()
-
-	interfaceDelete        = cmdInterface.Command("delete", "Delete a network interface")
-	interfaceDeleteMachine = interfaceDelete.Arg("machine", "Machine name").Required().String()
-	interfaceDeleteIndex   = interfaceDelete.Arg("index", "Index of the interface (0-indexed)").Required().Int()
 
 	// Volume management
 	cmdVolumes        = kingpin.Command("volumes", "List volumes")
@@ -235,6 +234,39 @@ func main() {
 			},
 		)
 		break
+	case "machine interfaces":
+		listInterfaces(
+			remote,
+			*machineInterfacesName,
+			*machineInterfacesRaw,
+		)
+		break
+	case "machine interface create":
+		createInterface(
+			remote,
+			*machineInterfaceCreateName,
+			*machineInterfaceCreateNetwork,
+			*machineInterfaceCreateMAC,
+			*machineInterfaceCreateIP,
+		)
+		break
+	case "machine interface update":
+		updateInterface(
+			remote,
+			*machineInterfaceUpdateName,
+			*machineInterfaceUpdateIndex,
+			*machineInterfaceUpdateNetwork,
+			*machineInterfaceUpdateMAC,
+			*machineInterfaceUpdateIP,
+		)
+		break
+	case "machine interface delete":
+		deleteInterface(
+			remote,
+			*machineInterfaceDeleteName,
+			*machineInterfaceDeleteIndex,
+		)
+		break
 	case "machine linux-sysprep":
 		linuxSysprepMachine(
 			remote,
@@ -266,31 +298,6 @@ func main() {
 		break
 	case "backup delete":
 		deleteBackup(remote, *backupDeleteMachine, *backupDeleteName)
-		break
-	case "interfaces":
-		listInterfaces(remote, *cmdInterfacesMachine, *cmdInterfacesRaw)
-		break
-	case "interface create":
-		createInterface(
-			remote,
-			*interfaceCreateMachine,
-			*interfaceCreateNetwork,
-			*interfaceCreateMAC,
-			*interfaceCreateIP,
-		)
-		break
-	case "interface update":
-		updateInterface(
-			remote,
-			*interfaceUpdateMachine,
-			*interfaceUpdateIndex,
-			*interfaceUpdateNetwork,
-			*interfaceUpdateMAC,
-			*interfaceUpdateIP,
-		)
-		break
-	case "interface delete":
-		deleteInterface(remote, *interfaceDeleteMachine, *interfaceDeleteIndex)
 		break
 	case "volumes":
 		listVolumes(remote, *cmdVolumesMachine, *cmdVolumesRaw)
