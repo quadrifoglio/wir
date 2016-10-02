@@ -83,6 +83,10 @@ func HandleDHCPDiscover(s *dhcp.Server, id uint32, mac gonet.HardwareAddr) {
 			return
 		}
 
+		if !netw.UseDHCP {
+			continue
+		}
+
 		if len(nic.IP) == 0 {
 			ip, err := FreeLease(netw)
 			if err != nil {
@@ -148,6 +152,10 @@ func HandleDHCPRequest(s *dhcp.Server, id uint32, mac gonet.HardwareAddr, reques
 		if err != nil {
 			log.Println("dhcp request: network", nic.Network, "not found")
 			return
+		}
+
+		if !netw.UseDHCP {
+			continue
 		}
 
 		srv := []byte{0, 0, 0, 0}
