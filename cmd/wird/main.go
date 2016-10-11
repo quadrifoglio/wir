@@ -15,10 +15,6 @@ type config struct {
 	HTTP struct {
 		Listen string
 	}
-
-	Images struct {
-		Endpoint string
-	}
 }
 
 func main() {
@@ -33,11 +29,11 @@ func main() {
 
 	r.HandleFunc("/", server.HandleIndex).Methods("GET")
 
-	r.HandleFunc(fmt.Sprintf("%s", c.Images.Endpoint), server.HandleImageCreate).Methods("POST")
-	r.HandleFunc(fmt.Sprintf("%s", c.Images.Endpoint), server.HandleImageList).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("%s/{id}", c.Images.Endpoint), server.HandleImageGet).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("%s/{id}", c.Images.Endpoint), server.HandleImageUpdate).Methods("POST")
-	r.HandleFunc(fmt.Sprintf("%s/{id}", c.Images.Endpoint), server.HandleImageDelete).Methods("DELETE")
+	r.HandleFunc("/images", server.HandleImageCreate).Methods("POST")
+	r.HandleFunc("/images", server.HandleImageList).Methods("GET")
+	r.HandleFunc("/images/{id}", server.HandleImageGet).Methods("GET")
+	r.HandleFunc("/images/{id}", server.HandleImageUpdate).Methods("POST")
+	r.HandleFunc("/images/{id}", server.HandleImageDelete).Methods("DELETE")
 
 	http.Handle("/", r)
 	log.Fatal(http.ListenAndServe(c.HTTP.Listen, nil))
