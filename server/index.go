@@ -16,7 +16,13 @@ func HandleIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	usage, err := system.CpuUsage()
+	cpu, err := system.CpuUsage()
+	if err != nil {
+		ErrorResponse(w, r, err, 500)
+		return
+	}
+
+	memUsed, memTotal, err := system.MemoryUsage()
 	if err != nil {
 		ErrorResponse(w, r, err, 500)
 		return
@@ -24,7 +30,9 @@ func HandleIndex(w http.ResponseWriter, r *http.Request) {
 
 	var resp shared.IndexDef
 	resp.Hostname = hostname
-	resp.CpuUsage = usage
+	resp.CpuUsage = cpu
+	resp.MemoryUsage = memUsed
+	resp.MemoryTotal = memTotal
 
 	SuccessResponse(w, r, resp)
 }
