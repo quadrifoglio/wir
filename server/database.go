@@ -3,6 +3,7 @@ package server
 import (
 	"database/sql"
 	"fmt"
+	"log"
 
 	"github.com/quadrifoglio/wir/shared"
 	"github.com/quadrifoglio/wir/utils"
@@ -55,7 +56,7 @@ func DBImageExists(id string) bool {
 		return false
 	}
 
-	if len(rows) == 1 {
+	if rows.Next() {
 		return true
 	}
 
@@ -66,7 +67,7 @@ func DBImageExists(id string) bool {
 // using the specified definition
 func DBImageCreate(def shared.ImageDef) error {
 	for {
-		def.ID = utils.RandID()
+		def.ID = utils.RandID(NodeID)
 		if !DBImageExists(def.ID) {
 			break
 		}

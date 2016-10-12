@@ -12,20 +12,21 @@ import (
 
 type config struct {
 	Server struct {
+		Node     byte
 		Listen   string // Listen address of the HTTP server
 		Database string // Path of the database file
 	}
 }
 
 func main() {
-	log.Println("starting wird")
+	log.Println("Starting wird")
 
 	var c config
 	if _, err := toml.DecodeFile("wird.toml", &c); err != nil {
 		log.Fatal(err)
 	}
 
-	err := server.InitDatabase(c.Server.Database)
+	err := server.Init(c.Server.Node, c.Server.Database)
 	if err != nil {
 		log.Fatal(err)
 	}
