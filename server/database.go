@@ -805,6 +805,11 @@ func DBMachineDelete(id string) error {
 		return err
 	}
 
+	_, err = DB.Exec("DELETE FROM param WHERE machine = ?", id)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
