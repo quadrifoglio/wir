@@ -6,7 +6,6 @@ import (
 	"log"
 
 	"github.com/quadrifoglio/wir/shared"
-	"github.com/quadrifoglio/wir/utils"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -68,13 +67,6 @@ func DBImageExists(id string) bool {
 // DBImageCreate creates a new image in the database
 // using the specified definition
 func DBImageCreate(def *shared.ImageDef) error {
-	for {
-		def.ID = utils.RandID(GlobalNodeID)
-		if !DBImageExists(def.ID) {
-			break
-		}
-	}
-
 	_, err := DB.Exec("INSERT INTO image VALUES (?, ?, ?)", def.ID, def.Name, def.Source)
 	if err != nil {
 		return err

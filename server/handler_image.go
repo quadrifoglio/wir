@@ -3,12 +3,15 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/mux"
 
 	"github.com/quadrifoglio/wir/shared"
 	"github.com/quadrifoglio/wir/system"
+	"github.com/quadrifoglio/wir/utils"
 )
 
 func HandleImageCreate(w http.ResponseWriter, r *http.Request) {
@@ -29,7 +32,14 @@ func HandleImageCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dst := ImageFile(req.Name)
+	for {
+		req.ID = utils.RandID(GlobalNodeID)
+		if !DBImageExists(req.ID) {
+			break
+		}
+	}
+
+	dst := ImageFile(req.ID)
 
 	err = system.FetchURL(req.Source, dst)
 	if err != nil {
@@ -129,4 +139,30 @@ func HandleImageDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	SuccessResponse(w, r, nil)
+}
+
+func HandleImageData(w http.ResponseWriter, r *http.Request) {
+	v := mux.Vars(r)
+	id := v["id"]
+
+	if !DBImageExists(id) {
+		ErrorResponse(w, r, fmt.Errorf("Image not found"), 404)
+		return
+	}
+
+	f, err := os.Open(ImageFile(id))
+	if err != nil {
+		ErrorResponse(w, r, err, 500)
+		return
+	}
+
+	defer f.Close()
+
+	// TODO: Log
+
+	_, err = io.Copy(w, f)
+	if err != nil {
+		ErrorResponse(w, r, err, 500)
+		return
+	}
 }

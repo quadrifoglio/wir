@@ -47,6 +47,7 @@ func main() {
 	r.HandleFunc("/images/{id}", server.HandleImageGet).Methods("GET")
 	r.HandleFunc("/images/{id}", server.HandleImageUpdate).Methods("POST")
 	r.HandleFunc("/images/{id}", server.HandleImageDelete).Methods("DELETE")
+	r.HandleFunc("/images/{id}", server.HandleImageData).Methods("DATA")
 
 	http.Handle("/", r)
 	log.Fatal(http.ListenAndServe(c.Server.Listen, nil))
