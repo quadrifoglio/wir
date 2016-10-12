@@ -56,6 +56,12 @@ const (
 		machine CHAR(8) NOT NULL REFERENCES machine(id),
 		volume CHAR(8) NOT NULL REFERENCES volume(id)
 	);
+
+	CREATE TABLE IF NOT EXISTS param (
+		machine CHAR(8) NOT NULL REFERENCES machine(id),
+		key VARCHAR(255) NOT NULL,
+		val VARCHAR(255) NOT NULL
+	);
 	`
 )
 
@@ -571,6 +577,38 @@ func DBMachineGetVolumes(id string) ([]string, error) {
 	}
 
 	return vols, nil
+}
+
+// DBMachineSetVal sets a string value for the specified key
+// concerning the machine
+func DBMachineSetVal(id, key, val string) error {
+	_, err := DB.Exec("INSERT OR REPLACE INTO param VALUES (?, ?, ?)", id, key, val)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DBMachineGetVal gets a string value for the specified key
+// concerning the machine
+func DBMachineGetVal(id, key string) (string, error) {
+	rows, err := DB.Query("SELECT val FROM param WHERE machine = ? AND key = ? LIMIT 1", id, key)
+	if err != nil {
+		return "", err
+	}
+
+	defer rows.Close()
+
+	var v string
+	if rows.Next() {
+		err := rows.Scan(&v)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return v, nil
 }
 
 // DBMachineGetInterfaces returns the details of the interfaces
