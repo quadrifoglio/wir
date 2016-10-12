@@ -16,7 +16,7 @@ const (
 	CREATE TABLE IF NOT EXISTS image (
 		id CHAR(8) NOT NULL UNIQUE PRIMARY KEY,
 		name VARCHAR(255) NOT NULL,
-		url VARCHAR(255) NOT NULL
+		src VARCHAR(255) NOT NULL
 	);
 	`
 )
@@ -56,6 +56,8 @@ func DBImageExists(id string) bool {
 		return false
 	}
 
+	defer rows.Close()
+
 	if rows.Next() {
 		return true
 	}
@@ -65,15 +67,15 @@ func DBImageExists(id string) bool {
 
 // DBImageCreate creates a new image in the database
 // using the specified definition
-func DBImageCreate(def shared.ImageDef) error {
+func DBImageCreate(def *shared.ImageDef) error {
 	for {
-		def.ID = utils.RandID(NodeID)
+		def.ID = utils.RandID(GlobalNodeID)
 		if !DBImageExists(def.ID) {
 			break
 		}
 	}
 
-	_, err := DB.Exec("INSERT INTO image VALUES (?, ?, ?)", def.ID, def.Name, def.URL)
+	_, err := DB.Exec("INSERT INTO image VALUES (?, ?, ?)", def.ID, def.Name, def.Source)
 	if err != nil {
 		return err
 	}
@@ -95,14 +97,14 @@ func DBImageList() ([]shared.ImageDef, error) {
 	for rows.Next() {
 		var id string
 		var name string
-		var url string
+		var src string
 
-		err := rows.Scan(&id, &name, &url)
+		err := rows.Scan(&id, &name, &src)
 		if err != nil {
 			return nil, err
 		}
 
-		images = append(images, shared.ImageDef{id, name, url})
+		images = append(images, shared.ImageDef{id, name, src})
 	}
 
 	if err := rows.Err(); err != nil {
@@ -125,7 +127,7 @@ func DBImageGet(id string) (shared.ImageDef, error) {
 	defer rows.Close()
 
 	if rows.Next() {
-		err := rows.Scan(&def.ID, &def.Name, &def.URL)
+		err := rows.Scan(&def.ID, &def.Name, &def.Source)
 		if err != nil {
 			return def, err
 		}
@@ -142,8 +144,8 @@ func DBImageGet(id string) (shared.ImageDef, error) {
 
 // DBImageUpdate replaces all the values of the specified image
 // with the new ones
-func DBImageUpdate(def shared.ImageDef) error {
-	_, err := DB.Exec("UPDATE image set name = ?, url = ? WHERE id = ?", def.ID, def.Name, def.URL)
+func DBImageUpdate(def *shared.ImageDef) error {
+	_, err := DB.Exec("UPDATE image SET name = ?, src = ? WHERE id = ?", def.Name, def.Source, def.ID)
 	if err != nil {
 		return err
 	}

@@ -12,13 +12,15 @@ import (
 func SuccessResponse(w http.ResponseWriter, r *http.Request, v interface{}) {
 	req := fmt.Sprintf("%s %s from %s", r.Method, r.URL, r.RemoteAddr)
 
-	err := json.NewEncoder(w).Encode(v)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintf(w, "{\"Error\": \"Failed to encode response\"}")
+	if v != nil {
+		err := json.NewEncoder(w).Encode(v)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, "{\"Error\": \"Failed to encode response\"}")
 
-		log.Printf("%s - Failed to encore response: %s\n", req, err)
-		return
+			log.Printf("%s - Failed to encore response: %s\n", req, err)
+			return
+		}
 	}
 
 	log.Printf("%s - 200 OK\n", req)

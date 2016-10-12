@@ -12,9 +12,9 @@ type IndexDef struct {
 // ImageDef is the data structure used in communications
 // with all the Image* HTTP handlers (/images)
 type ImageDef struct {
-	ID   string // 64 bit random unique identifier
-	Name string // Name of the image
-	URL  string // Location of the image file (scheme://[user@]host/path)
+	ID     string // 64 bit random unique identifier
+	Name   string // Name of the image
+	Source string // Location of the image file (scheme://[user@]host/path or just file path)
 }
 
 // NetworkDef is the data structure used in communications

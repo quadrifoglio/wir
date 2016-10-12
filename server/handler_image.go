@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/quadrifoglio/wir/shared"
+	"github.com/quadrifoglio/wir/system"
 )
 
 func HandleImageCreate(w http.ResponseWriter, r *http.Request) {
@@ -23,16 +24,28 @@ func HandleImageCreate(w http.ResponseWriter, r *http.Request) {
 		ErrorResponse(w, r, fmt.Errorf("Missing 'Name'"), 400)
 		return
 	}
-	if len(req.URL) == 0 {
-		ErrorResponse(w, r, fmt.Errorf("Missing 'URL'"), 400)
+	if len(req.Source) == 0 {
+		ErrorResponse(w, r, fmt.Errorf("Missing 'Source'"), 400)
 		return
 	}
 
-	err = DBImageCreate(req)
+	dst := ImageFile(req.Name)
+
+	err = system.FetchURL(req.Source, dst)
 	if err != nil {
 		ErrorResponse(w, r, err, 500)
 		return
 	}
+
+	req.Source = dst
+
+	err = DBImageCreate(&req)
+	if err != nil {
+		ErrorResponse(w, r, err, 500)
+		return
+	}
+
+	SuccessResponse(w, r, req)
 }
 
 func HandleImageList(w http.ResponseWriter, r *http.Request) {
@@ -42,28 +55,25 @@ func HandleImageList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(images)
-	if err != nil {
-		ErrorResponse(w, r, err, 500)
-		return
-	}
+	SuccessResponse(w, r, images)
 }
 
 func HandleImageGet(w http.ResponseWriter, r *http.Request) {
 	v := mux.Vars(r)
 	id := v["id"]
 
-	image, err := DBImageGet(id)
-	if err != nil {
-		ErrorResponse(w, r, err, 404)
+	if !DBImageExists(id) {
+		ErrorResponse(w, r, fmt.Errorf("Image not found"), 404)
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(image)
+	image, err := DBImageGet(id)
 	if err != nil {
 		ErrorResponse(w, r, err, 500)
 		return
 	}
+
+	SuccessResponse(w, r, image)
 }
 
 func HandleImageUpdate(w http.ResponseWriter, r *http.Request) {
@@ -71,6 +81,11 @@ func HandleImageUpdate(w http.ResponseWriter, r *http.Request) {
 
 	v := mux.Vars(r)
 	id := v["id"]
+
+	if !DBImageExists(id) {
+		ErrorResponse(w, r, fmt.Errorf("Image not found"), 404)
+		return
+	}
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
@@ -84,31 +99,34 @@ func HandleImageUpdate(w http.ResponseWriter, r *http.Request) {
 		ErrorResponse(w, r, fmt.Errorf("Missing 'Name'"), 400)
 		return
 	}
-	if len(req.URL) == 0 {
-		ErrorResponse(w, r, fmt.Errorf("Missing 'URL'"), 400)
+	if len(req.Source) == 0 {
+		ErrorResponse(w, r, fmt.Errorf("Missing 'Source'"), 400)
 		return
 	}
 
-	err = DBImageUpdate(req)
+	err = DBImageUpdate(&req)
 	if err != nil {
 		ErrorResponse(w, r, err, 404)
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(req)
-	if err != nil {
-		ErrorResponse(w, r, err, 500)
-		return
-	}
+	SuccessResponse(w, r, req)
 }
 
 func HandleImageDelete(w http.ResponseWriter, r *http.Request) {
 	v := mux.Vars(r)
 	id := v["id"]
 
+	if !DBImageExists(id) {
+		ErrorResponse(w, r, fmt.Errorf("Image not found"), 404)
+		return
+	}
+
 	err := DBImageDelete(id)
 	if err != nil {
 		ErrorResponse(w, r, err, 500)
 		return
 	}
+
+	SuccessResponse(w, r, nil)
 }

@@ -16,6 +16,11 @@ type config struct {
 		Listen   string // Listen address of the HTTP server
 		Database string // Path of the database file
 	}
+
+	Storage struct {
+		Images   string // Folder in which images are stored
+		Machines string // Folder in which machines are stored
+	}
 }
 
 func main() {
@@ -26,7 +31,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err := server.Init(c.Server.Node, c.Server.Database)
+	err := server.Init(c.Server.Node, c.Server.Database, c.Storage.Images, c.Storage.Machines)
 	if err != nil {
 		log.Fatal(err)
 	}

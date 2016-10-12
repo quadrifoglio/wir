@@ -2,3 +2,7 @@
 node = 1
 listen = "127.0.0.1:8000"
 database = "wird.sqlite"
+
+[storage]
+images = "/var/lib/wir/images"
+machines = "/var/lib/wir/machines"
