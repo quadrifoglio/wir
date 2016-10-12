@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/quadrifoglio/wir/shared"
+	"github.com/quadrifoglio/wir/utils"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -23,6 +24,8 @@ var (
 	DB *sql.DB
 )
 
+// InitDatabase opens the specified SQLite database
+// and creates the tables if they don't exist
 func InitDatabase(path string) error {
 	db, err := sql.Open("sqlite3", path)
 	if err != nil {
@@ -38,11 +41,37 @@ func InitDatabase(path string) error {
 	return nil
 }
 
+// CloseDatabase closes the database
 func CloseDatabase() error {
 	return DB.Close()
 }
 
+// DBImageExists checks if the specified image ID
+// exists in the database
+func DBImageExists(id string) bool {
+	rows, err := DB.Query("SELECT id FROM image WHERE id = ? LIMIT 1", id)
+	if err != nil {
+		log.Println("Image exists check:", err)
+		return false
+	}
+
+	if len(rows) == 1 {
+		return true
+	}
+
+	return false
+}
+
+// DBImageCreate creates a new image in the database
+// using the specified definition
 func DBImageCreate(def shared.ImageDef) error {
+	for {
+		def.ID = utils.RandID()
+		if !DBImageExists(def.ID) {
+			break
+		}
+	}
+
 	_, err := DB.Exec("INSERT INTO image VALUES (?, ?, ?)", def.ID, def.Name, def.URL)
 	if err != nil {
 		return err
@@ -51,6 +80,8 @@ func DBImageCreate(def shared.ImageDef) error {
 	return nil
 }
 
+// DBImageList returns all the images
+// stored in the database
 func DBImageList() ([]shared.ImageDef, error) {
 	rows, err := DB.Query("SELECT * FROM image")
 	if err != nil {
@@ -80,6 +111,8 @@ func DBImageList() ([]shared.ImageDef, error) {
 	return images, nil
 }
 
+// DBImageGet returns the requested image
+// from the database
 func DBImageGet(id string) (shared.ImageDef, error) {
 	var def shared.ImageDef
 
@@ -104,6 +137,8 @@ func DBImageGet(id string) (shared.ImageDef, error) {
 	return def, fmt.Errorf("Image not found")
 }
 
+// DBImageUpdate replaces all the values of the specified image
+// with the new ones
 func DBImageUpdate(def shared.ImageDef) error {
 	_, err := DB.Exec("UPDATE image set name = ?, url = ? WHERE id = ?", def.ID, def.Name, def.URL)
 	if err != nil {
@@ -113,6 +148,8 @@ func DBImageUpdate(def shared.ImageDef) error {
 	return nil
 }
 
+// DBImageDelete deletes the specified image
+// from the database
 func DBImageDelete(id string) error {
 	_, err := DB.Exec("DELETE FROM image WHERE id = ?", id)
 	if err != nil {
