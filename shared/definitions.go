@@ -38,3 +38,32 @@ type NetworkDef struct {
 		Router  string // IP address of the network router
 	}
 }
+
+// VolumeDef is the data structure used in communications
+// with all the Volume* HTTP handlers (/volumes)
+type VolumeDef struct {
+	ID   string // 64 bit random unique identifier
+	Name string // Name of the volume
+	Size uint64 // Size of the volume in KiB
+}
+
+// InterfaceDef represents a network interface
+// associated with a machine
+type InterfaceDef struct {
+	Network string // ID of the network to which the interface is attached
+	MAC     string // MAC address of the interface
+	IP      string // IP address of the interface in CIDR notation
+}
+
+// MachineDef is the data structure used in communications
+// with all the Machine* HTTP handlers (/machines)
+type MachineDef struct {
+	ID     string // 64 bit random unique identifier
+	Name   string // Name of the machine
+	Image  string // ID of the machine's image
+	Cores  int    // Number of CPUs
+	Memory uint64 // Memory in KiB
+
+	Volumes    []string       // IDs of the attached volumes
+	Interfaces []InterfaceDef // List of network interfaces
+}

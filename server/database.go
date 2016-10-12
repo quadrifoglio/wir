@@ -30,6 +30,32 @@ const (
 		dhcp_num INTEGER NOT NULL,
 		dhcp_router VARCHAR(255) NOT NULL
 	);
+
+	CREATE TABLE IF NOT EXISTS volume (
+		id CHAR(8) NOT NULL UNIQUE PRIMARY KEY,
+		name VARCHAR(255) NOT NULL,
+		size BIGINT NOT NULL
+	);
+
+	CREATE TABLE IF NOT EXISTS machine (
+		id CHAR(8) NOT NULL UNIQUE PRIMARY KEY,
+		name VARCHAR(255) NOT NULL,
+		img CHAR(8) NOT NULL REFERENCES image(id),
+		cores INTEGER NOT NULL,
+		mem BIGINT NOT NULL
+	);
+
+	CREATE TABLE IF NOT EXISTS iface (
+		machine CHAR(8) NOT NULL REFERENCES machine(id),
+		net VARCHAR(255) NOT NULL,
+		mac VARCHAR(255) NOT NULL,
+		ip VARCHAR(255)
+	);
+
+	CREATE TABLE IF NOT EXISTS attach (
+		machine CHAR(8) NOT NULL REFERENCES machine(id),
+		volume CHAR(8) NOT NULL REFERENCES volume(id)
+	);
 	`
 )
 
@@ -324,6 +350,419 @@ func DBNetworkUpdate(def *shared.NetworkDef) error {
 // from the database
 func DBNetworkDelete(id string) error {
 	_, err := DB.Exec("DELETE FROM network WHERE id = ?", id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// VOLUMES
+
+// DBVolumeExists checks if the specified volume ID
+// exists in the database
+func DBVolumeExists(id string) bool {
+	rows, err := DB.Query("SELECT id FROM volume WHERE id = ? LIMIT 1", id)
+	if err != nil {
+		log.Println("Volume exists check:", err)
+		return false
+	}
+
+	defer rows.Close()
+
+	if rows.Next() {
+		return true
+	}
+
+	return false
+}
+
+// DBVolumeCreate creates a new volume in the database
+// using the specified definition
+func DBVolumeCreate(def *shared.VolumeDef) error {
+	_, err := DB.Exec(
+		"INSERT INTO volume VALUES (?, ?, ?)",
+		def.ID,
+		def.Name,
+		def.Size,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DBVolumeList returns all the volumes
+// stored in the database
+func DBVolumeList() ([]shared.VolumeDef, error) {
+	rows, err := DB.Query("SELECT * FROM volume")
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	volumes := make([]shared.VolumeDef, 0)
+	for rows.Next() {
+		var def shared.VolumeDef
+
+		err := rows.Scan(
+			&def.ID,
+			&def.Name,
+			&def.Size,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		volumes = append(volumes, def)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return volumes, nil
+}
+
+// DBVolumeGet returns the requested volume
+// from the database
+func DBVolumeGet(id string) (shared.VolumeDef, error) {
+	var def shared.VolumeDef
+
+	rows, err := DB.Query("SELECT * FROM volume WHERE id = ?", id)
+	if err != nil {
+		return def, err
+	}
+
+	defer rows.Close()
+
+	if rows.Next() {
+		err := rows.Scan(
+			&def.ID,
+			&def.Name,
+			&def.Size,
+		)
+
+		if err != nil {
+			return def, err
+		}
+
+		return def, nil
+	}
+
+	if err := rows.Err(); err != nil {
+		return def, err
+	}
+
+	return def, fmt.Errorf("Volume not found")
+}
+
+// DBVolumeUpdate replaces all the values of the specified volume
+// with the new ones
+func DBVolumeUpdate(def *shared.VolumeDef) error {
+	_, err := DB.Exec("UPDATE volume SET name = ?, size = ? WHERE id = ?",
+		def.Name,
+		def.Size,
+		def.ID,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DBVolumeDelete deletes the specified volume
+// from the database
+func DBVolumeDelete(id string) error {
+	_, err := DB.Exec("DELETE FROM volume WHERE id = ?", id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// MACHINES
+
+// DBMachineExists checks if the specified machine ID
+// exists in the database
+func DBMachineExists(id string) bool {
+	rows, err := DB.Query("SELECT id FROM machine WHERE id = ? LIMIT 1", id)
+	if err != nil {
+		log.Println("Machine exists check:", err)
+		return false
+	}
+
+	defer rows.Close()
+
+	if rows.Next() {
+		return true
+	}
+
+	return false
+}
+
+// DBMachineSetVolumes flushes the volumes associated with the machine,
+// and updates them
+func DBMachineSetVolumes(def shared.MachineDef) error {
+	_, err := DB.Exec("DELETE FROM attach WHERE machine = ?", def.ID)
+	if err != nil {
+		return err
+	}
+
+	for _, v := range def.Volumes {
+		_, err := DB.Exec("INSERT INTO attach VALUES (?, ?)", def.ID, v)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// DBMachineSetInterfaces flushes the volumes associated with the machine,
+// and updates them
+func DBMachineSetInterfaces(def shared.MachineDef) error {
+	_, err := DB.Exec("DELETE FROM iface WHERE machine = ?", def.ID)
+	if err != nil {
+		return err
+	}
+
+	for _, i := range def.Interfaces {
+		_, err := DB.Exec("INSERT INTO iface VALUES (?, ?, ?, ?)", def.ID, i.Network, i.MAC, i.IP)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// DBMachineGetVolumes returns the list of volume IDs
+// associated with the machine
+func DBMachineGetVolumes(id string) ([]string, error) {
+	rows, err := DB.Query("SELECT volume FROM attach WHERE machine = ?", id)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	vols := make([]string, 0)
+	for rows.Next() {
+		var v string
+
+		err := rows.Scan(&v)
+		if err != nil {
+			return nil, err
+		}
+
+		vols = append(vols, v)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return vols, nil
+}
+
+// DBMachineGetInterfaces returns the details of the interfaces
+// associated with the machine
+func DBMachineGetInterfaces(id string) ([]shared.InterfaceDef, error) {
+	rows, err := DB.Query("SELECT * FROM iface WHERE machine = ?", id)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	ifaces := make([]shared.InterfaceDef, 0)
+	for rows.Next() {
+		var id string
+		var i shared.InterfaceDef
+
+		err := rows.Scan(&id, &i.Network, &i.MAC, &i.IP)
+		if err != nil {
+			return nil, err
+		}
+
+		ifaces = append(ifaces, i)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return ifaces, nil
+}
+
+// DBMachineCreate creates a new machine in the database
+// using the specified definition
+func DBMachineCreate(def shared.MachineDef) error {
+	_, err := DB.Exec(
+		"INSERT INTO machine VALUES (?, ?, ?, ?, ?)",
+		def.ID,
+		def.Name,
+		def.Image,
+		def.Cores,
+		def.Memory,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	if err := DBMachineSetVolumes(def); err != nil {
+		return err
+	}
+	if err := DBMachineSetInterfaces(def); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DBMachineList returns all the machines
+// stored in the database
+func DBMachineList() ([]shared.MachineDef, error) {
+	rows, err := DB.Query("SELECT * FROM machine")
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	machines := make([]shared.MachineDef, 0)
+	for rows.Next() {
+		var def shared.MachineDef
+
+		err := rows.Scan(
+			&def.ID,
+			&def.Name,
+			&def.Image,
+			&def.Cores,
+			&def.Memory,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		def.Volumes, err = DBMachineGetVolumes(def.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		def.Interfaces, err = DBMachineGetInterfaces(def.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		machines = append(machines, def)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return machines, nil
+}
+
+// DBMachineGet returns the requested machine
+// from the database
+func DBMachineGet(id string) (shared.MachineDef, error) {
+	var def shared.MachineDef
+
+	rows, err := DB.Query("SELECT * FROM machine WHERE id = ?", id)
+	if err != nil {
+		return def, err
+	}
+
+	defer rows.Close()
+
+	if rows.Next() {
+		err := rows.Scan(
+			&def.ID,
+			&def.Name,
+			&def.Image,
+			&def.Cores,
+			&def.Memory,
+		)
+
+		if err != nil {
+			return def, err
+		}
+
+		def.Volumes, err = DBMachineGetVolumes(def.ID)
+		if err != nil {
+			return def, err
+		}
+
+		def.Interfaces, err = DBMachineGetInterfaces(def.ID)
+		if err != nil {
+			return def, err
+		}
+
+		return def, nil
+	}
+
+	if err := rows.Err(); err != nil {
+		return def, err
+	}
+
+	return def, fmt.Errorf("Machine not found")
+}
+
+// DBMachineUpdate replaces all the values of the specified machine
+// with the new ones
+func DBMachineUpdate(def shared.MachineDef) error {
+	sqls := `
+		UPDATE machine SET
+		name = ?, cores = ?, mem = ?
+		WHERE id = ?
+	`
+	_, err := DB.Exec(sqls,
+		def.Name,
+		def.Cores,
+		def.Memory,
+		def.ID,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	if err := DBMachineSetVolumes(def); err != nil {
+		return err
+	}
+	if err := DBMachineSetInterfaces(def); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DBMachineDelete deletes the specified machine
+// from the database
+func DBMachineDelete(id string) error {
+	_, err := DB.Exec("DELETE FROM machine WHERE id = ?", id)
+	if err != nil {
+		return err
+	}
+
+	_, err = DB.Exec("DELETE FROM attach WHERE machine = ?", id)
+	if err != nil {
+		return err
+	}
+
+	_, err = DB.Exec("DELETE FROM iface WHERE machine = ?", id)
 	if err != nil {
 		return err
 	}

@@ -12,7 +12,7 @@ import (
 	"github.com/quadrifoglio/wir/utils"
 )
 
-func validate(req shared.NetworkDef) (error, int) {
+func validateNetwork(req shared.NetworkDef) (error, int) {
 	if len(req.Name) == 0 {
 		return fmt.Errorf("Missing 'Name'"), 400
 	}
@@ -51,7 +51,7 @@ func HandleNetworkCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err, status := validate(req)
+	err, status := validateNetwork(req)
 	if err != nil {
 		ErrorResponse(w, r, err, status)
 		return
@@ -120,7 +120,7 @@ func HandleNetworkUpdate(w http.ResponseWriter, r *http.Request) {
 
 	req.ID = id
 
-	err, status := validate(req)
+	err, status := validateNetwork(req)
 	if err != nil {
 		ErrorResponse(w, r, err, status)
 		return

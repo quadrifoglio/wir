@@ -55,6 +55,18 @@ func main() {
 	r.HandleFunc("/networks/{id}", server.HandleNetworkUpdate).Methods("POST")
 	r.HandleFunc("/networks/{id}", server.HandleNetworkDelete).Methods("DELETE")
 
+	r.HandleFunc("/volumes", server.HandleVolumeCreate).Methods("POST")
+	r.HandleFunc("/volumes", server.HandleVolumeList).Methods("GET")
+	r.HandleFunc("/volumes/{id}", server.HandleVolumeGet).Methods("GET")
+	r.HandleFunc("/volumes/{id}", server.HandleVolumeUpdate).Methods("POST")
+	r.HandleFunc("/volumes/{id}", server.HandleVolumeDelete).Methods("DELETE")
+
+	r.HandleFunc("/machines", server.HandleMachineCreate).Methods("POST")
+	r.HandleFunc("/machines", server.HandleMachineList).Methods("GET")
+	r.HandleFunc("/machines/{id}", server.HandleMachineGet).Methods("GET")
+	r.HandleFunc("/machines/{id}", server.HandleMachineUpdate).Methods("POST")
+	r.HandleFunc("/machines/{id}", server.HandleMachineDelete).Methods("DELETE")
+
 	http.Handle("/", r)
 	log.Fatal(http.ListenAndServe(c.Server.Listen, nil))
 }

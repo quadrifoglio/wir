@@ -14,6 +14,20 @@ import (
 	"github.com/quadrifoglio/wir/utils"
 )
 
+func validateImage(req shared.ImageDef) (error, int) {
+	if len(req.Name) == 0 {
+		return fmt.Errorf("Missing 'Name'"), 400
+	}
+	if req.Type != shared.BackendKVM && req.Type != shared.BackendLXC {
+		return fmt.Errorf("Missing or unsupported 'Type'"), 400
+	}
+	if len(req.Source) == 0 {
+		return fmt.Errorf("Missing 'Source'"), 400
+	}
+
+	return nil, 200
+}
+
 func HandleImageCreate(w http.ResponseWriter, r *http.Request) {
 	var req shared.ImageDef
 
@@ -23,16 +37,9 @@ func HandleImageCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(req.Name) == 0 {
-		ErrorResponse(w, r, fmt.Errorf("Missing 'Name'"), 400)
-		return
-	}
-	if req.Type != shared.BackendKVM && req.Type != shared.BackendLXC {
-		ErrorResponse(w, r, fmt.Errorf("Missing or unsupported 'Type'"), 400)
-		return
-	}
-	if len(req.Source) == 0 {
-		ErrorResponse(w, r, fmt.Errorf("Missing 'Source'"), 400)
+	err, status := validateImage(req)
+	if err != nil {
+		ErrorResponse(w, r, err, status)
 		return
 	}
 
@@ -109,16 +116,9 @@ func HandleImageUpdate(w http.ResponseWriter, r *http.Request) {
 
 	req.ID = id
 
-	if len(req.Name) == 0 {
-		ErrorResponse(w, r, fmt.Errorf("Missing 'Name'"), 400)
-		return
-	}
-	if req.Type != shared.BackendKVM && req.Type != shared.BackendLXC {
-		ErrorResponse(w, r, fmt.Errorf("Missing or unsupported 'Type'"), 400)
-		return
-	}
-	if len(req.Source) == 0 {
-		ErrorResponse(w, r, fmt.Errorf("Missing 'Source'"), 400)
+	err, status := validateImage(req)
+	if err != nil {
+		ErrorResponse(w, r, err, status)
 		return
 	}
 
