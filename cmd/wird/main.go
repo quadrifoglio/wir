@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
@@ -12,8 +11,9 @@ import (
 )
 
 type config struct {
-	HTTP struct {
-		Listen string
+	Server struct {
+		Listen   string // Listen address of the HTTP server
+		Database string // Path of the database file
 	}
 }
 
@@ -24,6 +24,13 @@ func main() {
 	if _, err := toml.DecodeFile("wird.toml", &c); err != nil {
 		log.Fatal(err)
 	}
+
+	err := server.InitDatabase(c.Server.Database)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer server.CloseDatabase()
 
 	r := mux.NewRouter()
 
@@ -36,5 +43,5 @@ func main() {
 	r.HandleFunc("/images/{id}", server.HandleImageDelete).Methods("DELETE")
 
 	http.Handle("/", r)
-	log.Fatal(http.ListenAndServe(c.HTTP.Listen, nil))
+	log.Fatal(http.ListenAndServe(c.Server.Listen, nil))
 }
