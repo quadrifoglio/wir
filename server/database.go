@@ -129,6 +129,8 @@ func DBImageGet(id string) (shared.ImageDef, error) {
 		if err != nil {
 			return def, err
 		}
+
+		return def, nil
 	}
 
 	if err := rows.Err(); err != nil {
