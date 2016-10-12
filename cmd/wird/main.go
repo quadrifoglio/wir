@@ -49,6 +49,12 @@ func main() {
 	r.HandleFunc("/images/{id}", server.HandleImageDelete).Methods("DELETE")
 	r.HandleFunc("/images/{id}", server.HandleImageData).Methods("DATA")
 
+	r.HandleFunc("/networks", server.HandleNetworkCreate).Methods("POST")
+	r.HandleFunc("/networks", server.HandleNetworkList).Methods("GET")
+	r.HandleFunc("/networks/{id}", server.HandleNetworkGet).Methods("GET")
+	r.HandleFunc("/networks/{id}", server.HandleNetworkUpdate).Methods("POST")
+	r.HandleFunc("/networks/{id}", server.HandleNetworkDelete).Methods("DELETE")
+
 	http.Handle("/", r)
 	log.Fatal(http.ListenAndServe(c.Server.Listen, nil))
 }
