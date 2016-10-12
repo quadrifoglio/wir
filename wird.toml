@@ -5,4 +5,5 @@ database = "wird.sqlite"
 
 [storage]
 images = "/var/lib/wir/images"
+volumes = "/var/lib/wir/volumes"
 machines = "/var/lib/wir/machines"

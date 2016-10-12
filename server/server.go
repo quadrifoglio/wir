@@ -8,14 +8,16 @@ var (
 	GlobalNodeID byte
 
 	GlobalImagePath   string
+	GlobalVolumePath  string
 	GlobalMachinePath string
 )
 
 // Init initializes the parameters
 // of the server
-func Init(nodeId byte, database string, img, machine string) error {
+func Init(nodeId byte, db string, img, vol, machine string) error {
 	GlobalNodeID = nodeId
 	GlobalImagePath = img
+	GlobalVolumePath = vol
 	GlobalMachinePath = machine
 
 	return InitDatabase(database)

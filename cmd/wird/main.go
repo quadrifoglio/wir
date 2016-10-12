@@ -19,6 +19,7 @@ type config struct {
 
 	Storage struct {
 		Images   string // Folder in which images are stored
+		Volumes  string // Folder in which volumes are stored
 		Machines string // Folder in which machines are stored
 	}
 }
@@ -31,7 +32,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err := server.Init(c.Server.Node, c.Server.Database, c.Storage.Images, c.Storage.Machines)
+	err := server.Init(c.Server.Node, c.Server.Database, c.Storage.Images, C.Storage.Volumes, c.Storage.Machines)
 	if err != nil {
 		log.Fatal(err)
 	}
