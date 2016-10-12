@@ -15,6 +15,7 @@ const (
 	CREATE TABLE IF NOT EXISTS image (
 		id CHAR(8) NOT NULL UNIQUE PRIMARY KEY,
 		name VARCHAR(255) NOT NULL,
+		type VARCHAR(255) NOT NULL,
 		src VARCHAR(255) NOT NULL
 	);
 	`
@@ -67,7 +68,7 @@ func DBImageExists(id string) bool {
 // DBImageCreate creates a new image in the database
 // using the specified definition
 func DBImageCreate(def *shared.ImageDef) error {
-	_, err := DB.Exec("INSERT INTO image VALUES (?, ?, ?)", def.ID, def.Name, def.Source)
+	_, err := DB.Exec("INSERT INTO image VALUES (?, ?, ?, ?)", def.ID, def.Name, def.Type, def.Source)
 	if err != nil {
 		return err
 	}
@@ -89,14 +90,15 @@ func DBImageList() ([]shared.ImageDef, error) {
 	for rows.Next() {
 		var id string
 		var name string
+		var t string
 		var src string
 
-		err := rows.Scan(&id, &name, &src)
+		err := rows.Scan(&id, &name, &t, &src)
 		if err != nil {
 			return nil, err
 		}
 
-		images = append(images, shared.ImageDef{id, name, src})
+		images = append(images, shared.ImageDef{id, name, t, src})
 	}
 
 	if err := rows.Err(); err != nil {
@@ -119,7 +121,7 @@ func DBImageGet(id string) (shared.ImageDef, error) {
 	defer rows.Close()
 
 	if rows.Next() {
-		err := rows.Scan(&def.ID, &def.Name, &def.Source)
+		err := rows.Scan(&def.ID, &def.Name, &def.Type, &def.Source)
 		if err != nil {
 			return def, err
 		}
@@ -137,7 +139,7 @@ func DBImageGet(id string) (shared.ImageDef, error) {
 // DBImageUpdate replaces all the values of the specified image
 // with the new ones
 func DBImageUpdate(def *shared.ImageDef) error {
-	_, err := DB.Exec("UPDATE image SET name = ?, src = ? WHERE id = ?", def.Name, def.Source, def.ID)
+	_, err := DB.Exec("UPDATE image SET name = ?, type = ?, src = ? WHERE id = ?", def.Name, def.Type, def.Source, def.ID)
 	if err != nil {
 		return err
 	}

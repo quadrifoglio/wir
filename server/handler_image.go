@@ -27,6 +27,10 @@ func HandleImageCreate(w http.ResponseWriter, r *http.Request) {
 		ErrorResponse(w, r, fmt.Errorf("Missing 'Name'"), 400)
 		return
 	}
+	if req.Type != shared.BackendKVM && req.Type != shared.BackendLXC {
+		ErrorResponse(w, r, fmt.Errorf("Missing or unsupported 'Type'"), 400)
+		return
+	}
 	if len(req.Source) == 0 {
 		ErrorResponse(w, r, fmt.Errorf("Missing 'Source'"), 400)
 		return
@@ -107,6 +111,10 @@ func HandleImageUpdate(w http.ResponseWriter, r *http.Request) {
 
 	if len(req.Name) == 0 {
 		ErrorResponse(w, r, fmt.Errorf("Missing 'Name'"), 400)
+		return
+	}
+	if req.Type != shared.BackendKVM && req.Type != shared.BackendLXC {
+		ErrorResponse(w, r, fmt.Errorf("Missing or unsupported 'Type'"), 400)
 		return
 	}
 	if len(req.Source) == 0 {

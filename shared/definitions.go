@@ -1,5 +1,10 @@
 package shared
 
+const (
+	BackendKVM = "kvm"
+	BackendLXC = "lxc"
+)
+
 // IndexDef represents the data returned by
 // the Index HTTP handler (/)
 type IndexDef struct {
@@ -14,6 +19,7 @@ type IndexDef struct {
 type ImageDef struct {
 	ID     string // 64 bit random unique identifier
 	Name   string // Name of the image
+	Type   string // Type of the image (kvm, lxc)
 	Source string // Location of the image file (scheme://[user@]host/path or just file path)
 }
 
