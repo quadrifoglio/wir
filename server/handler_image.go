@@ -60,7 +60,7 @@ func HandleImageCreate(w http.ResponseWriter, r *http.Request) {
 
 	req.Source = dst
 
-	err = DBImageCreate(&req)
+	err = DBImageCreate(req)
 	if err != nil {
 		ErrorResponse(w, r, err, 500)
 		return
@@ -122,7 +122,7 @@ func HandleImageUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = DBImageUpdate(&req)
+	err = DBImageUpdate(req)
 	if err != nil {
 		ErrorResponse(w, r, err, 404)
 		return

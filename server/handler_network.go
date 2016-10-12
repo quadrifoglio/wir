@@ -64,7 +64,7 @@ func HandleNetworkCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = DBNetworkCreate(&req)
+	err = DBNetworkCreate(req)
 	if err != nil {
 		ErrorResponse(w, r, err, 500)
 		return
@@ -126,7 +126,7 @@ func HandleNetworkUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = DBNetworkUpdate(&req)
+	err = DBNetworkUpdate(req)
 	if err != nil {
 		ErrorResponse(w, r, err, 404)
 		return

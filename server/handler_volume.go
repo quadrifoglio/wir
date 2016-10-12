@@ -44,7 +44,7 @@ func HandleVolumeCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = DBVolumeCreate(&req)
+	err = DBVolumeCreate(req)
 	if err != nil {
 		ErrorResponse(w, r, err, 500)
 		return
@@ -106,7 +106,7 @@ func HandleVolumeUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = DBVolumeUpdate(&req)
+	err = DBVolumeUpdate(req)
 	if err != nil {
 		ErrorResponse(w, r, err, 404)
 		return

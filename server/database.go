@@ -107,7 +107,7 @@ func DBImageExists(id string) bool {
 
 // DBImageCreate creates a new image in the database
 // using the specified definition
-func DBImageCreate(def *shared.ImageDef) error {
+func DBImageCreate(def shared.ImageDef) error {
 	_, err := DB.Exec("INSERT INTO image VALUES (?, ?, ?, ?)", def.ID, def.Name, def.Type, def.Source)
 	if err != nil {
 		return err
@@ -178,7 +178,7 @@ func DBImageGet(id string) (shared.ImageDef, error) {
 
 // DBImageUpdate replaces all the values of the specified image
 // with the new ones
-func DBImageUpdate(def *shared.ImageDef) error {
+func DBImageUpdate(def shared.ImageDef) error {
 	_, err := DB.Exec("UPDATE image SET name = ?, type = ?, src = ? WHERE id = ?", def.Name, def.Type, def.Source, def.ID)
 	if err != nil {
 		return err
@@ -220,7 +220,7 @@ func DBNetworkExists(id string) bool {
 
 // DBNetworkCreate creates a new network in the database
 // using the specified definition
-func DBNetworkCreate(def *shared.NetworkDef) error {
+func DBNetworkCreate(def shared.NetworkDef) error {
 	_, err := DB.Exec(
 		"INSERT INTO network VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
 		def.ID,
@@ -319,7 +319,7 @@ func DBNetworkGet(id string) (shared.NetworkDef, error) {
 
 // DBNetworkUpdate replaces all the values of the specified network
 // with the new ones
-func DBNetworkUpdate(def *shared.NetworkDef) error {
+func DBNetworkUpdate(def shared.NetworkDef) error {
 	sqls := `
 		UPDATE network SET
 			name = ?, cidr = ?, gw = ?,
@@ -379,7 +379,7 @@ func DBVolumeExists(id string) bool {
 
 // DBVolumeCreate creates a new volume in the database
 // using the specified definition
-func DBVolumeCreate(def *shared.VolumeDef) error {
+func DBVolumeCreate(def shared.VolumeDef) error {
 	_, err := DB.Exec(
 		"INSERT INTO volume VALUES (?, ?, ?)",
 		def.ID,
@@ -463,7 +463,7 @@ func DBVolumeGet(id string) (shared.VolumeDef, error) {
 
 // DBVolumeUpdate replaces all the values of the specified volume
 // with the new ones
-func DBVolumeUpdate(def *shared.VolumeDef) error {
+func DBVolumeUpdate(def shared.VolumeDef) error {
 	_, err := DB.Exec("UPDATE volume SET name = ?, size = ? WHERE id = ?",
 		def.Name,
 		def.Size,
