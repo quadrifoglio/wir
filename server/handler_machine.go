@@ -51,6 +51,10 @@ func validateMachine(req shared.MachineDef) (error, int) {
 			if err != nil {
 				return fmt.Errorf("Invalid 'MAC' for interface"), 400
 			}
+
+			if !DBIsMACFree(i.MAC) {
+				return fmt.Errorf("MAC address is already in use"), 400
+			}
 		}
 		if len(i.IP) > 0 {
 			ip := net.ParseIP(i.IP)

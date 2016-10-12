@@ -20,7 +20,7 @@ func Init(nodeId byte, db string, img, vol, machine string) error {
 	GlobalVolumePath = vol
 	GlobalMachinePath = machine
 
-	return InitDatabase(database)
+	return InitDatabase(db)
 }
 
 // ImageFile returns the path of the file
@@ -29,7 +29,13 @@ func ImageFile(name string) string {
 	return fmt.Sprintf("%s/%s/img.data", GlobalImagePath, name)
 }
 
-// MachinePath returns the current path
+// VolumeFile returns the path of the file
+// for the specified volume name
+func VolumeFile(name string) string {
+	return fmt.Sprintf("%s/%s/volume.data", GlobalVolumePath, name)
+}
+
+// MachinePath returns the current folder
 // for the specified machine name
 func MachinePath(name string) string {
 	return fmt.Sprintf("%s/%s", GlobalMachinePath, name)

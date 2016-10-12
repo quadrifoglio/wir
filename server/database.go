@@ -769,3 +769,23 @@ func DBMachineDelete(id string) error {
 
 	return nil
 }
+
+// MISC
+
+// DBIsMACFree checks if the specified MAC address
+// is in use on an interface
+func DBIsMACFree(mac string) bool {
+	rows, err := DB.Query("SELECT mac FROM iface WHERE mac = ?", mac)
+	if err != nil {
+		log.Println("Free MAC check: ", err)
+		return false
+	}
+
+	defer rows.Close()
+
+	if rows.Next() {
+		return false
+	}
+
+	return true
+}
