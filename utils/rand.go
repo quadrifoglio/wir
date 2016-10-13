@@ -16,7 +16,7 @@ func RandID(prefix byte) string {
 	binary.LittleEndian.PutUint64(b[1:], uint64(nano))
 
 	b[0] = prefix
-	return hex.EncodeToString(b)
+	return hex.EncodeToString(b[:4])
 }
 
 // RandMAC generates a random MAC address with

@@ -64,6 +64,12 @@ func HandleNetworkCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	err = CreateNetwork(req)
+	if err != nil {
+		ErrorResponse(w, r, err, 500)
+		return
+	}
+
 	err = DBNetworkCreate(req)
 	if err != nil {
 		ErrorResponse(w, r, err, 500)

@@ -32,7 +32,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err := server.Init(c.Server.Node, c.Server.Database, c.Storage.Images, C.Storage.Volumes, c.Storage.Machines)
+	err := server.Init(c.Server.Node, c.Server.Database, c.Storage.Images, c.Storage.Volumes, c.Storage.Machines)
 	if err != nil {
 		log.Fatal(err)
 	}
