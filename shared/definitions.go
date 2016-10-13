@@ -44,6 +44,7 @@ type NetworkDef struct {
 type VolumeDef struct {
 	ID   string // 64 bit random unique identifier
 	Name string // Name of the volume
+	Type string // Type of the volume (kvm, lxc)
 	Size uint64 // Size of the volume in KiB
 }
 

@@ -34,6 +34,7 @@ const (
 	CREATE TABLE IF NOT EXISTS volume (
 		id CHAR(8) NOT NULL UNIQUE PRIMARY KEY,
 		name VARCHAR(255) NOT NULL,
+		type VARCHAR(255) NOT NULL,
 		size BIGINT NOT NULL
 	);
 
@@ -387,9 +388,10 @@ func DBVolumeExists(id string) bool {
 // using the specified definition
 func DBVolumeCreate(def shared.VolumeDef) error {
 	_, err := DB.Exec(
-		"INSERT INTO volume VALUES (?, ?, ?)",
+		"INSERT INTO volume VALUES (?, ?, ?, ?)",
 		def.ID,
 		def.Name,
+		def.Type,
 		def.Size,
 	)
 
@@ -417,6 +419,7 @@ func DBVolumeList() ([]shared.VolumeDef, error) {
 		err := rows.Scan(
 			&def.ID,
 			&def.Name,
+			&def.Type,
 			&def.Size,
 		)
 
@@ -450,6 +453,7 @@ func DBVolumeGet(id string) (shared.VolumeDef, error) {
 		err := rows.Scan(
 			&def.ID,
 			&def.Name,
+			&def.Type,
 			&def.Size,
 		)
 
@@ -470,8 +474,9 @@ func DBVolumeGet(id string) (shared.VolumeDef, error) {
 // DBVolumeUpdate replaces all the values of the specified volume
 // with the new ones
 func DBVolumeUpdate(def shared.VolumeDef) error {
-	_, err := DB.Exec("UPDATE volume SET name = ?, size = ? WHERE id = ?",
+	_, err := DB.Exec("UPDATE volume SET name = ?, type = ?, size = ? WHERE id = ?",
 		def.Name,
+		def.Type,
 		def.Size,
 		def.ID,
 	)

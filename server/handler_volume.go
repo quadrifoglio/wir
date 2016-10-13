@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/quadrifoglio/wir/shared"
+	"github.com/quadrifoglio/wir/system"
 	"github.com/quadrifoglio/wir/utils"
 )
 
@@ -17,6 +18,12 @@ func validateVolume(req shared.VolumeDef) (error, int) {
 	}
 	if req.Size == 0 {
 		return fmt.Errorf("'Size' can't be 0"), 400
+	}
+
+	if len(req.Type) > 0 {
+		return fmt.Errorf("Invalid 'Type' (must be kvm, lxc)"), 400
+	} else {
+		return fmt.Errorf("Missing 'Type'"), 400
 	}
 
 	return nil, 200
@@ -42,6 +49,12 @@ func HandleVolumeCreate(w http.ResponseWriter, r *http.Request) {
 		if !DBVolumeExists(req.ID) {
 			break
 		}
+	}
+
+	err = system.CreateVolume(req.Type, VolumeFile(req.ID), req.Size)
+	if err != nil {
+		ErrorResponse(w, r, err, 500)
+		return
 	}
 
 	err = DBVolumeCreate(req)
