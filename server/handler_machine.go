@@ -12,7 +12,7 @@ import (
 	"github.com/quadrifoglio/wir/utils"
 )
 
-func validateMachine(req shared.MachineDef) (error, int) {
+func validateMachine(req *shared.MachineDef) (error, int) {
 	if len(req.Name) == 0 {
 		return fmt.Errorf("Missing 'Name'"), 400
 	}
@@ -38,26 +38,40 @@ func validateMachine(req shared.MachineDef) (error, int) {
 		}
 	}
 
-	for _, i := range req.Interfaces {
-		if len(i.Network) == 0 {
+	for i, iface := range req.Interfaces {
+		if len(iface.Network) == 0 {
 			return fmt.Errorf("Missing 'Network' for interface"), 400
 		}
-		if !DBNetworkExists(i.Network) {
-			return fmt.Errorf("Network '%s' not found", i.Network), 404
+		if !DBNetworkExists(iface.Network) {
+			return fmt.Errorf("Network '%s' not found", iface.Network), 404
 		}
 
-		if len(i.MAC) > 0 {
-			_, err := net.ParseMAC(i.MAC)
+		if len(iface.MAC) > 0 {
+			_, err := net.ParseMAC(iface.MAC)
 			if err != nil {
 				return fmt.Errorf("Invalid 'MAC' for interface"), 400
 			}
 
-			if !DBIsMACFree(i.MAC) {
+			if !DBIsMACFree(iface.MAC) {
 				return fmt.Errorf("MAC address is already in use"), 400
 			}
+		} else {
+			for {
+				mac, err := utils.RandMAC(GlobalNodeID)
+				if err != nil {
+					return err, 500
+				}
+
+				req.Interfaces[i].MAC = mac
+
+				if DBIsMACFree(mac) {
+					break
+				}
+			}
 		}
-		if len(i.IP) > 0 {
-			ip := net.ParseIP(i.IP)
+
+		if len(iface.IP) > 0 {
+			ip := net.ParseIP(iface.IP)
 			if ip == nil {
 				return fmt.Errorf("Invalid 'IP' for interface"), 400
 			}
@@ -76,7 +90,7 @@ func HandleMachineCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err, status := validateMachine(req)
+	err, status := validateMachine(&req)
 	if err != nil {
 		ErrorResponse(w, r, err, status)
 		return
@@ -162,7 +176,7 @@ func HandleMachineUpdate(w http.ResponseWriter, r *http.Request) {
 
 	req.ID = id
 
-	err, status := validateMachine(req)
+	err, status := validateMachine(&req)
 	if err != nil {
 		ErrorResponse(w, r, err, status)
 		return
