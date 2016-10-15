@@ -14,6 +14,8 @@ import (
 	"github.com/quadrifoglio/wir/utils"
 )
 
+// validateImage validates the requested image definition
+// and returns the coresponding http status code
 func validateImage(req shared.ImageDef) (error, int) {
 	if len(req.Name) == 0 {
 		return fmt.Errorf("Missing 'Name'"), 400
@@ -28,6 +30,7 @@ func validateImage(req shared.ImageDef) (error, int) {
 	return nil, 200
 }
 
+// POST /images
 func HandleImageCreate(w http.ResponseWriter, r *http.Request) {
 	var req shared.ImageDef
 
@@ -69,6 +72,7 @@ func HandleImageCreate(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(w, r, req)
 }
 
+// GET /images
 func HandleImageList(w http.ResponseWriter, r *http.Request) {
 	images, err := DBImageList()
 	if err != nil {
@@ -79,6 +83,7 @@ func HandleImageList(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(w, r, images)
 }
 
+// GET /images/<id>
 func HandleImageGet(w http.ResponseWriter, r *http.Request) {
 	v := mux.Vars(r)
 	id := v["id"]
@@ -97,6 +102,7 @@ func HandleImageGet(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(w, r, image)
 }
 
+// POST /images/<id>
 func HandleImageUpdate(w http.ResponseWriter, r *http.Request) {
 	var req shared.ImageDef
 
@@ -131,6 +137,7 @@ func HandleImageUpdate(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(w, r, req)
 }
 
+// DELETE /images/<id>
 func HandleImageDelete(w http.ResponseWriter, r *http.Request) {
 	v := mux.Vars(r)
 	id := v["id"]
@@ -155,6 +162,7 @@ func HandleImageDelete(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(w, r, nil)
 }
 
+// GET /images/<id>/data
 func HandleImageData(w http.ResponseWriter, r *http.Request) {
 	v := mux.Vars(r)
 	id := v["id"]

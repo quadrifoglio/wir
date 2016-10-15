@@ -11,6 +11,8 @@ import (
 	"github.com/quadrifoglio/wir/utils"
 )
 
+// validateVolume validates the requested volume definition
+// and returns the coresponding http satus code
 func validateVolume(req shared.VolumeDef) (error, int) {
 	if len(req.Name) == 0 {
 		return fmt.Errorf("Missing 'Name'"), 400
@@ -30,6 +32,7 @@ func validateVolume(req shared.VolumeDef) (error, int) {
 	return nil, 200
 }
 
+// POST /volumes
 func HandleVolumeCreate(w http.ResponseWriter, r *http.Request) {
 	var req shared.VolumeDef
 
@@ -67,6 +70,7 @@ func HandleVolumeCreate(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(w, r, req)
 }
 
+// GET /volumes
 func HandleVolumeList(w http.ResponseWriter, r *http.Request) {
 	volumes, err := DBVolumeList()
 	if err != nil {
@@ -77,6 +81,7 @@ func HandleVolumeList(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(w, r, volumes)
 }
 
+// GET /volumes/<id>
 func HandleVolumeGet(w http.ResponseWriter, r *http.Request) {
 	v := mux.Vars(r)
 	id := v["id"]
@@ -95,6 +100,7 @@ func HandleVolumeGet(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(w, r, volume)
 }
 
+// POST /volumes/<id>
 func HandleVolumeUpdate(w http.ResponseWriter, r *http.Request) {
 	var req shared.VolumeDef
 
@@ -129,6 +135,7 @@ func HandleVolumeUpdate(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(w, r, req)
 }
 
+// DELETE /volumes/<id>
 func HandleVolumeDelete(w http.ResponseWriter, r *http.Request) {
 	v := mux.Vars(r)
 	id := v["id"]

@@ -15,6 +15,8 @@ import (
 	"github.com/quadrifoglio/wir/utils"
 )
 
+// validateMachine validates the specified machine definition,
+// modifying it if need be, and returns the coresponding http status code
 func validateMachine(req *shared.MachineDef) (error, int) {
 	if len(req.Name) == 0 {
 		return fmt.Errorf("Missing 'Name'"), 400
@@ -84,6 +86,7 @@ func validateMachine(req *shared.MachineDef) (error, int) {
 	return nil, 200
 }
 
+// POST /machines
 func HandleMachineCreate(w http.ResponseWriter, r *http.Request) {
 	var req shared.MachineDef
 
@@ -132,6 +135,7 @@ func HandleMachineCreate(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(w, r, req)
 }
 
+// GET /machines
 func HandleMachineList(w http.ResponseWriter, r *http.Request) {
 	machines, err := DBMachineList()
 	if err != nil {
@@ -142,6 +146,7 @@ func HandleMachineList(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(w, r, machines)
 }
 
+// GET /machines/<id>
 func HandleMachineGet(w http.ResponseWriter, r *http.Request) {
 	v := mux.Vars(r)
 	id := v["id"]
@@ -160,6 +165,7 @@ func HandleMachineGet(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(w, r, machine)
 }
 
+// POST /machines/<id>
 func HandleMachineUpdate(w http.ResponseWriter, r *http.Request) {
 	var req shared.MachineDef
 
@@ -194,6 +200,7 @@ func HandleMachineUpdate(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(w, r, req)
 }
 
+// DELET /machines/<id>
 func HandleMachineDelete(w http.ResponseWriter, r *http.Request) {
 	v := mux.Vars(r)
 	id := v["id"]
@@ -230,6 +237,7 @@ func HandleMachineDelete(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(w, r, nil)
 }
 
+// GET /machines/<id>/start
 func HandleMachineStart(w http.ResponseWriter, r *http.Request) {
 	v := mux.Vars(r)
 	id := v["id"]
@@ -248,6 +256,7 @@ func HandleMachineStart(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(w, r, nil)
 }
 
+// GET /machines/<id>/stop
 func HandleMachineStop(w http.ResponseWriter, r *http.Request) {
 	v := mux.Vars(r)
 	id := v["id"]
@@ -266,6 +275,7 @@ func HandleMachineStop(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(w, r, nil)
 }
 
+// GET /machines/<id>/status
 func HandleMachineStatus(w http.ResponseWriter, r *http.Request) {
 	v := mux.Vars(r)
 	id := v["id"]

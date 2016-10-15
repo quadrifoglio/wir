@@ -12,6 +12,8 @@ import (
 	"github.com/quadrifoglio/wir/utils"
 )
 
+// validateNetwork checks if the requested definiton
+// is valid, and returns the coresponding http status code
 func validateNetwork(req shared.NetworkDef) (error, int) {
 	if len(req.Name) == 0 {
 		return fmt.Errorf("Missing 'Name'"), 400
@@ -42,6 +44,7 @@ func validateNetwork(req shared.NetworkDef) (error, int) {
 	return nil, 200
 }
 
+// POST /networks
 func HandleNetworkCreate(w http.ResponseWriter, r *http.Request) {
 	var req shared.NetworkDef
 
@@ -79,6 +82,7 @@ func HandleNetworkCreate(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(w, r, req)
 }
 
+// GET /networks
 func HandleNetworkList(w http.ResponseWriter, r *http.Request) {
 	networks, err := DBNetworkList()
 	if err != nil {
@@ -89,6 +93,7 @@ func HandleNetworkList(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(w, r, networks)
 }
 
+// GET /networks/<id>
 func HandleNetworkGet(w http.ResponseWriter, r *http.Request) {
 	v := mux.Vars(r)
 	id := v["id"]
@@ -107,6 +112,7 @@ func HandleNetworkGet(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(w, r, network)
 }
 
+// POST /networks/<id>
 func HandleNetworkUpdate(w http.ResponseWriter, r *http.Request) {
 	var req shared.NetworkDef
 
@@ -141,6 +147,7 @@ func HandleNetworkUpdate(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(w, r, req)
 }
 
+// DELETE /networks/<id>
 func HandleNetworkDelete(w http.ResponseWriter, r *http.Request) {
 	v := mux.Vars(r)
 	id := v["id"]

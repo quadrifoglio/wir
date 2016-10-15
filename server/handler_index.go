@@ -8,7 +8,7 @@ import (
 	"github.com/quadrifoglio/wir/system"
 )
 
-// HTTP Handler - GET /
+// GET /
 func HandleIndex(w http.ResponseWriter, r *http.Request) {
 	hostname, err := os.Hostname()
 	if err != nil {
