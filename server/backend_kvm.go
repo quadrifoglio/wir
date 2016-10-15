@@ -1,6 +1,11 @@
 package server
 
 import (
+	"os"
+	"path/filepath"
+	"strconv"
+	"syscall"
+
 	"github.com/quadrifoglio/go-qemu"
 	"github.com/quadrifoglio/wir/shared"
 )
@@ -11,9 +16,9 @@ const (
 )
 
 // MachineKvmCreate will acutally create the virtual machine
-// based on the specified definition
-func MachineKvmCreate(def shared.MachineDef) error {
-	img, err := DBImageGet(def.Image)
+// based on the specified machine & image definitions
+func MachineKvmCreate(def shared.MachineDef, img shared.ImageDef) error {
+	err := os.MkdirAll(filepath.Dir(MachineDisk(def.ID)), 0755)
 	if err != nil {
 		return err
 	}
@@ -29,12 +34,17 @@ func MachineKvmCreate(def shared.MachineDef) error {
 	return nil
 }
 
-// MachineKvmStart starts the mahine based on the definition
+// MachineKvmStart starts the mahine based on the machine ID
 // and returns the PID of the hypervisor's process
-func MachineKvmStart(def shared.MachineDef) (int, error) {
+func MachineKvmStart(id string) error {
+	def, err := DBMachineGet(id)
+	if err != nil {
+		return err
+	}
+
 	disk, err := qemu.OpenImage(MachineDisk(def.ID))
 	if err != nil {
-		return -1, err
+		return err
 	}
 
 	m := qemu.NewMachine(def.Cores, int(def.Memory))
@@ -42,12 +52,48 @@ func MachineKvmStart(def shared.MachineDef) (int, error) {
 
 	pid, err := m.Start("x86_64", true) // x86_64 arch (using qemu-system-x86_64), with kvm
 	if err != nil {
-		return -1, err
+		return err
+	}
+
+	err = DBMachineSetVal(def.ID, "pid", strconv.Itoa(pid))
+	if err != nil {
+		return err
 	}
 
 	/*for _, v := range def.Volumes {
 		m.AddDrive(qemu.Drive{qemu.ImageFormatQCOW2, volumePath})
 	}*/
 
-	return pid, nil
+	return nil
+}
+
+// MachineKvmStop stops the machine by finding its
+// PID an sending it a SIGTERM signal
+func MachineKvmStop(id string) error {
+	pidStr, err := DBMachineGetVal(id, "pid")
+	if err != nil {
+		return err
+	}
+
+	err = DBMachineSetVal(id, "pid", "")
+	if err != nil {
+		return err
+	}
+
+	pid, err := strconv.Atoi(pidStr)
+	if err != nil {
+		return err
+	}
+
+	proc, err := os.FindProcess(pid)
+	if err != nil {
+		return err
+	}
+
+	err = proc.Signal(syscall.SIGTERM)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

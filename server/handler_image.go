@@ -140,7 +140,13 @@ func HandleImageDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := DBImageDelete(id)
+	err := os.Remove(ImageFile(id))
+	if err != nil {
+		ErrorResponse(w, r, err, 500)
+		return
+	}
+
+	err = DBImageDelete(id)
 	if err != nil {
 		ErrorResponse(w, r, err, 500)
 		return

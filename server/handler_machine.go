@@ -89,6 +89,23 @@ func HandleMachineCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	img, err := DBImageGet(req.Image)
+	if err != nil {
+		ErrorResponse(w, r, err, 500)
+		return
+	}
+
+	if img.Type == shared.BackendKVM {
+		err := MachineKvmCreate(req, img)
+		if err != nil {
+			ErrorResponse(w, r, err, 500)
+			return
+		}
+	} else {
+		ErrorResponse(w, r, fmt.Errorf("Unsupported backend"), 400)
+		return
+	}
+
 	err = DBMachineCreate(req)
 	if err != nil {
 		ErrorResponse(w, r, err, 500)
@@ -170,6 +187,42 @@ func HandleMachineDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err := DBMachineDelete(id)
+	if err != nil {
+		ErrorResponse(w, r, err, 500)
+		return
+	}
+
+	SuccessResponse(w, r, nil)
+}
+
+func HandleMachineStart(w http.ResponseWriter, r *http.Request) {
+	v := mux.Vars(r)
+	id := v["id"]
+
+	if !DBMachineExists(id) {
+		ErrorResponse(w, r, fmt.Errorf("Machine not found"), 404)
+		return
+	}
+
+	err := MachineKvmStart(id)
+	if err != nil {
+		ErrorResponse(w, r, err, 500)
+		return
+	}
+
+	SuccessResponse(w, r, nil)
+}
+
+func HandleMachineStop(w http.ResponseWriter, r *http.Request) {
+	v := mux.Vars(r)
+	id := v["id"]
+
+	if !DBMachineExists(id) {
+		ErrorResponse(w, r, fmt.Errorf("Machine not found"), 404)
+		return
+	}
+
+	err := MachineKvmStop(id)
 	if err != nil {
 		ErrorResponse(w, r, err, 500)
 		return

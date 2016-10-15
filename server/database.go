@@ -61,7 +61,8 @@ const (
 	CREATE TABLE IF NOT EXISTS param (
 		machine CHAR(8) NOT NULL REFERENCES machine(id),
 		key VARCHAR(255) NOT NULL,
-		val VARCHAR(255) NOT NULL
+		val VARCHAR(255) NOT NULL,
+		UNIQUE (machine, key)
 	);
 	`
 )

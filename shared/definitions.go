@@ -63,7 +63,7 @@ type MachineDef struct {
 	Name   string // Name of the machine
 	Image  string // ID of the machine's image
 	Cores  int    // Number of CPUs
-	Memory uint64 // Memory in KiB
+	Memory uint64 // Memory in MiB
 
 	Volumes    []string       // IDs of the attached volumes
 	Interfaces []InterfaceDef // List of network interfaces
