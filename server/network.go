@@ -11,13 +11,13 @@ import (
 // NetworkIface returns the bridge interface name
 // coresponding to the specified network ID
 func NetworkIface(id string) string {
-	return fmt.Sprintf("wir%s%s", strings.ToUpper(id[:1]), id[1:])
+	return fmt.Sprintf("wirIf%s%s", strings.ToUpper(id[:1]), id[1:])
 }
 
 // MachineIface returns the interface name coresponding
 // to the n-th interface of the specified machine ID
 func MachineIface(id string, n int) string {
-	return fmt.Sprintf("wir%s%s.%d", strings.ToUpper(id[:1]), id[1:], n)
+	return fmt.Sprintf("wirNet%s%s.%d", strings.ToUpper(id[:1]), id[1:], n)
 }
 
 // CreateNetwork creates the specified network

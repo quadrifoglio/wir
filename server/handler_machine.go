@@ -3,12 +3,15 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/mux"
 
 	"github.com/quadrifoglio/wir/shared"
+	"github.com/quadrifoglio/wir/system"
 	"github.com/quadrifoglio/wir/utils"
 )
 
@@ -200,7 +203,25 @@ func HandleMachineDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := DBMachineDelete(id)
+	machine, err := DBMachineGet(id)
+	if err != nil {
+		ErrorResponse(w, r, err, 500)
+		return
+	}
+
+	err = os.RemoveAll(MachinePath(id))
+	if err != nil {
+		log.Printf("Could not delete machine '%s' files: %s\n", id, err)
+	}
+
+	for i, _ := range machine.Interfaces {
+		err := system.DeleteInterface(MachineIface(id, i))
+		if err != nil {
+			log.Printf("Could not delete machine '%s' interfaces: %s\n", id, err)
+		}
+	}
+
+	err = DBMachineDelete(id)
 	if err != nil {
 		ErrorResponse(w, r, err, 500)
 		return

@@ -150,7 +150,13 @@ func HandleNetworkDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := DBNetworkDelete(id)
+	err := DeleteNetwork(id)
+	if err != nil {
+		ErrorResponse(w, r, err, 500)
+		return
+	}
+
+	err = DBNetworkDelete(id)
 	if err != nil {
 		ErrorResponse(w, r, err, 500)
 		return
