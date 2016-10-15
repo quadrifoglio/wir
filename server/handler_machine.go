@@ -230,3 +230,21 @@ func HandleMachineStop(w http.ResponseWriter, r *http.Request) {
 
 	SuccessResponse(w, r, nil)
 }
+
+func HandleMachineStatus(w http.ResponseWriter, r *http.Request) {
+	v := mux.Vars(r)
+	id := v["id"]
+
+	if !DBMachineExists(id) {
+		ErrorResponse(w, r, fmt.Errorf("Machine not found"), 404)
+		return
+	}
+
+	def, err := MachineKvmStatus(id)
+	if err != nil {
+		ErrorResponse(w, r, err, 500)
+		return
+	}
+
+	SuccessResponse(w, r, def)
+}

@@ -1,6 +1,8 @@
 package server
 
 import (
+	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -67,10 +69,67 @@ func MachineKvmStart(id string) error {
 	return nil
 }
 
+// MachineKvmGetProcess returns the hypervisor's process
+// ID corresponding to the specified machine ID, if any
+func MachineKvmGetPID(id string) (int, error) {
+	pidStr, err := DBMachineGetVal(id, "pid")
+	if err != nil {
+		return -1, err
+	}
+
+	if len(pidStr) == 0 {
+		return 0, nil
+	}
+
+	pid, err := strconv.Atoi(pidStr)
+	if err != nil {
+		return -1, err
+	}
+
+	return pid, nil
+}
+
+// MachineKvmIsRunning checks if the speicifed machine
+// is currently running
+func MachineKvmIsRunning(id string) bool {
+	pid, err := MachineKvmGetPID(id)
+	if err != nil {
+		log.Printf("KVM machine '%s' is running check: %s\n", id, err)
+		return false
+	}
+
+	if pid == 0 {
+		return false
+	}
+
+	proc, err := os.FindProcess(pid)
+	if err != nil {
+		log.Printf("KVM machine '%s' is running check: %s\n", id, err)
+		return false
+	}
+
+	err = proc.Signal(syscall.Signal(0))
+	if err != nil {
+		log.Printf("KVM machine '%s' is running check: %s\n", id, err)
+		return false
+	}
+
+	return true
+}
+
 // MachineKvmStop stops the machine by finding its
 // PID an sending it a SIGTERM signal
 func MachineKvmStop(id string) error {
-	pidStr, err := DBMachineGetVal(id, "pid")
+	pid, err := MachineKvmGetPID(id)
+	if err != nil {
+		return err
+	}
+
+	if pid == 0 {
+		return fmt.Errorf("Machine already stopped")
+	}
+
+	proc, err := os.FindProcess(pid)
 	if err != nil {
 		return err
 	}
@@ -80,20 +139,19 @@ func MachineKvmStop(id string) error {
 		return err
 	}
 
-	pid, err := strconv.Atoi(pidStr)
-	if err != nil {
-		return err
-	}
-
-	proc, err := os.FindProcess(pid)
-	if err != nil {
-		return err
-	}
-
-	err = proc.Signal(syscall.SIGTERM)
+	err = proc.Kill()
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// MachineKvmStatus returns a MachineStatusDef
+// representing the current status of the machine
+func MachineKvmStatus(id string) (shared.MachineStatusDef, error) {
+	var def shared.MachineStatusDef
+	def.Running = MachineKvmIsRunning(id)
+
+	return def, nil
 }

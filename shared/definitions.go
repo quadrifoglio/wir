@@ -68,3 +68,9 @@ type MachineDef struct {
 	Volumes    []string       // IDs of the attached volumes
 	Interfaces []InterfaceDef // List of network interfaces
 }
+
+// MachineStatusDef is the data structure used as a response
+// to the MachineStatus HTTP handler (/machines/<id>/status)
+type MachineStatusDef struct {
+	Running bool // True if the machine is currently running
+}

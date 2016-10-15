@@ -69,6 +69,7 @@ func main() {
 	r.HandleFunc("/machines/{id}", server.HandleMachineDelete).Methods("DELETE")
 	r.HandleFunc("/machines/{id}/start", server.HandleMachineStart).Methods("GET")
 	r.HandleFunc("/machines/{id}/stop", server.HandleMachineStop).Methods("GET")
+	r.HandleFunc("/machines/{id}/status", server.HandleMachineStatus).Methods("GET")
 
 	http.Handle("/", r)
 	log.Fatal(http.ListenAndServe(c.Server.Listen, nil))
