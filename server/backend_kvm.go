@@ -39,6 +39,10 @@ func MachineKvmCreate(def shared.MachineDef, img shared.ImageDef) error {
 // MachineKvmStart starts the mahine based on the machine ID
 // and returns the PID of the hypervisor's process
 func MachineKvmStart(id string) error {
+	if MachineKvmIsRunning(id) {
+		return fmt.Errorf("Machine already running")
+	}
+
 	def, err := DBMachineGet(id)
 	if err != nil {
 		return err
@@ -94,7 +98,7 @@ func MachineKvmGetPID(id string) (int, error) {
 func MachineKvmIsRunning(id string) bool {
 	pid, err := MachineKvmGetPID(id)
 	if err != nil {
-		log.Printf("KVM machine '%s' is running check: %s\n", id, err)
+		log.Printf("Not Fatal: KVM machine '%s' is running check: %s\n", id, err)
 		return false
 	}
 
@@ -104,13 +108,17 @@ func MachineKvmIsRunning(id string) bool {
 
 	proc, err := os.FindProcess(pid)
 	if err != nil {
-		log.Printf("KVM machine '%s' is running check: %s\n", id, err)
+		DBMachineSetVal(id, "pid", "")
+
+		log.Printf("Not Fatal: KVM machine '%s' is running check: %s\n", id, err)
 		return false
 	}
 
 	err = proc.Signal(syscall.Signal(0))
 	if err != nil {
-		log.Printf("KVM machine '%s' is running check: %s\n", id, err)
+		DBMachineSetVal(id, "pid", "")
+
+		log.Printf("Not Fatal: KVM machine '%s' is running check: %s\n", id, err)
 		return false
 	}
 
