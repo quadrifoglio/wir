@@ -49,8 +49,12 @@ func MachineKvmStart(id string) error {
 		return err
 	}
 
-	m := qemu.NewMachine(def.Cores, int(def.Memory))
-	m.AddDrive(disk)
+	m := qemu.NewMachine(def.Cores, def.Memory)
+	m.AddDriveImage(disk)
+
+	for _, v := range def.Volumes {
+		m.AddDrive(qemu.Drive{VolumeFile(v), qemu.ImageFormatQCOW2})
+	}
 
 	pid, err := m.Start("x86_64", true) // x86_64 arch (using qemu-system-x86_64), with kvm
 	if err != nil {
@@ -61,10 +65,6 @@ func MachineKvmStart(id string) error {
 	if err != nil {
 		return err
 	}
-
-	/*for _, v := range def.Volumes {
-		m.AddDrive(qemu.Drive{qemu.ImageFormatQCOW2, volumePath})
-	}*/
 
 	return nil
 }
