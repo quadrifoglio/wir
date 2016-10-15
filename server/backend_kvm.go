@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"syscall"
+	"time"
 
 	"github.com/quadrifoglio/go-qemu"
 	"github.com/quadrifoglio/wir/shared"
@@ -60,9 +61,28 @@ func MachineKvmStart(id string) error {
 		m.AddDrive(qemu.Drive{VolumeFile(v), qemu.ImageFormatQCOW2})
 	}
 
+	for i, _ := range def.Interfaces {
+		netdev, err := qemu.NewNetworkDevice("tap", fmt.Sprintf("net%d", i))
+		if err != nil {
+			return err
+		}
+
+		netdev.SetHostInterfaceName(MachineIface(id, i))
+		m.AddNetworkDevice(netdev)
+	}
+
 	pid, err := m.Start("x86_64", true) // x86_64 arch (using qemu-system-x86_64), with kvm
 	if err != nil {
 		return err
+	}
+
+	time.Sleep(1 * time.Second)
+
+	for i, iface := range def.Interfaces {
+		err := AttachInterfaceToNetwork(id, i, iface.Network)
+		if err != nil {
+			return err
+		}
 	}
 
 	err = DBMachineSetVal(def.ID, "pid", strconv.Itoa(pid))
