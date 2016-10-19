@@ -51,5 +51,5 @@ func UintTokens(s string) ([]uint64, error) {
 // OneLine transforms the input byte sequence into
 // a one-line string
 func OneLine(b []byte) string {
-	return strings.Replace(strings.TrimSpace(string(b)), "\n", ". ", -1)
+	return strings.Replace(strings.Replace(strings.TrimSpace(string(b)), "\n", ". ", -1), "\"", "'", -1)
 }

@@ -231,7 +231,7 @@ func HandleMachineDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for i, _ := range machine.Interfaces {
-		err := system.DeleteInterface(MachineIface(id, i))
+		err := system.DeleteInterface(MachineNicName(id, i))
 		if err != nil {
 			log.Printf("Could not delete machine '%s' interfaces: %s\n", id, err)
 		}

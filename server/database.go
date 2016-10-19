@@ -719,12 +719,115 @@ func DBMachineList() ([]shared.MachineDef, error) {
 	return machines, nil
 }
 
+// DBMachineListOnNetwork finds the machines associated with
+// the specified network
+func DBMachineListOnNetwork(netw string) ([]shared.MachineDef, error) {
+	sqls := `
+		SELECT * FROM machine WHERE id = (
+			SELECT machine FROM iface WHERE net = ? LIMIT 1
+		)
+	`
+
+	rows, err := DB.Query(sqls, netw)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	machines := make([]shared.MachineDef, 0)
+	for rows.Next() {
+		var def shared.MachineDef
+
+		err := rows.Scan(
+			&def.ID,
+			&def.Name,
+			&def.Image,
+			&def.Cores,
+			&def.Memory,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		def.Volumes, err = DBMachineGetVolumes(def.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		def.Interfaces, err = DBMachineGetInterfaces(def.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		machines = append(machines, def)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return machines, nil
+}
+
 // DBMachineGet returns the requested machine
 // from the database
 func DBMachineGet(id string) (shared.MachineDef, error) {
 	var def shared.MachineDef
 
 	rows, err := DB.Query("SELECT * FROM machine WHERE id = ?", id)
+	if err != nil {
+		return def, err
+	}
+
+	defer rows.Close()
+
+	if rows.Next() {
+		err := rows.Scan(
+			&def.ID,
+			&def.Name,
+			&def.Image,
+			&def.Cores,
+			&def.Memory,
+		)
+
+		if err != nil {
+			return def, err
+		}
+
+		def.Volumes, err = DBMachineGetVolumes(def.ID)
+		if err != nil {
+			return def, err
+		}
+
+		def.Interfaces, err = DBMachineGetInterfaces(def.ID)
+		if err != nil {
+			return def, err
+		}
+
+		return def, nil
+	}
+
+	if err := rows.Err(); err != nil {
+		return def, err
+	}
+
+	return def, fmt.Errorf("Machine not found")
+}
+
+// DBMachineGetByMAC finds the machine associated with
+// the specified MAC address
+func DBMachineGetByMAC(mac string) (shared.MachineDef, error) {
+	var def shared.MachineDef
+
+	sqls := `
+		SELECT * FROM machine WHERE id = (
+			SELECT machine FROM iface WHERE mac = ? LIMIT 1
+		) LIMIT 1
+	`
+
+	rows, err := DB.Query(sqls, mac)
 	if err != nil {
 		return def, err
 	}

@@ -2,10 +2,23 @@ package system
 
 import (
 	"fmt"
+	"net"
 	"os/exec"
 
 	"github.com/quadrifoglio/wir/utils"
 )
+
+// InterfaceExists returns true if the
+// specified interface exists on the system
+func InterfaceExists(name string) bool {
+	_, err := net.InterfaceByName(name)
+	if err != nil {
+		// Do net log the error: assuming the interface just does not exist
+		return false
+	}
+
+	return true
+}
 
 // CreateBridge creates a new interface
 // working as Linux bridge (switch equivalent)

@@ -120,7 +120,7 @@ func MachineKvmStart(id string) error {
 		}
 
 		netdev.SetMacAddress(iface.MAC)
-		netdev.SetHostInterfaceName(MachineIface(id, i))
+		netdev.SetHostInterfaceName(MachineNicName(id, i))
 
 		m.AddNetworkDevice(netdev)
 	}
@@ -129,16 +129,20 @@ func MachineKvmStart(id string) error {
 		m.AddVNC(def.KvmVNC.Addr, def.KvmVNC.Port)
 	}
 
-	pid, err := m.Start("x86_64", true) // x86_64 arch (using qemu-system-x86_64), with kvm
+	proc, err := m.Start("x86_64", true) // x86_64 arch (using qemu-system-x86_64), with kvm
 	if err != nil {
 		return err
 	}
+
+	pid := proc.Pid
 
 	// Wait 1 second, just to make sure that the interfaces have been created by QEMU
 	time.Sleep(1 * time.Second)
 	for i, iface := range def.Interfaces {
 		err := AttachInterfaceToNetwork(id, i, iface.Network)
 		if err != nil {
+			proc.Kill()
+
 			return err
 		}
 	}

@@ -20,7 +20,17 @@ func Init(nodeId byte, db string, img, vol, machine string) error {
 	GlobalVolumePath = vol
 	GlobalMachinePath = machine
 
-	return InitDatabase(db)
+	err := InitDatabase(db)
+	if err != nil {
+		return err
+	}
+
+	err = StartNetworks()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // ImageFile returns the path of the file
