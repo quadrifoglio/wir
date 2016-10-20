@@ -723,9 +723,9 @@ func DBMachineList() ([]shared.MachineDef, error) {
 // the specified network
 func DBMachineListOnNetwork(netw string) ([]shared.MachineDef, error) {
 	sqls := `
-		SELECT * FROM machine WHERE id = (
-			SELECT machine FROM iface WHERE net = ? LIMIT 1
-		)
+		SELECT machine.* FROM machine
+		INNER JOIN iface ON machine.id = iface.machine
+		WHERE iface.net = ?
 	`
 
 	rows, err := DB.Query(sqls, netw)
