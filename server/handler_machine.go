@@ -89,6 +89,20 @@ func validateMachine(req *shared.MachineDef) (error, int) {
 			if ip == nil {
 				return fmt.Errorf("Invalid 'IP' for interface"), 400
 			}
+		} else {
+			netw, err := DBNetworkGet(iface.Network)
+			if err != nil {
+				return fmt.Errorf("Failed to get '%s' network: %s", iface.Network, err), 500
+			}
+
+			if netw.DHCP.Enabled { // If internal DHCP is used, we should associate an IP to the VM
+				ip, err := NetworkFreeLease(netw)
+				if err != nil {
+					return fmt.Errorf("Can't get free lease in network '%s': %s\n", netw.ID, err), 500
+				}
+
+				req.Interfaces[i].IP = ip.String()
+			}
 		}
 	}
 

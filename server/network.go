@@ -75,9 +75,7 @@ func StartNetworkDHCP() error {
 			return
 		}
 
-		for index, _ := range machine.Interfaces {
-			nic := &machine.Interfaces[index]
-
+		for _, nic := range machine.Interfaces {
 			if len(nic.Network) == 0 {
 				continue
 			}
@@ -93,22 +91,6 @@ func StartNetworkDHCP() error {
 
 			if !netw.DHCP.Enabled {
 				continue
-			}
-
-			if msg.Type == dhcp.DHCPTypeDiscover && len(nic.IP) == 0 {
-				ip, err := NetworkFreeLease(netw)
-				if err != nil {
-					log.Printf("DHCP: can't get free lease in network '%s': %s\n", netw.ID, err)
-					return
-				}
-
-				nic.IP = ip.String()
-
-				err = DBMachineSetInterfaces(machine)
-				if err != nil {
-					log.Printf("DHCP: can't save machine interfaces to database: %s\n", err)
-					return
-				}
 			}
 
 			_, netAddr, err := net.ParseCIDR(netw.CIDR)
@@ -159,6 +141,7 @@ func NetworkFreeLease(netw shared.NetworkDef) (net.IP, error) {
 
 	}
 
+	// Pack all the IPs in use on the network into an array
 	ips := make([]string, 0)
 	for _, m := range ms {
 		for _, i := range m.Interfaces {
@@ -168,6 +151,7 @@ func NetworkFreeLease(netw shared.NetworkDef) (net.IP, error) {
 		}
 	}
 
+	// Parse the CIDR to get the network address and mask
 	_, netAddr, err := net.ParseCIDR(netw.CIDR)
 	if err != nil {
 		return ip, err
@@ -176,6 +160,7 @@ func NetworkFreeLease(netw shared.NetworkDef) (net.IP, error) {
 	ip = net.ParseIP(netw.DHCP.StartIP).To4()
 	ip.Mask(netAddr.Mask)
 
+	// Try to find an available IP
 	for i := 0; i < netw.DHCP.NumIP; i++ {
 		if !utils.SliceContainsStr(ip.To4().String(), ips) {
 			return ip.To4(), nil
@@ -185,17 +170,16 @@ func NetworkFreeLease(netw shared.NetworkDef) (net.IP, error) {
 	}
 
 	return ip, fmt.Errorf("no lease available")
-
 }
 
 // NetworkNicName returns the bridge interface name
 // coresponding to the specified network ID
 func NetworkNicName(id string) string {
-	return fmt.Sprintf("wirIf%s%s", strings.ToUpper(id[:1]), id[1:])
+	return fmt.Sprintf("net%s%s", strings.ToUpper(id[:1]), id[1:])
 }
 
 // MachineNicName returns the interface name coresponding
 // to the n-th interface of the specified machine ID
 func MachineNicName(id string, n int) string {
-	return fmt.Sprintf("wirNet%s%s.%d", strings.ToUpper(id[:1]), id[1:], n)
+	return fmt.Sprintf("nic%s%s.%d", strings.ToUpper(id[:1]), id[1:], n)
 }
