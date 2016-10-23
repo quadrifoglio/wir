@@ -78,6 +78,8 @@ type MachineStatusDef struct {
 // KvmOptsDef is the data structure used to represent
 // KVM-specific options in the machine HTTP handler (/machines/<id>/kvm)
 type KvmOptsDef struct {
+	PID int // The QEMU/KVM proccess ID
+
 	VNC struct {
 		Enabled bool   // Wether to use the VNC server
 		Address string // Bind address of the VNC server (ip:port)

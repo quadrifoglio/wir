@@ -58,11 +58,12 @@ const (
 		volume CHAR(8) NOT NULL REFERENCES volume(id)
 	);
 
-	CREATE TABLE IF NOT EXISTS param (
+	CREATE TABLE IF NOT EXISTS kvm_opt (
 		machine CHAR(8) NOT NULL REFERENCES machine(id),
-		key VARCHAR(255) NOT NULL,
-		val VARCHAR(255) NOT NULL,
-		UNIQUE (machine, key)
+		pid INTEGER,
+		vnc_enabled BOOLEAN NOT NULL,
+		vnc_addr VARCHAR(255),
+		vnc_port INTEGER,
 	);
 	`
 )
@@ -595,8 +596,20 @@ func DBMachineGetVolumes(id string) ([]string, error) {
 
 // DBMachineSetVal sets a string value for the specified key
 // concerning the machine
-func DBMachineSetVal(id, key, val string) error {
-	_, err := DB.Exec("INSERT OR REPLACE INTO param VALUES (?, ?, ?)", id, key, val)
+func DBMachineSetKvmOpts(id string, def shared.KvmOptsDef) error {
+	if !DBMachineExists(id) {
+		return fmt.Errorf("Machine not found")
+	}
+
+	_, err := DB.Exec(
+		"INSERT OR REPLACE INTO kvm_opt VALUES (?, ?, ?, ?, ?)",
+		id,
+		def.PID,
+		def.VNC.Enabled,
+		def.VNC.Address,
+		def.VNC.Port,
+	)
+
 	if err != nil {
 		return err
 	}
@@ -604,25 +617,28 @@ func DBMachineSetVal(id, key, val string) error {
 	return nil
 }
 
-// DBMachineGetVal gets a string value for the specified key
-// concerning the machine
-func DBMachineGetVal(id, key string) (string, error) {
-	rows, err := DB.Query("SELECT val FROM param WHERE machine = ? AND key = ? LIMIT 1", id, key)
+// DBMachineGetKvmOpts retreives the KVM-specific options of
+// the machine as a data structure
+func DBMachineGetKvmOpts(id string) (shared.KvmOptsDef, error) {
+	var def shared.KvmOptsDef
+
+	rows, err := DB.Query("SELECT * FROM kvm_opt WHERE machine = ? LIMIT 1", id)
 	if err != nil {
-		return "", err
+		return def, err
 	}
 
 	defer rows.Close()
 
-	var v string
 	if rows.Next() {
-		err := rows.Scan(&v)
+		err := rows.Scan(&id, &def.PID, &def.VNC.Enabled, &def.VNC.Address, &def.VNC.Port)
 		if err != nil {
-			return "", err
+			return def, err
 		}
+
+		return def, nil
 	}
 
-	return v, nil
+	return def, fmt.Errorf("KVM options not found")
 }
 
 // DBMachineGetInterfaces returns the details of the interfaces

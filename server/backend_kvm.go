@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strconv"
 	"syscall"
 	"time"
 
@@ -18,42 +17,23 @@ const (
 	DiskSize = 25 * GiB
 )
 
-// MachineKvmGetProcess returns the hypervisor's process
-// ID corresponding to the specified machine ID, if any
-func MachineKvmGetPID(id string) (int, error) {
-	pidStr, err := DBMachineGetVal(id, "pid")
-	if err != nil {
-		return -1, err
-	}
-
-	if len(pidStr) == 0 {
-		return 0, nil
-	}
-
-	pid, err := strconv.Atoi(pidStr)
-	if err != nil {
-		return -1, err
-	}
-
-	return pid, nil
-}
-
 // MachineKvmIsRunning checks if the speicifed machine
 // is currently running
 func MachineKvmIsRunning(id string) bool {
-	pid, err := MachineKvmGetPID(id)
+	opts, err := DBMachineGetKvmOpts(id)
 	if err != nil {
 		log.Printf("Not Fatal: KVM machine '%s' is running check: %s\n", id, err)
 		return false
 	}
 
-	if pid == 0 {
+	if opts.PID == 0 {
 		return false
 	}
 
-	proc, err := os.FindProcess(pid)
+	proc, err := os.FindProcess(opts.PID)
 	if err != nil {
-		DBMachineSetVal(id, "pid", "")
+		opts.PID = 0
+		DBMachineSetKvmOpts(id, opts)
 
 		log.Printf("Not Fatal: KVM machine '%s' is running check: %s\n", id, err)
 		return false
@@ -61,7 +41,8 @@ func MachineKvmIsRunning(id string) bool {
 
 	err = proc.Signal(syscall.Signal(0))
 	if err != nil {
-		DBMachineSetVal(id, "pid", "")
+		opts.PID = 0
+		DBMachineSetKvmOpts(id, opts)
 
 		log.Printf("Not Fatal: KVM machine '%s' is running check: %s\n", id, err)
 		return false
@@ -101,6 +82,11 @@ func MachineKvmStart(id string) error {
 		return err
 	}
 
+	opts, err := DBMachineGetKvmOpts(def.ID)
+	if err != nil {
+		return err
+	}
+
 	disk, err := qemu.OpenImage(MachineDisk(def.ID))
 	if err != nil {
 		return err
@@ -125,17 +111,14 @@ func MachineKvmStart(id string) error {
 		m.AddNetworkDevice(netdev)
 	}
 
-	// TODO: Uncomment
-	/*if def.KvmVNC.Enabled {
-		m.AddVNC(def.KvmVNC.Addr, def.KvmVNC.Port)
-	}*/
+	if opts.VNC.Enabled {
+		m.AddVNC(opts.VNC.Address, opts.VNC.Port)
+	}
 
 	proc, err := m.Start("x86_64", true) // x86_64 arch (using qemu-system-x86_64), with kvm
 	if err != nil {
 		return err
 	}
-
-	pid := proc.Pid
 
 	// Wait 1 second, just to make sure that the interfaces have been created by QEMU
 	time.Sleep(1 * time.Second)
@@ -148,7 +131,9 @@ func MachineKvmStart(id string) error {
 		}
 	}
 
-	err = DBMachineSetVal(def.ID, "pid", strconv.Itoa(pid))
+	opts.PID = proc.Pid
+
+	err = DBMachineSetKvmOpts(def.ID, opts)
 	if err != nil {
 		return err
 	}
@@ -159,21 +144,23 @@ func MachineKvmStart(id string) error {
 // MachineKvmStop stops the machine by finding its
 // PID an sending it a SIGTERM signal
 func MachineKvmStop(id string) error {
-	pid, err := MachineKvmGetPID(id)
+	opts, err := DBMachineGetKvmOpts(id)
 	if err != nil {
 		return err
 	}
 
-	if pid == 0 {
+	if opts.PID == 0 {
 		return fmt.Errorf("Machine already stopped")
 	}
 
-	proc, err := os.FindProcess(pid)
+	proc, err := os.FindProcess(opts.PID)
 	if err != nil {
 		return err
 	}
 
-	err = DBMachineSetVal(id, "pid", "")
+	opts.PID = 0
+
+	err = DBMachineSetKvmOpts(id, opts)
 	if err != nil {
 		return err
 	}
