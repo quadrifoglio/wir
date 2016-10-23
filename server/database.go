@@ -124,6 +124,21 @@ func DBImageCreate(def shared.ImageDef) error {
 	return nil
 }
 
+// DBImageFetch fetches a corresponding data structure
+// from the database
+func DBImageFetch(rows *sql.Rows) (shared.ImageDef, error) {
+	var def shared.ImageDef
+
+	err := rows.Scan(
+		&def.ID,
+		&def.Name,
+		&def.Type,
+		&def.Source,
+	)
+
+	return def, err
+}
+
 // DBImageList returns all the images
 // stored in the database
 func DBImageList() ([]shared.ImageDef, error) {
@@ -136,17 +151,12 @@ func DBImageList() ([]shared.ImageDef, error) {
 
 	images := make([]shared.ImageDef, 0)
 	for rows.Next() {
-		var id string
-		var name string
-		var t string
-		var src string
-
-		err := rows.Scan(&id, &name, &t, &src)
+		def, err := DBImageFetch(rows)
 		if err != nil {
 			return nil, err
 		}
 
-		images = append(images, shared.ImageDef{id, name, t, src})
+		images = append(images, def)
 	}
 
 	if err := rows.Err(); err != nil {
@@ -169,7 +179,7 @@ func DBImageGet(id string) (shared.ImageDef, error) {
 	defer rows.Close()
 
 	if rows.Next() {
-		err := rows.Scan(&def.ID, &def.Name, &def.Type, &def.Source)
+		def, err := DBImageFetch(rows)
 		if err != nil {
 			return def, err
 		}
@@ -248,6 +258,25 @@ func DBNetworkCreate(def shared.NetworkDef) error {
 	return nil
 }
 
+// DBNetworkFetch fetches a corresponding data structure
+// from the database
+func DBNetworkFetch(rows *sql.Rows) (shared.NetworkDef, error) {
+	var def shared.NetworkDef
+
+	err := rows.Scan(
+		&def.ID,
+		&def.Name,
+		&def.CIDR,
+		&def.GatewayIface,
+		&def.DHCP.Enabled,
+		&def.DHCP.StartIP,
+		&def.DHCP.NumIP,
+		&def.DHCP.Router,
+	)
+
+	return def, err
+}
+
 // DBNetworkList returns all the networks
 // stored in the database
 func DBNetworkList() ([]shared.NetworkDef, error) {
@@ -260,19 +289,7 @@ func DBNetworkList() ([]shared.NetworkDef, error) {
 
 	networks := make([]shared.NetworkDef, 0)
 	for rows.Next() {
-		var def shared.NetworkDef
-
-		err := rows.Scan(
-			&def.ID,
-			&def.Name,
-			&def.CIDR,
-			&def.GatewayIface,
-			&def.DHCP.Enabled,
-			&def.DHCP.StartIP,
-			&def.DHCP.NumIP,
-			&def.DHCP.Router,
-		)
-
+		def, err := DBNetworkFetch(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -300,17 +317,7 @@ func DBNetworkGet(id string) (shared.NetworkDef, error) {
 	defer rows.Close()
 
 	if rows.Next() {
-		err := rows.Scan(
-			&def.ID,
-			&def.Name,
-			&def.CIDR,
-			&def.GatewayIface,
-			&def.DHCP.Enabled,
-			&def.DHCP.StartIP,
-			&def.DHCP.NumIP,
-			&def.DHCP.Router,
-		)
-
+		def, err = DBNetworkFetch(rows)
 		if err != nil {
 			return def, err
 		}
@@ -403,6 +410,21 @@ func DBVolumeCreate(def shared.VolumeDef) error {
 	return nil
 }
 
+// DBVolumeFetch fetches a corresponding data structure
+// from the database
+func DBVolumeFetch(rows *sql.Rows) (shared.VolumeDef, error) {
+	var def shared.VolumeDef
+
+	err := rows.Scan(
+		&def.ID,
+		&def.Name,
+		&def.Type,
+		&def.Size,
+	)
+
+	return def, err
+}
+
 // DBVolumeList returns all the volumes
 // stored in the database
 func DBVolumeList() ([]shared.VolumeDef, error) {
@@ -415,15 +437,7 @@ func DBVolumeList() ([]shared.VolumeDef, error) {
 
 	volumes := make([]shared.VolumeDef, 0)
 	for rows.Next() {
-		var def shared.VolumeDef
-
-		err := rows.Scan(
-			&def.ID,
-			&def.Name,
-			&def.Type,
-			&def.Size,
-		)
-
+		def, err := DBVolumeFetch(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -451,13 +465,7 @@ func DBVolumeGet(id string) (shared.VolumeDef, error) {
 	defer rows.Close()
 
 	if rows.Next() {
-		err := rows.Scan(
-			&def.ID,
-			&def.Name,
-			&def.Type,
-			&def.Size,
-		)
-
+		def, err = DBVolumeFetch(rows)
 		if err != nil {
 			return def, err
 		}
@@ -673,6 +681,36 @@ func DBMachineCreate(def shared.MachineDef) error {
 	return nil
 }
 
+// DBMachineFetch fetches a corresponding data structure
+// from the database
+func DBMachineFetch(rows *sql.Rows) (shared.MachineDef, error) {
+	var def shared.MachineDef
+
+	err := rows.Scan(
+		&def.ID,
+		&def.Name,
+		&def.Image,
+		&def.Cores,
+		&def.Memory,
+	)
+
+	if err != nil {
+		return def, err
+	}
+
+	def.Volumes, err = DBMachineGetVolumes(def.ID)
+	if err != nil {
+		return def, err
+	}
+
+	def.Interfaces, err = DBMachineGetInterfaces(def.ID)
+	if err != nil {
+		return def, err
+	}
+
+	return def, nil
+}
+
 // DBMachineList returns all the machines
 // stored in the database
 func DBMachineList() ([]shared.MachineDef, error) {
@@ -685,26 +723,7 @@ func DBMachineList() ([]shared.MachineDef, error) {
 
 	machines := make([]shared.MachineDef, 0)
 	for rows.Next() {
-		var def shared.MachineDef
-
-		err := rows.Scan(
-			&def.ID,
-			&def.Name,
-			&def.Image,
-			&def.Cores,
-			&def.Memory,
-		)
-
-		if err != nil {
-			return nil, err
-		}
-
-		def.Volumes, err = DBMachineGetVolumes(def.ID)
-		if err != nil {
-			return nil, err
-		}
-
-		def.Interfaces, err = DBMachineGetInterfaces(def.ID)
+		def, err := DBMachineFetch(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -737,26 +756,7 @@ func DBMachineListOnNetwork(netw string) ([]shared.MachineDef, error) {
 
 	machines := make([]shared.MachineDef, 0)
 	for rows.Next() {
-		var def shared.MachineDef
-
-		err := rows.Scan(
-			&def.ID,
-			&def.Name,
-			&def.Image,
-			&def.Cores,
-			&def.Memory,
-		)
-
-		if err != nil {
-			return nil, err
-		}
-
-		def.Volumes, err = DBMachineGetVolumes(def.ID)
-		if err != nil {
-			return nil, err
-		}
-
-		def.Interfaces, err = DBMachineGetInterfaces(def.ID)
+		def, err := DBMachineFetch(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -784,24 +784,7 @@ func DBMachineGet(id string) (shared.MachineDef, error) {
 	defer rows.Close()
 
 	if rows.Next() {
-		err := rows.Scan(
-			&def.ID,
-			&def.Name,
-			&def.Image,
-			&def.Cores,
-			&def.Memory,
-		)
-
-		if err != nil {
-			return def, err
-		}
-
-		def.Volumes, err = DBMachineGetVolumes(def.ID)
-		if err != nil {
-			return def, err
-		}
-
-		def.Interfaces, err = DBMachineGetInterfaces(def.ID)
+		def, err = DBMachineFetch(rows)
 		if err != nil {
 			return def, err
 		}
@@ -835,24 +818,7 @@ func DBMachineGetByMAC(mac string) (shared.MachineDef, error) {
 	defer rows.Close()
 
 	if rows.Next() {
-		err := rows.Scan(
-			&def.ID,
-			&def.Name,
-			&def.Image,
-			&def.Cores,
-			&def.Memory,
-		)
-
-		if err != nil {
-			return def, err
-		}
-
-		def.Volumes, err = DBMachineGetVolumes(def.ID)
-		if err != nil {
-			return def, err
-		}
-
-		def.Interfaces, err = DBMachineGetInterfaces(def.ID)
+		def, err := DBMachineFetch(rows)
 		if err != nil {
 			return def, err
 		}
