@@ -67,6 +67,8 @@ func main() {
 	r.HandleFunc("/machines/{id}", server.HandleMachineGet).Methods("GET")
 	r.HandleFunc("/machines/{id}", server.HandleMachineUpdate).Methods("POST")
 	r.HandleFunc("/machines/{id}", server.HandleMachineDelete).Methods("DELETE")
+	r.HandleFunc("/machines/{id}/kvm", server.HandleMachineGetKvmOpts).Methods("GET")
+	r.HandleFunc("/machines/{id}/kvm", server.HandleMachineSetKvmOpts).Methods("POST")
 	r.HandleFunc("/machines/{id}/start", server.HandleMachineStart).Methods("GET")
 	r.HandleFunc("/machines/{id}/stop", server.HandleMachineStop).Methods("GET")
 	r.HandleFunc("/machines/{id}/status", server.HandleMachineStatus).Methods("GET")

@@ -224,7 +224,7 @@ func HandleMachineUpdate(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(w, r, req)
 }
 
-// DELET /machines/<id>
+// DELETE /machines/<id>
 func HandleMachineDelete(w http.ResponseWriter, r *http.Request) {
 	v := mux.Vars(r)
 	id := v["id"]
@@ -259,6 +259,60 @@ func HandleMachineDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	SuccessResponse(w, r, nil)
+}
+
+// GET /machines/<id>/kvm
+func HandleMachineGetKvmOpts(w http.ResponseWriter, r *http.Request) {
+	v := mux.Vars(r)
+	id := v["id"]
+
+	if !DBMachineExists(id) {
+		ErrorResponse(w, r, fmt.Errorf("Machine not found"), 404)
+		return
+	}
+
+	opts, err := DBMachineGetKvmOpts(id)
+	if err != nil {
+		ErrorResponse(w, r, err, 500)
+		return
+	}
+
+	SuccessResponse(w, r, opts)
+}
+
+// POST /machines/<id>/kvm
+func HandleMachineSetKvmOpts(w http.ResponseWriter, r *http.Request) {
+	var req shared.KvmOptsDef
+
+	v := mux.Vars(r)
+	id := v["id"]
+
+	if !DBMachineExists(id) {
+		ErrorResponse(w, r, fmt.Errorf("Machine not found"), 404)
+		return
+	}
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		ErrorResponse(w, r, err, 400)
+		return
+	}
+
+	req.PID = -1 // The PID should not be modified by the request
+
+	err = DBMachineSetKvmOpts(id, req)
+	if err != nil {
+		ErrorResponse(w, r, err, 500)
+		return
+	}
+
+	opts, err := DBMachineGetKvmOpts(id)
+	if err != nil {
+		ErrorResponse(w, r, err, 500)
+		return
+	}
+
+	SuccessResponse(w, r, opts)
 }
 
 // GET /machines/<id>/start

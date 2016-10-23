@@ -59,11 +59,11 @@ const (
 	);
 
 	CREATE TABLE IF NOT EXISTS kvm_opt (
-		machine CHAR(8) NOT NULL REFERENCES machine(id),
+		machine CHAR(8) NOT NULL UNIQUE REFERENCES machine(id),
 		pid INTEGER,
 		vnc_enabled BOOLEAN NOT NULL,
 		vnc_addr VARCHAR(255),
-		vnc_port INTEGER,
+		vnc_port INTEGER
 	);
 	`
 )
@@ -594,11 +594,21 @@ func DBMachineGetVolumes(id string) ([]string, error) {
 	return vols, nil
 }
 
-// DBMachineSetVal sets a string value for the specified key
-// concerning the machine
+// DBMachineSetKvmOpts saves the KVM-specific options of
+// the machine into the database
 func DBMachineSetKvmOpts(id string, def shared.KvmOptsDef) error {
 	if !DBMachineExists(id) {
 		return fmt.Errorf("Machine not found")
+	}
+
+	// The PID should not me modified
+	if def.PID == -1 {
+		opts, err := DBMachineGetKvmOpts(id)
+		if err != nil {
+			return err
+		}
+
+		def.PID = opts.PID
 	}
 
 	_, err := DB.Exec(
@@ -691,6 +701,13 @@ func DBMachineCreate(def shared.MachineDef) error {
 		return err
 	}
 	if err := DBMachineSetInterfaces(def); err != nil {
+		return err
+	}
+
+	var opts shared.KvmOptsDef
+
+	err = DBMachineSetKvmOpts(def.ID, opts)
+	if err != nil {
 		return err
 	}
 
@@ -896,7 +913,7 @@ func DBMachineDelete(id string) error {
 		return err
 	}
 
-	_, err = DB.Exec("DELETE FROM param WHERE machine = ?", id)
+	_, err = DB.Exec("DELETE FROM kvm_opt WHERE machine = ?", id)
 	if err != nil {
 		return err
 	}
