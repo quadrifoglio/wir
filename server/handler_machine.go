@@ -37,7 +37,7 @@ func validateMachine(req *shared.MachineDef) (error, int) {
 		return fmt.Errorf("'Memory' can't be 0"), 400
 	}
 
-	if req.KvmVNC.Enable {
+	if req.KvmVNC.Enabled {
 		if net.ParseIP(req.KvmVNC.Addr) == nil {
 			return fmt.Errorf("Invalid 'KvmVNC.Addr' IP address"), 400
 		}

@@ -125,7 +125,7 @@ func MachineKvmStart(id string) error {
 		m.AddNetworkDevice(netdev)
 	}
 
-	if def.KvmVNC.Enable {
+	if def.KvmVNC.Enabled {
 		m.AddVNC(def.KvmVNC.Addr, def.KvmVNC.Port)
 	}
 

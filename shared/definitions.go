@@ -67,9 +67,9 @@ type MachineDef struct {
 
 	// KVM VNC server
 	KvmVNC struct {
-		Enable bool   // Wether to use the VNC server
-		Addr   string // Bind address of the VNC server (ip:port)
-		Port   int    // Port number
+		Enabled bool   // Wether to use the VNC server
+		Addr    string // Bind address of the VNC server (ip:port)
+		Port    int    // Port number
 		// TODO: Add parapeters (ssl, authentication...)
 	} `json:",omitempty"`
 

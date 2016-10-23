@@ -26,9 +26,9 @@ const (
 		gw VARCHAR(255) NOT NULL,
 
 		dhcp_enabled BOOLEAN NOT NULL,
-		dhcp_start VARCHAR(255) NOT NULL,
-		dhcp_num INTEGER NOT NULL,
-		dhcp_router VARCHAR(255) NOT NULL
+		dhcp_start VARCHAR(255),
+		dhcp_num INTEGER,
+		dhcp_router VARCHAR(255)
 	);
 
 	CREATE TABLE IF NOT EXISTS volume (
@@ -43,7 +43,11 @@ const (
 		name VARCHAR(255) NOT NULL,
 		img CHAR(8) NOT NULL REFERENCES image(id),
 		cores INTEGER NOT NULL,
-		mem BIGINT NOT NULL
+		mem BIGINT NOT NULL,
+
+		vnc_enabled BOOLEAN NOT NULL,
+		vnc_addr VARCHAR(255),
+		vnc_port INTEGER
 	);
 
 	CREATE TABLE IF NOT EXISTS iface (
@@ -651,12 +655,15 @@ func DBMachineGetInterfaces(id string) ([]shared.InterfaceDef, error) {
 // using the specified definition
 func DBMachineCreate(def shared.MachineDef) error {
 	_, err := DB.Exec(
-		"INSERT INTO machine VALUES (?, ?, ?, ?, ?)",
+		"INSERT INTO machine VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
 		def.ID,
 		def.Name,
 		def.Image,
 		def.Cores,
 		def.Memory,
+		def.KvmVNC.Enabled,
+		def.KvmVNC.Addr,
+		def.KvmVNC.Port,
 	)
 
 	if err != nil {
@@ -693,6 +700,9 @@ func DBMachineList() ([]shared.MachineDef, error) {
 			&def.Image,
 			&def.Cores,
 			&def.Memory,
+			&def.KvmVNC.Enabled,
+			&def.KvmVNC.Addr,
+			&def.KvmVNC.Port,
 		)
 
 		if err != nil {
@@ -745,6 +755,9 @@ func DBMachineListOnNetwork(netw string) ([]shared.MachineDef, error) {
 			&def.Image,
 			&def.Cores,
 			&def.Memory,
+			&def.KvmVNC.Enabled,
+			&def.KvmVNC.Addr,
+			&def.KvmVNC.Port,
 		)
 
 		if err != nil {
@@ -790,6 +803,9 @@ func DBMachineGet(id string) (shared.MachineDef, error) {
 			&def.Image,
 			&def.Cores,
 			&def.Memory,
+			&def.KvmVNC.Enabled,
+			&def.KvmVNC.Addr,
+			&def.KvmVNC.Port,
 		)
 
 		if err != nil {
@@ -841,6 +857,9 @@ func DBMachineGetByMAC(mac string) (shared.MachineDef, error) {
 			&def.Image,
 			&def.Cores,
 			&def.Memory,
+			&def.KvmVNC.Enabled,
+			&def.KvmVNC.Addr,
+			&def.KvmVNC.Port,
 		)
 
 		if err != nil {
@@ -872,13 +891,17 @@ func DBMachineGetByMAC(mac string) (shared.MachineDef, error) {
 func DBMachineUpdate(def shared.MachineDef) error {
 	sqls := `
 		UPDATE machine SET
-		name = ?, cores = ?, mem = ?
+		name = ?, cores = ?, mem = ?,
+		vnc_enabled = ?, vnc_addr = ?, vnc_port = ?
 		WHERE id = ?
 	`
 	_, err := DB.Exec(sqls,
 		def.Name,
 		def.Cores,
 		def.Memory,
+		def.KvmVNC.Enabled,
+		def.KvmVNC.Addr,
+		def.KvmVNC.Port,
 		def.ID,
 	)
 
