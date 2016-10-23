@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"os/exec"
+	"strings"
 
 	"github.com/quadrifoglio/wir/utils"
 )
@@ -63,6 +64,86 @@ func DeleteInterface(name string) error {
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("ip link add: %s", utils.OneLine(out))
+	}
+
+	return nil
+}
+
+// EbtablesSetup runs the basic commads in order for
+// ebtables traffic control to work
+func EbtablesSetup() error {
+	// Set default policy
+	cmd = exec.Command("ebtables", "-P", "FORWARD", "DROP")
+
+	out, err = cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("ebtables -P FORWARD DROP: %s", utils.OneLine(out))
+	}
+
+	// Accept ARP
+	cmd = exec.Command("ebtables", "-A", "FORWARD", "-p", "arp", "-j", "ACCEPT")
+
+	out, err = cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("ebtables -A FORWARD -p arp -j ACCEPT: %s", utils.OneLine(out))
+	}
+
+	// Accept DHCP
+	cmd = exec.Command("ebtables", "-A", "FORWARD", "-p", "ip", "--ip-src", "0.0.0.0", "-j", "ACCEPT")
+
+	out, err = cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("ebtables -A FORWARD -p ip --ip-src 0.0.0.0 -j ACCEPT: %s", utils.OneLine(out))
+	}
+
+	return nil
+}
+
+// EbtablesAllowTraffic creates an ebtables rule to allow
+// traffic from the specified MAC/IP addresses
+func EbtablesAllowTraffic(iface, mac, ip string) error {
+	cmd := exec.Command("ebtables", "-A", "FORWARD", "-p", "ip", "-i", iface, "--ip-src", ip, "-s", mac, "-j", "ACCEPT")
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("ebtables -A FORWARD -p ip -i %s --ip-src %s -s %s -j ACCEPT: %s", iface, ip, mac, utils.OneLine(out))
+	}
+
+	return nil
+}
+
+// EbtablesFlush deletes all the rules related
+// to the `iface` interface
+func EbtablesFlush(iface string) error {
+	// List all the rules
+	cmd := exec.Command("ebtables", "-L", "FORWARD")
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("ebtables -L FORWARD: %s", utils.OneLine(out))
+	}
+
+	// Find the rules concerning iface
+	var rules []string
+	for _, line := range strings.Split(string(out), "\n") {
+		if strings.Contains(line, iface) {
+			rules = append(rules, strings.TrimSuffix(line, " "))
+		}
+	}
+
+	// Finally, delete them
+	for _, rule := range rules {
+		args := make([]string, 2)
+		args[0] = "-D"
+		args[1] = "FORWARD"
+		args = append(args, strings.Split(rule, " ")...)
+
+		cmd := exec.Command("ebtables", args...)
+
+		out, err := cmd.CombinedOutput()
+		if err != nil {
+			return fmt.Errorf("ebtables -D FORWARD %s: %s", rule, utils.OneLine(out))
+		}
 	}
 
 	return nil

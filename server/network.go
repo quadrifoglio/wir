@@ -29,6 +29,11 @@ func StartNetworks() error {
 		}
 	}
 
+	err = system.EbtablesSetup()
+	if err != nil {
+		return err
+	}
+
 	go StartNetworkDHCP()
 	return nil
 }
@@ -54,9 +59,19 @@ func CreateNetwork(def shared.NetworkDef) error {
 }
 
 // AttachInterfaceToNetwork attaches the n-th interface of the specified machine ID
-// to the specified network ID
-func AttachInterfaceToNetwork(machineId string, n int, netId string) error {
-	return system.SetInterfaceMaster(MachineNicName(machineId, n), NetworkNicName(netId))
+// to the specified network ID, and sets up the traffic controle rules
+func AttachInterfaceToNetwork(machineId string, n int, def shared.InterfaceDef) error {
+	err := system.EbtablesFlush(MachineNicName(machineId, n))
+	if err != nil {
+		return err
+	}
+
+	err = system.EbtablesAllowTraffic(MachineNicName(machineId, n), def.MAC, def.IP)
+	if err != nil {
+		return err
+	}
+
+	return system.SetInterfaceMaster(MachineNicName(machineId, n), NetworkNicName(def.Network))
 }
 
 // DeleteNetwork deletes the specified network

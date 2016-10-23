@@ -123,7 +123,7 @@ func MachineKvmStart(id string) error {
 	// Wait 1 second, just to make sure that the interfaces have been created by QEMU
 	time.Sleep(1 * time.Second)
 	for i, iface := range def.Interfaces {
-		err := AttachInterfaceToNetwork(id, i, iface.Network)
+		err := AttachInterfaceToNetwork(id, i, iface)
 		if err != nil {
 			proc.Kill()
 
