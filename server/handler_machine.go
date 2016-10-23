@@ -66,10 +66,6 @@ func validateMachine(req *shared.MachineDef) (error, int) {
 			if err != nil {
 				return fmt.Errorf("Invalid 'MAC' for interface"), 400
 			}
-
-			if !DBIsMACFree(iface.MAC) {
-				return fmt.Errorf("MAC address is already in use"), 400
-			}
 		} else {
 			for {
 				mac, err := utils.RandMAC(GlobalNodeID)
@@ -137,6 +133,14 @@ func HandleMachineCreate(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		ErrorResponse(w, r, err, 500)
 		return
+	}
+
+	// Check if the MAC addresses are available
+	for _, iface := range req.Interfaces {
+		if !DBIsMACFree(iface.MAC) {
+			ErrorResponse(w, r, fmt.Errorf("MAC address is already in use"), 400)
+			return
+		}
 	}
 
 	if img.Type == shared.BackendKVM {

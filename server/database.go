@@ -871,7 +871,7 @@ func DBMachineGetByMAC(mac string) (shared.MachineDef, error) {
 func DBMachineUpdate(def shared.MachineDef) error {
 	sqls := `
 		UPDATE machine SET
-		name = ?, cores = ?, mem = ?,
+		name = ?, cores = ?, mem = ?
 		WHERE id = ?
 	`
 	_, err := DB.Exec(sqls,
