@@ -37,16 +37,6 @@ func validateMachine(req *shared.MachineDef) (error, int) {
 		return fmt.Errorf("'Memory' can't be 0"), 400
 	}
 
-	// TODO: Uncomment
-	/*if req.KvmVNC.Enabled {
-		if net.ParseIP(req.KvmVNC.Addr) == nil {
-			return fmt.Errorf("Invalid 'KvmVNC.Addr' IP address"), 400
-		}
-		if req.KvmVNC.Port == 0 {
-			return fmt.Errorf("Invalid 'KvmVNC.Port' number"), 400
-		}
-	}*/
-
 	for _, v := range req.Volumes {
 		if !DBVolumeExists(v) {
 			return fmt.Errorf("Volume '%s' not found", v), 404
@@ -303,6 +293,17 @@ func HandleMachineSetKvmOpts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	req.PID = -1 // The PID should not be modified by the request
+
+	if req.VNC.Enabled {
+		if net.ParseIP(req.VNC.Address) == nil {
+			ErrorResponse(w, r, fmt.Errorf("Invalid 'VNC.Address' IP address"), 400)
+			return
+		}
+		if req.VNC.Port == 0 {
+			ErrorResponse(w, r, fmt.Errorf("Invalid 'VNC.Port' number"), 400)
+			return
+		}
+	}
 
 	err = DBMachineSetKvmOpts(id, req)
 	if err != nil {
