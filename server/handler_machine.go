@@ -37,14 +37,15 @@ func validateMachine(req *shared.MachineDef) (error, int) {
 		return fmt.Errorf("'Memory' can't be 0"), 400
 	}
 
-	if req.KvmVNC.Enabled {
+	// TODO: Uncomment
+	/*if req.KvmVNC.Enabled {
 		if net.ParseIP(req.KvmVNC.Addr) == nil {
 			return fmt.Errorf("Invalid 'KvmVNC.Addr' IP address"), 400
 		}
 		if req.KvmVNC.Port == 0 {
 			return fmt.Errorf("Invalid 'KvmVNC.Port' number"), 400
 		}
-	}
+	}*/
 
 	for _, v := range req.Volumes {
 		if !DBVolumeExists(v) {

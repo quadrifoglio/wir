@@ -65,14 +65,6 @@ type MachineDef struct {
 	Cores  int    // Number of CPUs
 	Memory uint64 // Memory in MiB
 
-	// KVM VNC server
-	KvmVNC struct {
-		Enabled bool   // Wether to use the VNC server
-		Addr    string // Bind address of the VNC server (ip:port)
-		Port    int    // Port number
-		// TODO: Add parapeters (ssl, authentication...)
-	} `json:",omitempty"`
-
 	Volumes    []string       // IDs of the attached volumes
 	Interfaces []InterfaceDef // List of network interfaces
 }
@@ -81,4 +73,16 @@ type MachineDef struct {
 // to the MachineStatus HTTP handler (/machines/<id>/status)
 type MachineStatusDef struct {
 	Running bool // True if the machine is currently running
+}
+
+// KvmOptsDef is the data structure used to represent
+// KVM-specific options in the machine HTTP handler (/machines/<id>/kvm)
+type KvmOptsDef struct {
+	VNC struct {
+		Enabled bool   // Wether to use the VNC server
+		Address string // Bind address of the VNC server (ip:port)
+		Port    int    // Port number
+
+		// TODO: Add parapeters (ssl, authentication...)
+	}
 }

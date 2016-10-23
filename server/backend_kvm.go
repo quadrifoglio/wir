@@ -125,9 +125,10 @@ func MachineKvmStart(id string) error {
 		m.AddNetworkDevice(netdev)
 	}
 
-	if def.KvmVNC.Enabled {
+	// TODO: Uncomment
+	/*if def.KvmVNC.Enabled {
 		m.AddVNC(def.KvmVNC.Addr, def.KvmVNC.Port)
-	}
+	}*/
 
 	proc, err := m.Start("x86_64", true) // x86_64 arch (using qemu-system-x86_64), with kvm
 	if err != nil {
