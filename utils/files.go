@@ -26,3 +26,14 @@ func FileExists(path string) bool {
 func FileExtension(path string) string {
 	return filepath.Ext(path)
 }
+
+// FileSize returns the size of
+// the specified file in bytes
+func FileSize(path string) (uint64, error) {
+	stat, err := os.Stat(path)
+	if err != nil {
+		return 0, err
+	}
+
+	return uint64(stat.Size()), nil
+}

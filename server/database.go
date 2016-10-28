@@ -43,7 +43,8 @@ const (
 		name VARCHAR(255) NOT NULL,
 		img CHAR(8) NOT NULL REFERENCES image(id),
 		cores INTEGER NOT NULL,
-		mem BIGINT NOT NULL
+		mem BIGINT NOT NULL,
+		disk BIGINT NOT NULL
 	);
 
 	CREATE TABLE IF NOT EXISTS iface (
@@ -685,12 +686,13 @@ func DBMachineGetInterfaces(id string) ([]shared.InterfaceDef, error) {
 // using the specified definition
 func DBMachineCreate(def shared.MachineDef) error {
 	_, err := DB.Exec(
-		"INSERT INTO machine VALUES (?, ?, ?, ?, ?)",
+		"INSERT INTO machine VALUES (?, ?, ?, ?, ?, ?)",
 		def.ID,
 		def.Name,
 		def.Image,
 		def.Cores,
 		def.Memory,
+		def.Disk,
 	)
 
 	if err != nil {
@@ -725,6 +727,7 @@ func DBMachineFetch(rows *sql.Rows) (shared.MachineDef, error) {
 		&def.Image,
 		&def.Cores,
 		&def.Memory,
+		&def.Disk,
 	)
 
 	if err != nil {

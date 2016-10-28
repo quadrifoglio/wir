@@ -26,8 +26,8 @@ func validateMachine(req *shared.MachineDef) (error, int) {
 		if !DBImageExists(req.Image) {
 			return fmt.Errorf("Image not found"), 404
 		}
-	} else {
-		return fmt.Errorf("Missing 'Image'"), 400
+	} else if req.Disk == 0 {
+		return fmt.Errorf("Specify an 'Image' and/or a 'Disk' size"), 400
 	}
 
 	if req.Cores == 0 {
@@ -35,6 +35,8 @@ func validateMachine(req *shared.MachineDef) (error, int) {
 	}
 	if req.Memory == 0 {
 		return fmt.Errorf("'Memory' can't be 0"), 400
+	}
+	if req.Disk == 0 && len(req.Image) == 0 {
 	}
 
 	for _, v := range req.Volumes {
@@ -119,12 +121,6 @@ func HandleMachineCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	img, err := DBImageGet(req.Image)
-	if err != nil {
-		ErrorResponse(w, r, err, 500)
-		return
-	}
-
 	// Check if the MAC addresses are available
 	for _, iface := range req.Interfaces {
 		if !DBIsMACFree(iface.MAC) {
@@ -133,14 +129,9 @@ func HandleMachineCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if img.Type == shared.BackendKVM {
-		err := MachineKvmCreate(req, img)
-		if err != nil {
-			ErrorResponse(w, r, err, 500)
-			return
-		}
-	} else {
-		ErrorResponse(w, r, fmt.Errorf("Unsupported backend"), 400)
+	err = MachineKvmCreate(req)
+	if err != nil {
+		ErrorResponse(w, r, err, 500)
 		return
 	}
 

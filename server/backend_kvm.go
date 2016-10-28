@@ -12,6 +12,7 @@ import (
 
 	"github.com/quadrifoglio/wir/shared"
 	"github.com/quadrifoglio/wir/system"
+	"github.com/quadrifoglio/wir/utils"
 )
 
 const (
@@ -55,14 +56,29 @@ func MachineKvmIsRunning(id string) bool {
 
 // MachineKvmCreate will acutally create the virtual machine
 // based on the specified machine & image definitions
-func MachineKvmCreate(def shared.MachineDef, img shared.ImageDef) error {
+func MachineKvmCreate(def shared.MachineDef) error {
 	err := os.MkdirAll(filepath.Dir(MachineDisk(def.ID)), 0755)
 	if err != nil {
 		return err
 	}
 
-	disk := qemu.NewImage(MachineDisk(def.ID), qemu.ImageFormatQCOW2, DiskSize)
-	disk.SetBackingFile(img.Source)
+	disk := qemu.NewImage(MachineDisk(def.ID), qemu.ImageFormatQCOW2, def.Disk)
+
+	if len(def.Image) > 0 {
+		img, err := DBImageGet(def.Image)
+		if err != nil {
+			return err
+		}
+
+		disk.SetBackingFile(img.Source)
+
+		if def.Disk > 0 {
+			err := system.ResizeQcow2(img.Source, def.Disk)
+			if err != nil {
+				return err
+			}
+		}
+	}
 
 	err = disk.Create()
 	if err != nil {
@@ -197,8 +213,14 @@ func MachineKvmStatus(id string) (shared.MachineStatusDef, error) {
 			return def, err
 		}
 
+		disk, err := utils.FileSize(MachineDisk(id))
+		if err != nil {
+			return def, err
+		}
+
 		def.CpuUsage = cpu
 		def.RamUsage = ram
+		def.DiskUsage = disk
 	}
 
 	return def, nil

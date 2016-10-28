@@ -64,6 +64,7 @@ type MachineDef struct {
 	Image  string // ID of the machine's image
 	Cores  int    // Number of CPUs
 	Memory uint64 // Memory in MiB
+	Disk   uint64 // Disk size in bytes
 
 	Volumes    []string       // IDs of the attached volumes
 	Interfaces []InterfaceDef // List of network interfaces
@@ -72,9 +73,10 @@ type MachineDef struct {
 // MachineStatusDef is the data structure used as a response
 // to the MachineStatus HTTP handler (/machines/<id>/status)
 type MachineStatusDef struct {
-	Running  bool    // True if the machine is currently running
-	CpuUsage float32 // Percentage of the time the CPU is busy
-	RamUsage uint64  // Currently used RAM in MiB
+	Running   bool    // True if the machine is currently running
+	CpuUsage  float32 // Percentage of the time the CPU is busy
+	RamUsage  uint64  // Currently used RAM in MiB
+	DiskUsage uint64  // Current size of the disk image in bytes
 }
 
 // KvmOptsDef is the data structure used to represent
