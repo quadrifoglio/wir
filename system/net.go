@@ -73,9 +73,9 @@ func DeleteInterface(name string) error {
 // ebtables traffic control to work
 func EbtablesSetup() error {
 	// Set default policy
-	cmd = exec.Command("ebtables", "-P", "FORWARD", "DROP")
+	cmd := exec.Command("ebtables", "-P", "FORWARD", "DROP")
 
-	out, err = cmd.CombinedOutput()
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("ebtables -P FORWARD DROP: %s", utils.OneLine(out))
 	}

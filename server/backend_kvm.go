@@ -9,7 +9,9 @@ import (
 	"time"
 
 	"github.com/quadrifoglio/go-qemu"
+
 	"github.com/quadrifoglio/wir/shared"
+	"github.com/quadrifoglio/wir/system"
 )
 
 const (
@@ -178,6 +180,26 @@ func MachineKvmStop(id string) error {
 func MachineKvmStatus(id string) (shared.MachineStatusDef, error) {
 	var def shared.MachineStatusDef
 	def.Running = MachineKvmIsRunning(id)
+
+	if def.Running {
+		opts, err := DBMachineGetKvmOpts(id)
+		if err != nil {
+			return def, err
+		}
+
+		ram, err := system.ProcessRamUsage(opts.PID)
+		if err != nil {
+			return def, err
+		}
+
+		cpu, err := system.ProcessCpuUsage(opts.PID)
+		if err != nil {
+			return def, err
+		}
+
+		def.CpuUsage = cpu
+		def.RamUsage = ram
+	}
 
 	return def, nil
 }

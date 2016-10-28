@@ -72,7 +72,9 @@ type MachineDef struct {
 // MachineStatusDef is the data structure used as a response
 // to the MachineStatus HTTP handler (/machines/<id>/status)
 type MachineStatusDef struct {
-	Running bool // True if the machine is currently running
+	Running  bool    // True if the machine is currently running
+	CpuUsage float32 // Percentage of the time the CPU is busy
+	RamUsage uint64  // Currently used RAM in MiB
 }
 
 // KvmOptsDef is the data structure used to represent
