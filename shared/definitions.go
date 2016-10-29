@@ -92,3 +92,10 @@ type KvmOptsDef struct {
 		// TODO: Add parapeters (ssl, authentication...)
 	}
 }
+
+// CheckpointDef is the data structure used in transactions with
+// the checkpoint HTTP handler (/machines/<id>/checkpoints)
+type CheckpointDef struct {
+	Name      string // Name of the checkpoint
+	Timestamp int64  // Timestamp of the checkpoint
+}

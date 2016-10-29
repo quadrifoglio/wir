@@ -225,3 +225,15 @@ func MachineKvmStatus(id string) (shared.MachineStatusDef, error) {
 
 	return def, nil
 }
+
+// MachineKvmCreateCheckpoint creates a checkpoint of
+// a running machine under the specified name
+func MachineKvmCreateCheckpoint(id string, checkpoint string) error {
+	return nil
+}
+
+// MachineKvmDeleteCheckpoint delete the checkpoint of
+// the machine corresponding to the specified name
+func MachineKvmDeleteCheckpoint(id string, checkpoint string) error {
+	return nil
+}
