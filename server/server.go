@@ -56,3 +56,9 @@ func MachinePath(id string) string {
 func MachineDisk(id string) string {
 	return fmt.Sprintf("%s/disk.data", MachinePath(id))
 }
+
+// MachineMonitorPath returns the path to the
+// machine's monitor device
+func MachineMonitorPath(id string) string {
+	return fmt.Sprintf("%s/monitor.sock", MachinePath(id))
+}

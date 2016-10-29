@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/quadrifoglio/go-qemu"
+	"github.com/quadrifoglio/go-qmp"
 
 	"github.com/quadrifoglio/wir/shared"
 	"github.com/quadrifoglio/wir/system"
@@ -133,6 +134,8 @@ func MachineKvmStart(id string) error {
 		m.AddVNC(opts.VNC.Address, opts.VNC.Port)
 	}
 
+	m.AddMonitorUnix(MachineMonitorPath(def.ID))
+
 	proc, err := m.Start("x86_64", true) // x86_64 arch (using qemu-system-x86_64), with kvm
 	if err != nil {
 		return err
@@ -213,15 +216,16 @@ func MachineKvmStatus(id string) (shared.MachineStatusDef, error) {
 			return def, err
 		}
 
-		disk, err := utils.FileSize(MachineDisk(id))
-		if err != nil {
-			return def, err
-		}
-
 		def.CpuUsage = cpu
 		def.RamUsage = ram
-		def.DiskUsage = disk
 	}
+
+	disk, err := utils.FileSize(MachineDisk(id))
+	if err != nil {
+		return def, err
+	}
+
+	def.DiskUsage = disk
 
 	return def, nil
 }
@@ -229,11 +233,37 @@ func MachineKvmStatus(id string) (shared.MachineStatusDef, error) {
 // MachineKvmCreateCheckpoint creates a checkpoint of
 // a running machine under the specified name
 func MachineKvmCreateCheckpoint(id string, checkpoint string) error {
+	if !MachineKvmIsRunning(id) {
+		return fmt.Errorf("Machine is not running")
+	}
+
+	c, err := qmp.Open("unix", MachineMonitorPath(id))
+	if err != nil {
+		return err
+	}
+
+	defer c.Close()
+
+	_, err = c.HumanMonitorCommand(fmt.Sprintf("savevm %s", checkpoint))
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // MachineKvmDeleteCheckpoint delete the checkpoint of
 // the machine corresponding to the specified name
 func MachineKvmDeleteCheckpoint(id string, checkpoint string) error {
+	img, err := qemu.OpenImage(MachineDisk(id))
+	if err != nil {
+		return err
+	}
+
+	err = img.DeleteSnapshot(checkpoint)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
