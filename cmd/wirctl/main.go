@@ -84,6 +84,31 @@ var (
 	// Volume delete
 	CVolumeDelete   = CVolumeCommand.Command("delete", "Delete a volume")
 	CVolumeDeleteID = CVolumeDelete.Arg("id", "Volume ID").Required().String()
+
+	// Machine command
+	CMachineCommand = kingpin.Command("machine", "Machine manipulation actions")
+
+	CMachineList = CMachineCommand.Command("list", "List all the machines")
+
+	// Machine creation
+	CMachineCreate       = CMachineCommand.Command("create", "Create a new machine")
+	CMachineCreateName   = CMachineCreate.Flag("name", "Machine name").Required().String()
+	CMachineCreateImage  = CMachineCreate.Flag("image", "Image ID").String()
+	CMachineCreateCores  = CMachineCreate.Flag("cores", "Number of CPUs").Required().Int()
+	CMachineCreateMemory = CMachineCreate.Flag("ram", "Quantity of RAM in MiB").Required().Uint64()
+	CMachineCreateDisk   = CMachineCreate.Flag("disk", "Maximum disk space in bytes").Uint64()
+
+	// Machine update
+	CMachineUpdate       = CMachineCommand.Command("update", "Update a machine")
+	CMachineUpdateID     = CMachineUpdate.Arg("id", "Machine ID").Required().String()
+	CMachineUpdateName   = CMachineUpdate.Flag("name", "Machine name").String()
+	CMachineUpdateCores  = CMachineUpdate.Flag("cores", "Number of CPUs").Int()
+	CMachineUpdateMemory = CMachineUpdate.Flag("ram", "Quantity of RAM in MiB").Uint64()
+	CMachineUpdateDisk   = CMachineUpdate.Flag("disk", "Maximum disk space in bytes").Uint64()
+
+	// Machine delete
+	CMachineDelete   = CMachineCommand.Command("delete", "Delete a machine")
+	CMachineDeleteID = CMachineDelete.Arg("id", "Machine ID").Required().String()
 )
 
 // Fatal displays the error and
@@ -148,6 +173,19 @@ func main() {
 		break
 	case "volume delete":
 		VolumeDelete()
+		break
+
+	case "machine create":
+		MachineCreate()
+		break
+	case "machine list":
+		MachineList()
+		break
+	case "machine update":
+		MachineUpdate()
+		break
+	case "machine delete":
+		MachineDelete()
 		break
 
 	default:
