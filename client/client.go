@@ -72,10 +72,10 @@ func CheckResponse(resp *http.Response) error {
 
 		err := json.NewDecoder(resp.Body).Decode(&e)
 		if err != nil {
-			return fmt.Errorf("HTTP %d", resp.Status)
+			return fmt.Errorf("Remote: HTTP %d", resp.Status)
 		}
 
-		return fmt.Errorf("HTTP %d: %s", resp.StatusCode, e.Error)
+		return fmt.Errorf("Remote: HTTP %d: %s", resp.StatusCode, e.Error)
 	}
 
 	return nil

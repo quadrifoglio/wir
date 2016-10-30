@@ -64,6 +64,26 @@ var (
 	// Network delete
 	CNetworkDelete   = CNetworkCommand.Command("delete", "Delete a network")
 	CNetworkDeleteID = CNetworkDelete.Arg("id", "Network ID").Required().String()
+
+	// Volume command
+	CVolumeCommand = kingpin.Command("volume", "Volume manipulation actions")
+
+	CVolumeList = CVolumeCommand.Command("list", "List all the volumes")
+
+	// Volume creation
+	CVolumeCreate     = CVolumeCommand.Command("create", "Create a new volume")
+	CVolumeCreateName = CVolumeCreate.Flag("name", "Volume name").Required().String()
+	CVolumeCreateType = CVolumeCreate.Flag("type", "Volume type (kvm, vz)").Required().String()
+	CVolumeCreateSize = CVolumeCreate.Flag("size", "Volume size in bytes").Required().Uint64()
+
+	// Volume update
+	CVolumeUpdate     = CVolumeCommand.Command("update", "Update a volume")
+	CVolumeUpdateID   = CVolumeUpdate.Arg("id", "Volume ID").Required().String()
+	CVolumeUpdateName = CVolumeUpdate.Flag("name", "Volume name").Required().String()
+
+	// Volume delete
+	CVolumeDelete   = CVolumeCommand.Command("delete", "Delete a volume")
+	CVolumeDeleteID = CVolumeDelete.Arg("id", "Volume ID").Required().String()
 )
 
 // Fatal displays the error and
@@ -103,6 +123,7 @@ func main() {
 	case "image delete":
 		ImageDelete()
 		break
+
 	case "network create":
 		NetworkCreate()
 		break
@@ -115,6 +136,20 @@ func main() {
 	case "network delete":
 		NetworkDelete()
 		break
+
+	case "volume create":
+		VolumeCreate()
+		break
+	case "volume list":
+		VolumeList()
+		break
+	case "volume update":
+		VolumeUpdate()
+		break
+	case "volume delete":
+		VolumeDelete()
+		break
+
 	default:
 		Fatal(fmt.Errorf("Invalid command"))
 		break
