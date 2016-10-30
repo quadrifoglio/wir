@@ -21,7 +21,7 @@ func validateCheckpoint(req shared.CheckpointDef) (error, int) {
 	return nil, 200
 }
 
-// POST /checkpoints
+// POST /machines/<id>/checkpoints
 func HandleCheckpointCreate(w http.ResponseWriter, r *http.Request) {
 	var req shared.CheckpointDef
 
@@ -57,7 +57,7 @@ func HandleCheckpointCreate(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(w, r, req)
 }
 
-// GET /checkpoints
+// GET /machines/<id>/checkpoints
 func HandleCheckpointList(w http.ResponseWriter, r *http.Request) {
 	v := mux.Vars(r)
 	machine := v["id"]
@@ -71,7 +71,27 @@ func HandleCheckpointList(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(w, r, chks)
 }
 
-// DELETE /checkpoints/<id>
+// GET /machines/<id>/checkpoints/<name>/restore
+func HandleCheckpointRestore(w http.ResponseWriter, r *http.Request) {
+	v := mux.Vars(r)
+	machine := v["id"]
+	name := v["name"]
+
+	if !DBCheckpointExists(machine, name) {
+		ErrorResponse(w, r, fmt.Errorf("Checkpoint not found"), 404)
+		return
+	}
+
+	err := MachineKvmRestoreCheckpoint(machine, name)
+	if err != nil {
+		ErrorResponse(w, r, err, 500)
+		return
+	}
+
+	SuccessResponse(w, r, nil)
+}
+
+// DELETE /machines/<id>/checkpoints/<name>
 func HandleCheckpointDelete(w http.ResponseWriter, r *http.Request) {
 	v := mux.Vars(r)
 	machine := v["id"]

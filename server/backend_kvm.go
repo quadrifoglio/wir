@@ -17,8 +17,8 @@ import (
 )
 
 const (
-	GiB      = 1073741824
-	DiskSize = 25 * GiB
+	GiB             = 1073741824
+	DefaultDiskSize = 25 * GiB
 )
 
 // MachineKvmIsRunning checks if the speicifed machine
@@ -78,6 +78,10 @@ func MachineKvmCreate(def shared.MachineDef) error {
 			if err != nil {
 				return err
 			}
+		} else {
+			//  TODO: Same size as image file
+			def.Disk = DefaultDiskSize
+			disk.Size = DefaultDiskSize
 		}
 	}
 
@@ -252,9 +256,31 @@ func MachineKvmCreateCheckpoint(id string, checkpoint string) error {
 	return nil
 }
 
+// MachineKvmRestoreCheckpoint restores the machine to
+// the specified checkpoint
+func MachineKvmRestoreCheckpoint(id, checkpoint string) error {
+	if !MachineKvmIsRunning(id) {
+		return fmt.Errorf("Machine must be running to be restored")
+	}
+
+	c, err := qmp.Open("unix", MachineMonitorPath(id))
+	if err != nil {
+		return err
+	}
+
+	defer c.Close()
+
+	_, err = c.HumanMonitorCommand(fmt.Sprintf("loadvm %s", checkpoint))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // MachineKvmDeleteCheckpoint delete the checkpoint of
 // the machine corresponding to the specified name
-func MachineKvmDeleteCheckpoint(id string, checkpoint string) error {
+func MachineKvmDeleteCheckpoint(id, checkpoint string) error {
 	img, err := qemu.OpenImage(MachineDisk(id))
 	if err != nil {
 		return err
