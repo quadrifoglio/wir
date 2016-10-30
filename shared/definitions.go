@@ -5,6 +5,13 @@ const (
 	BackendLXC = "lxc"
 )
 
+// RemoteDef represents an API server
+// It is used in the 'client' package
+type RemoteDef struct {
+	Host string // IP address or host name of the API server
+	Port int    // TCP port
+}
+
 // IndexDef represents the data returned by
 // the Index HTTP handler (/)
 type IndexDef struct {
