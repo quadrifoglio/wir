@@ -52,7 +52,9 @@ func ImageUpdate() {
 		Fatal(err)
 	}
 
-	req.Name = *CImageUpdateName
+	if len(*CImageUpdateName) > 0 {
+		req.Name = *CImageUpdateName
+	}
 
 	_, err = client.ImageUpdate(GetRemote(), *CImageUpdateID, req)
 	if err != nil {

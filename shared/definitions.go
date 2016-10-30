@@ -40,9 +40,9 @@ type NetworkDef struct {
 
 	DHCP struct {
 		Enabled bool   // Wether internal DHCP is in use on this network
-		StartIP string // First IP to be leased
-		NumIP   int    // Number of IP addresses to lease, starting from StartIP
-		Router  string // IP address of the network router
+		StartIP string `json:",omitempty"` // First IP to be leased
+		NumIP   int    `json:",omitempty"` // Number of IP addresses to lease, starting from StartIP
+		Router  string `json:",omitempty"` // IP address of the network router
 	}
 }
 

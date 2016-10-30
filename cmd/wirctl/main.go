@@ -34,6 +34,36 @@ var (
 	// Image delete
 	CImageDelete   = CImageCommand.Command("delete", "Delete an image")
 	CImageDeleteID = CImageDelete.Arg("id", "Image ID").Required().String()
+
+	// Network command
+	CNetworkCommand = kingpin.Command("network", "Networks manipulation actions")
+
+	CNetworkList = CNetworkCommand.Command("list", "List all the networks")
+
+	// Network creation
+	CNetworkCreate             = CNetworkCommand.Command("create", "Create a new network")
+	CNetworkCreateName         = CNetworkCreate.Flag("name", "Network name").Required().String()
+	CNetworkCreateCIDR         = CNetworkCreate.Flag("cidr", "Network address in CIDR notation").Required().String()
+	CNetworkCreateGatewayIface = CNetworkCreate.Flag("gateway-iface", "Physical interface to connect to the network").String()
+	CNetworkCreateDhcpEnabled  = CNetworkCreate.Flag("dhcp", "True if the internal DHCP server should be used").Bool()
+	CNetworkCreateDhcpStartIP  = CNetworkCreate.Flag("dhcp-start", "First IP address to lease").String()
+	CNetworkCreateDhcpNumIP    = CNetworkCreate.Flag("dhcp-count", "Number of IP addresses to lease").Int()
+	CNetworkCreateDhcpRouter   = CNetworkCreate.Flag("dhcp-router", "IP address of the router supplied via DHCP").String()
+
+	// Network update
+	CNetworkUpdate             = CNetworkCommand.Command("update", "Update a network")
+	CNetworkUpdateID           = CNetworkUpdate.Arg("id", "Network ID").Required().String()
+	CNetworkUpdateName         = CNetworkUpdate.Flag("name", "Network name").String()
+	CNetworkUpdateCIDR         = CNetworkUpdate.Flag("cidr", "Network address in CIDR notation").String()
+	CNetworkUpdateGatewayIface = CNetworkUpdate.Flag("gateway-iface", "Physical interface to connect to the network").String()
+	// TODO: Update DHCP status
+	CNetworkUpdateDhcpStartIP = CNetworkUpdate.Flag("dhcp-start", "First IP address to lease").String()
+	CNetworkUpdateDhcpNumIP   = CNetworkUpdate.Flag("dhcp-count", "Number of IP addresses to lease").Int()
+	CNetworkUpdateDhcpRouter  = CNetworkUpdate.Flag("dhcp-router", "IP address of the router supplied via DHCP").String()
+
+	// Network delete
+	CNetworkDelete   = CNetworkCommand.Command("delete", "Delete a network")
+	CNetworkDeleteID = CNetworkDelete.Arg("id", "Network ID").Required().String()
 )
 
 // Fatal displays the error and
@@ -72,6 +102,18 @@ func main() {
 		break
 	case "image delete":
 		ImageDelete()
+		break
+	case "network create":
+		NetworkCreate()
+		break
+	case "network list":
+		NetworkList()
+		break
+	case "network update":
+		NetworkUpdate()
+		break
+	case "network delete":
+		NetworkDelete()
 		break
 	default:
 		Fatal(fmt.Errorf("Invalid command"))
