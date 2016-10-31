@@ -109,6 +109,30 @@ var (
 	// Machine delete
 	CMachineDelete   = CMachineCommand.Command("delete", "Delete a machine")
 	CMachineDeleteID = CMachineDelete.Arg("id", "Machine ID").Required().String()
+
+	// Machine KVM options
+	CMachineKvm = CMachineCommand.Command("kvm", "KVM machine options manipulation")
+
+	CMachineKvmGet   = CMachineKvm.Command("get", "Show KVM options")
+	CMachineKvmGetID = CMachineKvmGet.Arg("id", "Machine ID").Required().String()
+
+	CMachineKvmSet           = CMachineKvm.Command("set", "Set KVM options")
+	CMachineKvmSetID         = CMachineKvmSet.Arg("id", "Machine ID").Required().String()
+	CMachineKvmSetVncEnabled = CMachineKvmSet.Flag("vnc", "VNC server active").Bool()
+	CMachineKvmSetVncAddr    = CMachineKvmSet.Flag("vnc-address", "VNC server bind address").String()
+	CMachineKvmSetVncPort    = CMachineKvmSet.Flag("vnc-display", "VNC display port").Int()
+
+	// Machine start
+	CMachineStart   = CMachineCommand.Command("start", "Start a machine")
+	CMachineStartID = CMachineStart.Arg("id", "Machine ID").Required().String()
+
+	// Machine stop
+	CMachineStop   = CMachineCommand.Command("stop", "Stop a machine")
+	CMachineStopID = CMachineStop.Arg("id", "Machine ID").Required().String()
+
+	// Machine start
+	CMachineStatus   = CMachineCommand.Command("status", "Status of a machine")
+	CMachineStatusID = CMachineStatus.Arg("id", "Machine ID").Required().String()
 )
 
 // Fatal displays the error and
@@ -186,6 +210,24 @@ func main() {
 		break
 	case "machine delete":
 		MachineDelete()
+		break
+
+	case "machine kvm get":
+		MachineGetKvmOpts()
+		break
+	case "machine kvm set":
+		MachineSetKvmOpts()
+		break
+
+	case "machine start":
+		MachineStart()
+		break
+	case "machine stop":
+		MachineStop()
+		break
+
+	case "machine status":
+		MachineStatus()
 		break
 
 	default:

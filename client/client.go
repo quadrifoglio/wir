@@ -15,9 +15,9 @@ func RemoteDefURL(r shared.RemoteDef, path string) string {
 	return fmt.Sprintf("http://%s:%d%s", r.Host, r.Port, path)
 }
 
-// GetJson sends an HTTP GET request to the remote
+// Get sends an HTTP GET request to the remote
 // and returns the HTTP response
-func GetJson(r shared.RemoteDef, path string) (*http.Response, error) {
+func Get(r shared.RemoteDef, path string) (*http.Response, error) {
 	resp, err := http.Get(RemoteDefURL(r, path))
 	if err != nil {
 		return nil, err

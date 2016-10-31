@@ -28,7 +28,7 @@ func NetworkCreate(r shared.RemoteDef, req shared.NetworkDef) (shared.NetworkDef
 func NetworkList(r shared.RemoteDef) ([]shared.NetworkDef, error) {
 	var netws []shared.NetworkDef
 
-	resp, err := GetJson(r, "/networks")
+	resp, err := Get(r, "/networks")
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func NetworkList(r shared.RemoteDef) ([]shared.NetworkDef, error) {
 func NetworkGet(r shared.RemoteDef, id string) (shared.NetworkDef, error) {
 	var netw shared.NetworkDef
 
-	resp, err := GetJson(r, fmt.Sprintf("/networks/%s", id))
+	resp, err := Get(r, fmt.Sprintf("/networks/%s", id))
 	if err != nil {
 		return netw, err
 	}

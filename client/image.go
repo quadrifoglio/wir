@@ -28,7 +28,7 @@ func ImageCreate(r shared.RemoteDef, req shared.ImageDef) (shared.ImageDef, erro
 func ImageList(r shared.RemoteDef) ([]shared.ImageDef, error) {
 	var imgs []shared.ImageDef
 
-	resp, err := GetJson(r, "/images")
+	resp, err := Get(r, "/images")
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func ImageList(r shared.RemoteDef) ([]shared.ImageDef, error) {
 func ImageGet(r shared.RemoteDef, id string) (shared.ImageDef, error) {
 	var img shared.ImageDef
 
-	resp, err := GetJson(r, fmt.Sprintf("/images/%s", id))
+	resp, err := Get(r, fmt.Sprintf("/images/%s", id))
 	if err != nil {
 		return img, err
 	}

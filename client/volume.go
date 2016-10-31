@@ -28,7 +28,7 @@ func VolumeCreate(r shared.RemoteDef, req shared.VolumeDef) (shared.VolumeDef, e
 func VolumeList(r shared.RemoteDef) ([]shared.VolumeDef, error) {
 	var vols []shared.VolumeDef
 
-	resp, err := GetJson(r, "/volumes")
+	resp, err := Get(r, "/volumes")
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func VolumeList(r shared.RemoteDef) ([]shared.VolumeDef, error) {
 func VolumeGet(r shared.RemoteDef, id string) (shared.VolumeDef, error) {
 	var vol shared.VolumeDef
 
-	resp, err := GetJson(r, fmt.Sprintf("/volumes/%s", id))
+	resp, err := Get(r, fmt.Sprintf("/volumes/%s", id))
 	if err != nil {
 		return vol, err
 	}
