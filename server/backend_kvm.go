@@ -57,37 +57,49 @@ func MachineKvmIsRunning(id string) bool {
 
 // MachineKvmCreate will acutally create the virtual machine
 // based on the specified machine & image definitions
-func MachineKvmCreate(def shared.MachineDef) error {
+func MachineKvmCreate(def *shared.MachineDef) error {
 	err := os.MkdirAll(filepath.Dir(MachineDisk(def.ID)), 0755)
 	if err != nil {
 		return err
 	}
 
-	disk := qemu.NewImage(MachineDisk(def.ID), qemu.ImageFormatQCOW2, def.Disk)
+	disk := qemu.NewImage(MachineDisk(def.ID), qemu.ImageFormatQCOW2, 0)
 
+	// If we are using an image, then create the disk file
+	// with the same size as the image, and use a backing file
 	if len(def.Image) > 0 {
 		img, err := DBImageGet(def.Image)
 		if err != nil {
 			return err
 		}
 
-		disk.SetBackingFile(img.Source)
-
-		if def.Disk > 0 {
-			err := system.ResizeQcow2(img.Source, def.Disk)
-			if err != nil {
-				return err
-			}
-		} else {
-			//  TODO: Same size as image file
-			def.Disk = DefaultDiskSize
-			disk.Size = DefaultDiskSize
+		size, err := system.SizeQcow2(ImageFile(def.Image))
+		if err != nil {
+			return err
 		}
+
+		if def.Disk == 0 {
+			def.Disk = size // Update the disk size in definition (to be saved in database)
+		}
+
+		disk.Size = size
+		disk.SetBackingFile(img.Source)
+	} else {
+		disk.Size = def.Disk
 	}
 
 	err = disk.Create()
 	if err != nil {
 		return err
+	}
+
+	// If both an image and a disk size is specified, then we have
+	// to resize the disk image and its paritions to fit the requested size
+	if len(def.Image) > 0 && def.Disk != 0 && def.Disk != disk.Size {
+		err := system.ResizeQcow2(MachineDisk(def.ID), def.Disk)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

@@ -36,8 +36,6 @@ func validateMachine(req *shared.MachineDef) (error, int) {
 	if req.Memory == 0 {
 		return fmt.Errorf("'Memory' can't be 0"), 400
 	}
-	if req.Disk == 0 && len(req.Image) == 0 {
-	}
 
 	for _, v := range req.Volumes {
 		if !DBVolumeExists(v) {
@@ -129,7 +127,7 @@ func HandleMachineCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = MachineKvmCreate(req)
+	err = MachineKvmCreate(&req)
 	if err != nil {
 		ErrorResponse(w, r, err, 500)
 		return

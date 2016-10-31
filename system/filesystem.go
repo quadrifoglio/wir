@@ -3,6 +3,7 @@ package system
 import (
 	"fmt"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -21,6 +22,38 @@ type Partition struct {
 	End        uint64
 	Size       uint64
 	Filesystem string
+}
+
+// SizeQcow2 calculates the size of a QCOW2
+// disk file and returns it (bytes)
+func SizeQcow2(file string) (uint64, error) {
+	var size uint64
+
+	cmd := exec.Command("qemu-img", "info", file)
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return 0, fmt.Errorf("%s", utils.OneLine(out))
+	}
+
+	for _, l := range strings.Split(string(out), "\n") {
+		if !strings.Contains(l, "virtual size") {
+			continue
+		}
+
+		r := regexp.MustCompile("\\([0-9]+")
+		if d := r.Find([]byte(l)); d != nil {
+			s, err := strconv.ParseInt(string(d[1:]), 10, 64)
+			if err != nil {
+				return 0, fmt.Errorf("failed to parse qcow2 size from qemu-img: %s", err)
+			}
+
+			size = uint64(s)
+			break
+		}
+	}
+
+	return size, nil
 }
 
 // ResizeQcow2 resizes the image to the specified size
