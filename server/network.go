@@ -2,10 +2,12 @@ package server
 
 import (
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"net"
-	"strings"
+
+	"github.com/rs/xid"
 
 	"github.com/quadrifoglio/go-dhcp"
 
@@ -41,6 +43,10 @@ func StartNetworks() error {
 // CreateNetwork creates the specified network
 // by using Linux bridges
 func CreateNetwork(def shared.NetworkDef) error {
+	if len(def.Name) > 12 {
+		return fmt.Errorf("Network name must be less than 12 characters long")
+	}
+
 	if !system.InterfaceExists(NetworkNicName(def.ID)) {
 		err := system.CreateBridge(NetworkNicName(def.ID))
 		if err != nil {
@@ -188,13 +194,44 @@ func NetworkFreeLease(netw shared.NetworkDef) (net.IP, error) {
 }
 
 // NetworkNicName returns the bridge interface name
-// coresponding to the specified network ID
+// coresponding to the specified network name
 func NetworkNicName(id string) string {
-	return fmt.Sprintf("net%s%s", strings.ToUpper(id[:1]), id[1:])
+	uid, err := xid.FromString(id)
+	if err != nil {
+		return ""
+	}
+
+	c := make([]byte, 4)
+	t := make([]byte, 8)
+
+	binary.LittleEndian.PutUint32(c, uint32(uid.Counter()))
+	binary.LittleEndian.PutUint64(t, uint64(uid.Time().Unix()))
+
+	// The resulting ID is 'net'
+	// + 3 bytes of the original counter (32bits)
+	// + 3 bytes of the original timestamp (64bits)
+
+	return fmt.Sprintf("net%s%s", hex.EncodeToString(c[:3]), hex.EncodeToString(t[:3]))
 }
 
 // MachineNicName returns the interface name coresponding
 // to the n-th interface of the specified machine ID
 func MachineNicName(id string, n int) string {
-	return fmt.Sprintf("nic%s%s.%d", strings.ToUpper(id[:1]), id[1:], n)
+	uid, err := xid.FromString(id)
+	if err != nil {
+		return ""
+	}
+
+	c := make([]byte, 4)
+	t := make([]byte, 8)
+
+	binary.LittleEndian.PutUint32(c, uint32(uid.Counter()))
+	binary.LittleEndian.PutUint64(t, uint64(uid.Time().Unix()))
+
+	// The resulting ID is 'net'
+	// + 2  bytes of the original counter (32bits)
+	// + 2  bytes of the original timestamp (64bits)
+	// + .n the interface index
+
+	return fmt.Sprintf("nic%s%s.%d", hex.EncodeToString(c[:2]), hex.EncodeToString(t[:2]), n)
 }

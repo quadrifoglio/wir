@@ -244,6 +244,24 @@ func DBNetworkExists(id string) bool {
 	return false
 }
 
+// DBNetworkNameFree checks if the specified network name
+// exists in the database
+func DBNetworkNameFree(name string) bool {
+	rows, err := DB.Query("SELECT id FROM network WHERE name = ? LIMIT 1", name)
+	if err != nil {
+		log.Println("Network exists check:", err)
+		return false
+	}
+
+	defer rows.Close()
+
+	if rows.Next() {
+		return true
+	}
+
+	return false
+}
+
 // DBNetworkCreate creates a new network in the database
 // using the specified definition
 func DBNetworkCreate(def shared.NetworkDef) error {
