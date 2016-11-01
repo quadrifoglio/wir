@@ -48,12 +48,6 @@ func HandleCheckpointCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = DBCheckpointCreate(machine, req)
-	if err != nil {
-		ErrorResponse(w, r, err, 500)
-		return
-	}
-
 	SuccessResponse(w, r, req)
 }
 
@@ -62,7 +56,7 @@ func HandleCheckpointList(w http.ResponseWriter, r *http.Request) {
 	v := mux.Vars(r)
 	machine := v["id"]
 
-	chks, err := DBCheckpointList(machine)
+	chks, err := MachineKvmListCheckpoints(machine)
 	if err != nil {
 		ErrorResponse(w, r, err, 500)
 		return
@@ -76,11 +70,6 @@ func HandleCheckpointRestore(w http.ResponseWriter, r *http.Request) {
 	v := mux.Vars(r)
 	machine := v["id"]
 	name := v["name"]
-
-	if !DBCheckpointExists(machine, name) {
-		ErrorResponse(w, r, fmt.Errorf("Checkpoint not found"), 404)
-		return
-	}
 
 	err := MachineKvmRestoreCheckpoint(machine, name)
 	if err != nil {
@@ -97,18 +86,7 @@ func HandleCheckpointDelete(w http.ResponseWriter, r *http.Request) {
 	machine := v["id"]
 	name := v["name"]
 
-	if !DBCheckpointExists(machine, name) {
-		ErrorResponse(w, r, fmt.Errorf("Checkpoint not found"), 404)
-		return
-	}
-
 	err := MachineKvmDeleteCheckpoint(machine, name)
-	if err != nil {
-		ErrorResponse(w, r, err, 500)
-		return
-	}
-
-	err = DBCheckpointDelete(machine, name)
 	if err != nil {
 		ErrorResponse(w, r, err, 500)
 		return

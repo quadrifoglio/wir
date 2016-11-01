@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -277,12 +278,36 @@ func MachineKvmCreateCheckpoint(id string, checkpoint string) error {
 
 	defer c.Close()
 
-	_, err = c.HumanMonitorCommand(fmt.Sprintf("savevm %s", checkpoint))
+	_, err = c.HumanMonitorCommand(fmt.Sprintf("savevm checkpoint_%s", checkpoint))
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// MachineKvmListCheckpoints returns the list of
+// the specified machine's checkpoints
+func MachineKvmListCheckpoints(id string) ([]shared.CheckpointDef, error) {
+	chks := make([]shared.CheckpointDef, 0)
+
+	disk, err := qemu.OpenImage(MachineDisk(id))
+	if err != nil {
+		return nil, err
+	}
+
+	snaps, err := disk.Snapshots()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, snap := range snaps {
+		if strings.HasPrefix(snap.Name, "checkpoint_") {
+			chks = append(chks, shared.CheckpointDef{snap.Name[11:], snap.Date.Unix()})
+		}
+	}
+
+	return chks, nil
 }
 
 // MachineKvmRestoreCheckpoint restores the machine to
@@ -299,7 +324,7 @@ func MachineKvmRestoreCheckpoint(id, checkpoint string) error {
 
 	defer c.Close()
 
-	_, err = c.HumanMonitorCommand(fmt.Sprintf("loadvm %s", checkpoint))
+	_, err = c.HumanMonitorCommand(fmt.Sprintf("loadvm checkpoint_%s", checkpoint))
 	if err != nil {
 		return err
 	}
@@ -315,7 +340,7 @@ func MachineKvmDeleteCheckpoint(id, checkpoint string) error {
 		return err
 	}
 
-	err = img.DeleteSnapshot(checkpoint)
+	err = img.DeleteSnapshot(fmt.Sprintf("checkpoint_%s", checkpoint))
 	if err != nil {
 		return err
 	}

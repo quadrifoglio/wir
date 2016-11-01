@@ -66,12 +66,6 @@ const (
 		vnc_addr VARCHAR(255),
 		vnc_port INTEGER
 	);
-
-	CREATE TABLE IF NOT EXISTS checkpoints (
-		machine CHAR(8) NOT NULL UNIQUE REFERENCES machine(id),
-		name VARCHAR(255) NOT NULL,
-		timestamp BIGINT NOT NULL
-	);
 	`
 )
 
@@ -966,72 +960,4 @@ func DBIsMACFree(mac string) bool {
 	}
 
 	return true
-}
-
-// CHECKPOINTS
-
-// DBCheckpointCreate creates a new checkpoint
-// using the specified parameters
-func DBCheckpointCreate(machineId string, def shared.CheckpointDef) error {
-	_, err := DB.Exec("INSERT INTO checkpoints VALUES (?, ?, ?)", machineId, def.Name, def.Timestamp)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// DBCheckpointExists returns true if the
-// specified checkpoint exists in database
-func DBCheckpointExists(machineId, name string) bool {
-	rows, err := DB.Query("SELECT name FROM checkpoints WHERE machine = ? AND name = ? LIMIT 1", machineId, name)
-	if err != nil {
-		log.Println("Checkpoint exists check:", err)
-		return false
-	}
-
-	defer rows.Close()
-
-	if rows.Next() {
-		return true
-	}
-
-	return false
-}
-
-// DBCheckpointList returns the list of checkpoints
-// corresponding to the specified machine
-func DBCheckpointList(machineId string) ([]shared.CheckpointDef, error) {
-	rows, err := DB.Query("SELECT * FROM checkpoints WHERE machine = ? LIMIT 1", machineId)
-	if err != nil {
-		return nil, err
-	}
-
-	defer rows.Close()
-
-	chks := make([]shared.CheckpointDef, 0)
-
-	for rows.Next() {
-		var chk shared.CheckpointDef
-
-		err := rows.Scan(&machineId, &chk.Name, &chk.Timestamp)
-		if err != nil {
-			return nil, err
-		}
-
-		chks = append(chks, chk)
-	}
-
-	return chks, nil
-}
-
-// DBCheckpointDelete deletes the specified checkpoint
-// from the database
-func DBCheckpointDelete(machineId, name string) error {
-	_, err := DB.Exec("DELETE FROM checkpoints WHERE machine = ? AND name = ?", machineId, name)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
