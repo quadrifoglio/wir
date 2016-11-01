@@ -6,8 +6,13 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/gorilla/mux"
+	"gopkg.in/alecthomas/kingpin.v2"
 
 	"github.com/quadrifoglio/wir/server"
+)
+
+var (
+	CConfig = kingpin.Flag("config", "Configuration file to use").Default("/etc/wird.toml").String()
 )
 
 type config struct {
@@ -28,7 +33,7 @@ func main() {
 	log.Println("Starting wird")
 
 	var c config
-	if _, err := toml.DecodeFile("wird.toml", &c); err != nil {
+	if _, err := toml.DecodeFile(*CConfig, &c); err != nil {
 		log.Fatal(err)
 	}
 

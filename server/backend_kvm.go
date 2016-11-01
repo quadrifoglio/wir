@@ -63,40 +63,57 @@ func MachineKvmCreate(def *shared.MachineDef) error {
 		return err
 	}
 
-	disk := qemu.NewImage(MachineDisk(def.ID), qemu.ImageFormatQCOW2, 0)
+	if !utils.FileExists(MachineDisk(def.ID)) { // If this is a creation, not a migration
+		disk := qemu.NewImage(MachineDisk(def.ID), qemu.ImageFormatQCOW2, 0)
 
-	// If we are using an image, then create the disk file
-	// with the same size as the image, and use a backing file
-	if len(def.Image) > 0 {
+		// If we are using an image, then create the disk file
+		// with the same size as the image, and use a backing file
+		if len(def.Image) > 0 {
+			img, err := DBImageGet(def.Image)
+			if err != nil {
+				return err
+			}
+
+			size, err := system.SizeQcow2(ImageFile(def.Image))
+			if err != nil {
+				return err
+			}
+
+			if def.Disk == 0 {
+				def.Disk = size // Update the disk size in definition (to be saved in database)
+			}
+
+			disk.Size = size
+			disk.SetBackingFile(img.Source)
+		} else {
+			disk.Size = def.Disk
+		}
+
+		err = disk.Create()
+		if err != nil {
+			return err
+		}
+
+		// If both an image and a disk size is specified, then we have
+		// to resize the disk image and its paritions to fit the requested size
+		if len(def.Image) > 0 && def.Disk != 0 && def.Disk > disk.Size {
+			err := system.ResizeQcow2(MachineDisk(def.ID), def.Disk)
+			if err != nil {
+				return err
+			}
+		}
+	} else if len(def.Image) > 0 { // If this is a migration, rebase the disk to the image
 		img, err := DBImageGet(def.Image)
 		if err != nil {
 			return err
 		}
 
-		size, err := system.SizeQcow2(ImageFile(def.Image))
+		disk, err := qemu.OpenImage(MachineDisk(def.ID))
 		if err != nil {
 			return err
 		}
 
-		if def.Disk == 0 {
-			def.Disk = size // Update the disk size in definition (to be saved in database)
-		}
-
-		disk.Size = size
-		disk.SetBackingFile(img.Source)
-	} else {
-		disk.Size = def.Disk
-	}
-
-	err = disk.Create()
-	if err != nil {
-		return err
-	}
-
-	// If both an image and a disk size is specified, then we have
-	// to resize the disk image and its paritions to fit the requested size
-	if len(def.Image) > 0 && def.Disk != 0 && def.Disk != disk.Size {
-		err := system.ResizeQcow2(MachineDisk(def.ID), def.Disk)
+		err = disk.Rebase(ImageFile(img.ID))
 		if err != nil {
 			return err
 		}

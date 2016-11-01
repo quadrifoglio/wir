@@ -190,7 +190,7 @@ func NetworkFreeLease(netw shared.NetworkDef) (net.IP, error) {
 		utils.IncrementIP(ip)
 	}
 
-	return ip, fmt.Errorf("no lease available")
+	return ip, fmt.Errorf("No lease available")
 }
 
 // NetworkNicName returns the bridge interface name

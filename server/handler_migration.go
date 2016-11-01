@@ -12,7 +12,6 @@ import (
 	"github.com/quadrifoglio/wir/client"
 	"github.com/quadrifoglio/wir/shared"
 	"github.com/quadrifoglio/wir/system"
-	"github.com/quadrifoglio/wir/utils"
 )
 
 func validateFetch(req shared.MachineFetchDef) (error, int) {
@@ -105,17 +104,8 @@ func fetchImage(r shared.RemoteDef, img *shared.ImageDef) error {
 }
 
 func fetchMachine(r shared.RemoteDef, m *shared.MachineDef) error {
-	// Generate a new ID
-	var newId string
-	for {
-		newId = utils.RandID()
-		if !DBMachineExists(newId) {
-			break
-		}
-	}
-
 	// Download the distant disk
-	newDisk := MachineDisk(newId)
+	newDisk := MachineDisk(m.ID)
 
 	err := os.MkdirAll(filepath.Dir(newDisk), 0755)
 	if err != nil {
@@ -126,9 +116,6 @@ func fetchMachine(r shared.RemoteDef, m *shared.MachineDef) error {
 	if err != nil {
 		return err
 	}
-
-	// Update parameters
-	m.ID = newId
 
 	// TODO: Migrate volumes
 	// TODO: Migrate network interfaces

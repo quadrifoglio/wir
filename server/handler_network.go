@@ -18,6 +18,9 @@ func validateNetwork(req shared.NetworkDef) (error, int) {
 	if len(req.Name) == 0 {
 		return fmt.Errorf("Missing 'Name'"), 400
 	}
+	if !DBNetworkNameFree(req.Name) {
+		return fmt.Errorf("'Name' already used"), 400
+	}
 	if len(req.CIDR) == 0 {
 		return fmt.Errorf("Missing 'CIDR'"), 400
 	}
