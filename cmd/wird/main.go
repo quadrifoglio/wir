@@ -30,12 +30,14 @@ type config struct {
 }
 
 func main() {
-	log.Println("Starting wird")
+	kingpin.Parse()
 
 	var c config
 	if _, err := toml.DecodeFile(*CConfig, &c); err != nil {
 		log.Fatal(err)
 	}
+
+	log.Printf("Starting wird - Node #%d\n", c.Server.Node)
 
 	err := server.Init(c.Server.Node, c.Server.Database, c.Storage.Images, c.Storage.Volumes, c.Storage.Machines)
 	if err != nil {
@@ -78,6 +80,7 @@ func main() {
 	r.HandleFunc("/machines/{id}/start", server.HandleMachineStart).Methods("GET")
 	r.HandleFunc("/machines/{id}/stop", server.HandleMachineStop).Methods("GET")
 	r.HandleFunc("/machines/{id}/status", server.HandleMachineStatus).Methods("GET")
+	r.HandleFunc("/machines/{id}/disk/data", server.HandleMachineDiskData).Methods("GET")
 
 	r.HandleFunc("/machines/{id}/checkpoints", server.HandleCheckpointCreate).Methods("POST")
 	r.HandleFunc("/machines/{id}/checkpoints", server.HandleCheckpointList).Methods("GET")

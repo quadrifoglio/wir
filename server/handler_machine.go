@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -364,4 +365,31 @@ func HandleMachineStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	SuccessResponse(w, r, def)
+}
+
+// GET /machines/<id>/disk/data
+func HandleMachineDiskData(w http.ResponseWriter, r *http.Request) {
+	v := mux.Vars(r)
+	id := v["id"]
+
+	if !DBMachineExists(id) {
+		ErrorResponse(w, r, fmt.Errorf("Machine not found"), 404)
+		return
+	}
+
+	f, err := os.Open(MachineDisk(id))
+	if err != nil {
+		ErrorResponse(w, r, err, 500)
+		return
+	}
+
+	defer f.Close()
+
+	// TODO: Log
+
+	_, err = io.Copy(w, f)
+	if err != nil {
+		ErrorResponse(w, r, err, 500)
+		return
+	}
 }

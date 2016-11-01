@@ -2,6 +2,10 @@ package server
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+
+	"github.com/quadrifoglio/wir/utils"
 )
 
 var (
@@ -19,6 +23,13 @@ func Init(nodeId byte, db string, img, vol, machine string) error {
 	GlobalImagePath = img
 	GlobalVolumePath = vol
 	GlobalMachinePath = machine
+
+	if !utils.FileExists(filepath.Dir(db)) {
+		err := os.MkdirAll(filepath.Dir(db), 0755)
+		if err != nil {
+			return err
+		}
+	}
 
 	err := InitDatabase(db)
 	if err != nil {

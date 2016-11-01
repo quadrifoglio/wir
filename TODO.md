@@ -1,3 +1,2 @@
-* migration: cluster unique image IDs
-* migration: networks identified by name, not IDs
-* migration: machine volumes and network interfaces
+* migration: network migration (if same name)
+* migration: machine volumes, checkpoints and network interfaces

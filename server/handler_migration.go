@@ -21,7 +21,7 @@ func validateFetch(req shared.MachineFetchDef) (error, int) {
 	if req.Remote.Port == 0 {
 		return fmt.Errorf("Please specify a 'Remote.Port'"), 400
 	}
-	if len(req.ID) != 8 {
+	if len(req.ID) != 20 {
 		return fmt.Errorf("Invalid remote machine 'ID'"), 400
 	}
 
@@ -43,35 +43,41 @@ func HandleMachineFetch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = getRemoteMachine(req.Remote, req.ID)
+	// Get the remote machine & image information
+	m, err := client.MachineGet(req.Remote, req.ID)
 	if err != nil {
 		ErrorResponse(w, r, err, 500)
 		return
 	}
-}
 
-func getRemoteMachine(r shared.RemoteDef, id string) error {
-	m, err := client.MachineGet(r, id)
+	img, err := client.ImageGet(req.Remote, m.Image)
 	if err != nil {
-		return err
+		ErrorResponse(w, r, err, 500)
+		return
 	}
 
-	img, err := client.ImageGet(r, m.Image)
+	// Fetch the remote image, if not already on this host
+	err = fetchImage(req.Remote, &img)
 	if err != nil {
-		return err
+		ErrorResponse(w, r, err, 500)
+		return
 	}
 
-	err = fetchImage(r, &img)
+	// Fetch the remote machine
+	err = fetchMachine(req.Remote, &m)
 	if err != nil {
-		return err
+		ErrorResponse(w, r, err, 500)
+		return
 	}
 
-	err = fetchMachine(r, &m)
-	if err != nil {
-		return err
+	// If specified, delete the remote machine after fetching
+	if !req.KeepRemote {
+		err := client.MachineDelete(req.Remote, req.ID)
+		if err != nil {
+			ErrorResponse(w, r, err, 500)
+			return
+		}
 	}
-
-	return nil
 }
 
 func fetchImage(r shared.RemoteDef, img *shared.ImageDef) error {
@@ -113,6 +119,16 @@ func fetchMachine(r shared.RemoteDef, m *shared.MachineDef) error {
 	}
 
 	err = system.DownloadHttp(fmt.Sprintf("http://%s:%d/machines/%s/disk/data", r.Host, r.Port, m.ID), newDisk)
+	if err != nil {
+		return err
+	}
+
+	err = MachineKvmCreate(m)
+	if err != nil {
+		return err
+	}
+
+	err = DBMachineCreate(*m)
 	if err != nil {
 		return err
 	}

@@ -67,9 +67,9 @@ type InterfaceDef struct {
 // It contains all the information needed to retreive the machine
 // from the specified server
 type MachineFetchDef struct {
-	Remote       RemoteDef // The API server from which the machine should be fetched
-	ID           string    // ID of the machine to be fetched
-	DeleteRemote bool      // Wether the distant machine should be deleted from the remote
+	Remote     RemoteDef // The API server from which the machine should be fetched
+	ID         string    // ID of the machine to be fetched
+	KeepRemote bool      // Wether the distant machine should be kept on the remote
 }
 
 // MachineDef is the data structure used in communications
