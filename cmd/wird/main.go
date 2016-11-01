@@ -64,6 +64,7 @@ func main() {
 
 	r.HandleFunc("/machines", server.HandleMachineCreate).Methods("POST")
 	r.HandleFunc("/machines", server.HandleMachineList).Methods("GET")
+	r.HandleFunc("/machines/fetch", server.HandleMachineFetch).Methods("POST")
 	r.HandleFunc("/machines/{id}", server.HandleMachineGet).Methods("GET")
 	r.HandleFunc("/machines/{id}", server.HandleMachineUpdate).Methods("POST")
 	r.HandleFunc("/machines/{id}", server.HandleMachineDelete).Methods("DELETE")

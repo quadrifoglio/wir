@@ -63,6 +63,15 @@ type InterfaceDef struct {
 	IP      string // IP address of the interface in CIDR notation
 }
 
+// MachineFetchDef represents a machine fetch request sent to an API server
+// It contains all the information needed to retreive the machine
+// from the specified server
+type MachineFetchDef struct {
+	Remote       RemoteDef // The API server from which the machine should be fetched
+	ID           string    // ID of the machine to be fetched
+	DeleteRemote bool      // Wether the distant machine should be deleted from the remote
+}
+
 // MachineDef is the data structure used in communications
 // with all the Machine* HTTP handlers (/machines)
 type MachineDef struct {
