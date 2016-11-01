@@ -61,7 +61,7 @@ func HandleNetworkCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for {
-		req.ID = utils.RandID(GlobalNodeID)
+		req.ID = utils.RandID()
 		if !DBNetworkExists(req.ID) {
 			break
 		}

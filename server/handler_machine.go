@@ -113,7 +113,7 @@ func HandleMachineCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for {
-		req.ID = utils.RandID(GlobalNodeID)
+		req.ID = utils.RandID()
 		if !DBMachineExists(req.ID) {
 			break
 		}

@@ -47,7 +47,7 @@ func HandleImageCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for {
-		req.ID = utils.RandID(GlobalNodeID)
+		req.ID = utils.RandID()
 		if !DBImageExists(req.ID) {
 			break
 		}

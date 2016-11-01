@@ -108,7 +108,7 @@ func fetchMachine(r shared.RemoteDef, m *shared.MachineDef) error {
 	// Generate a new ID
 	var newId string
 	for {
-		newId = utils.RandID(GlobalNodeID)
+		newId = utils.RandID()
 		if !DBMachineExists(newId) {
 			break
 		}

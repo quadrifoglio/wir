@@ -1,22 +1,16 @@
 package utils
 
 import (
-	"encoding/binary"
-	"encoding/hex"
 	"fmt"
 	"math/rand"
-	"time"
+
+	"github.com/rs/xid"
 )
 
-// RandID generates a 32 bits identifier
-// in which the first byte will have the value of 'prefix'
-func RandID(prefix byte) string {
-	b := make([]byte, 9)
-	nano := time.Now().UnixNano()
-	binary.LittleEndian.PutUint64(b[1:], uint64(nano))
-
-	b[0] = prefix
-	return hex.EncodeToString(b[:4])
+// RandID generates a unique 12 bytes identifier and returns
+// it as a 20 chars string (Base32 hex encoded)
+func RandID() string {
+	return xid.New().String()
 }
 
 // RandMAC generates a random MAC address with
