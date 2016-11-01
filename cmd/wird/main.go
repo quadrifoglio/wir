@@ -73,8 +73,8 @@ func main() {
 	r.HandleFunc("/machines/{id}/stop", server.HandleMachineStop).Methods("GET")
 	r.HandleFunc("/machines/{id}/status", server.HandleMachineStatus).Methods("GET")
 
-	r.HandleFunc("/machines/{id}/checkpoints", server.HandleCheckpointList).Methods("GET")
 	r.HandleFunc("/machines/{id}/checkpoints", server.HandleCheckpointCreate).Methods("POST")
+	r.HandleFunc("/machines/{id}/checkpoints", server.HandleCheckpointList).Methods("GET")
 	r.HandleFunc("/machines/{id}/checkpoints/{name}", server.HandleCheckpointDelete).Methods("DELETE")
 	r.HandleFunc("/machines/{id}/checkpoints/{name}/restore", server.HandleCheckpointRestore).Methods("GET")
 

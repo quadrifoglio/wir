@@ -133,6 +133,24 @@ var (
 	// Machine start
 	CMachineStatus   = CMachineCommand.Command("status", "Status of a machine")
 	CMachineStatusID = CMachineStatus.Arg("id", "Machine ID").Required().String()
+
+	// Machine checkpoints
+	CCheckpoint = CMachineCommand.Command("checkpoint", "Checkpoint manipulation actions")
+
+	CCheckpointList        = CCheckpoint.Command("list", "List checkpoints")
+	CCheckpointListMachine = CCheckpointList.Arg("machine", "Machine ID").Required().String()
+
+	CCheckpointCreate        = CCheckpoint.Command("create", "Create a checkpoint")
+	CCheckpointCreateMachine = CCheckpointCreate.Arg("machine", "Machine ID").Required().String()
+	CCheckpointCreateName    = CCheckpointCreate.Arg("name", "Checkpoint name").Required().String()
+
+	CCheckpointDelete        = CCheckpoint.Command("delete", "Delete a checkpoint")
+	CCheckpointDeleteMachine = CCheckpointDelete.Arg("machine", "Machine ID").Required().String()
+	CCheckpointDeleteName    = CCheckpointDelete.Arg("name", "Checkpoint name").Required().String()
+
+	CCheckpointRestore        = CCheckpoint.Command("restore", "Restore a checkpoint")
+	CCheckpointRestoreMachine = CCheckpointRestore.Arg("machine", "Machine ID").Required().String()
+	CCheckpointRestoreName    = CCheckpointRestore.Arg("name", "Checkpoint name").Required().String()
 )
 
 // Fatal displays the error and
@@ -228,6 +246,19 @@ func main() {
 
 	case "machine status":
 		MachineStatus()
+		break
+
+	case "machine checkpoint create":
+		MachineCheckpointCreate()
+		break
+	case "machine checkpoint list":
+		MachineCheckpointList()
+		break
+	case "machine checkpoint delete":
+		MachineCheckpointDelete()
+		break
+	case "machine checkpoint restore":
+		MachineCheckpointRestore()
 		break
 
 	default:

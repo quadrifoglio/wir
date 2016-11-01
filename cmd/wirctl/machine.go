@@ -19,28 +19,30 @@ func MachineList() {
 		Fatal(err)
 	}
 
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{
-		"ID",
-		"Name",
-		"Image",
-		"Cores",
-		"Memory",
-		"Disk",
-	})
-
-	for _, m := range ms {
-		table.Append([]string{
-			m.ID,
-			m.Name,
-			m.Image,
-			strconv.Itoa(m.Cores),
-			strconv.FormatUint(m.Memory, 10),
-			strconv.FormatUint(m.Disk, 10),
+	if len(ms) > 0 {
+		table := tablewriter.NewWriter(os.Stdout)
+		table.SetHeader([]string{
+			"ID",
+			"Name",
+			"Image",
+			"Cores",
+			"Memory",
+			"Disk",
 		})
-	}
 
-	table.Render()
+		for _, m := range ms {
+			table.Append([]string{
+				m.ID,
+				m.Name,
+				m.Image,
+				strconv.Itoa(m.Cores),
+				strconv.FormatUint(m.Memory, 10),
+				strconv.FormatUint(m.Disk, 10),
+			})
+		}
+
+		table.Render()
+	}
 }
 
 // MachineCreate creates a new

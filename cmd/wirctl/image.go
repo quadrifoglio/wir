@@ -18,14 +18,16 @@ func ImageList() {
 		Fatal(err)
 	}
 
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"ID", "Name", "Type", "Source"})
+	if len(imgs) > 0 {
+		table := tablewriter.NewWriter(os.Stdout)
+		table.SetHeader([]string{"ID", "Name", "Type", "Source"})
 
-	for _, img := range imgs {
-		table.Append([]string{img.ID, img.Name, img.Type, img.Source})
+		for _, img := range imgs {
+			table.Append([]string{img.ID, img.Name, img.Type, img.Source})
+		}
+
+		table.Render()
 	}
-
-	table.Render()
 }
 
 // ImageCreate creates a new

@@ -19,24 +19,26 @@ func VolumeList() {
 		Fatal(err)
 	}
 
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{
-		"ID",
-		"Name",
-		"Type",
-		"Size",
-	})
-
-	for _, vol := range vols {
-		table.Append([]string{
-			vol.ID,
-			vol.Name,
-			vol.Type,
-			strconv.FormatUint(vol.Size, 10),
+	if len(vols) > 0 {
+		table := tablewriter.NewWriter(os.Stdout)
+		table.SetHeader([]string{
+			"ID",
+			"Name",
+			"Type",
+			"Size",
 		})
-	}
 
-	table.Render()
+		for _, vol := range vols {
+			table.Append([]string{
+				vol.ID,
+				vol.Name,
+				vol.Type,
+				strconv.FormatUint(vol.Size, 10),
+			})
+		}
+
+		table.Render()
+	}
 }
 
 // VolumeCreate creates a new

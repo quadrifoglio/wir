@@ -19,37 +19,39 @@ func NetworkList() {
 		Fatal(err)
 	}
 
-	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{
-		"ID",
-		"Name",
-		"CIDR",
-		"Gateway Interface",
-		"Using internal DHCP",
-		"DHCP First IP",
-		"DHCP IP Count",
-		"DHCP Router",
-	})
+	if len(netws) > 0 {
+		table := tablewriter.NewWriter(os.Stdout)
+		table.SetHeader([]string{
+			"ID",
+			"Name",
+			"CIDR",
+			"Gateway Interface",
+			"Using internal DHCP",
+			"DHCP First IP",
+			"DHCP IP Count",
+			"DHCP Router",
+		})
 
-	for _, netw := range netws {
-		enabled := "false"
-		if netw.DHCP.Enabled {
-			enabled = "true"
+		for _, netw := range netws {
+			enabled := "false"
+			if netw.DHCP.Enabled {
+				enabled = "true"
+			}
+
+			table.Append([]string{
+				netw.ID,
+				netw.Name,
+				netw.CIDR,
+				netw.GatewayIface,
+				enabled,
+				netw.DHCP.StartIP,
+				strconv.Itoa(netw.DHCP.NumIP),
+				netw.DHCP.Router,
+			})
 		}
 
-		table.Append([]string{
-			netw.ID,
-			netw.Name,
-			netw.CIDR,
-			netw.GatewayIface,
-			enabled,
-			netw.DHCP.StartIP,
-			strconv.Itoa(netw.DHCP.NumIP),
-			netw.DHCP.Router,
-		})
+		table.Render()
 	}
-
-	table.Render()
 }
 
 // NetworkCreate creates a new
