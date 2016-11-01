@@ -110,6 +110,29 @@ var (
 	CMachineDelete   = CMachineCommand.Command("delete", "Delete a machine")
 	CMachineDeleteID = CMachineDelete.Arg("id", "Machine ID").Required().String()
 
+	// Machine network interfaces
+	CMachineNic = CMachineCommand.Command("interface", "Network interface manipulation actions")
+
+	CMachineNicList        = CMachineNic.Command("list", "List interfaces")
+	CMachineNicListMachine = CMachineNicList.Arg("machine", "Machine ID").Required().String()
+
+	CMachineNicCreate        = CMachineNic.Command("create", "Create an interface")
+	CMachineNicCreateMachine = CMachineNicCreate.Arg("machine", "Machine ID").Required().String()
+	CMachineNicCreateNetwork = CMachineNicCreate.Flag("network", "Network ID").Required().String()
+	CMachineNicCreateMAC     = CMachineNicCreate.Flag("mac", "MAC address").String()
+	CMachineNicCreateIP      = CMachineNicCreate.Flag("ip", "IP address").String()
+
+	CMachineNicUpdate        = CMachineNic.Command("update", "Update an interface")
+	CMachineNicUpdateMachine = CMachineNicUpdate.Arg("machine", "Machine ID").Required().String()
+	CMachineNicUpdateIndex   = CMachineNicUpdate.Arg("index", "Interface index").Required().Int()
+	CMachineNicUpdateNetwork = CMachineNicUpdate.Flag("network", "Network ID").String()
+	CMachineNicUpdateMAC     = CMachineNicUpdate.Flag("mac", "MAC address").String()
+	CMachineNicUpdateIP      = CMachineNicUpdate.Flag("ip", "IP address").String()
+
+	CMachineNicDelete        = CMachineNic.Command("delete", "Delete an interface")
+	CMachineNicDeleteMachine = CMachineNicDelete.Arg("machine", "Machine ID").Required().String()
+	CMachineNicDeleteIndex   = CMachineNicDelete.Arg("index", "Interface index").Required().Int()
+
 	// Machine KVM options
 	CMachineKvm = CMachineCommand.Command("kvm", "KVM machine options manipulation")
 
@@ -228,6 +251,19 @@ func main() {
 		break
 	case "machine delete":
 		MachineDelete()
+		break
+
+	case "machine interface create":
+		MachineInterfaceCreate()
+		break
+	case "machine interface list":
+		MachineInterfaceList()
+		break
+	case "machine interface update":
+		MachineInterfaceUpdate()
+		break
+	case "machine interface delete":
+		MachineInterfaceDelete()
 		break
 
 	case "machine kvm get":
