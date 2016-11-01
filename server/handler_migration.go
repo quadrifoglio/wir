@@ -110,10 +110,27 @@ func fetchImage(r shared.RemoteDef, img *shared.ImageDef) error {
 }
 
 func fetchMachine(r shared.RemoteDef, m *shared.MachineDef) error {
+	var live bool // Will be true if this is a live migration
+
+	status, err := client.MachineStatus(r, m.ID)
+	if err != nil {
+		return err
+	}
+
+	if status.Running {
+		live = true
+
+		// If live migration, create a checkpoint first
+		_, err := client.CheckpointCreate(r, m.ID, shared.CheckpointDef{Name: "_migration"})
+		if err != nil {
+			return err
+		}
+	}
+
 	// Download the distant disk
 	newDisk := MachineDisk(m.ID)
 
-	err := os.MkdirAll(filepath.Dir(newDisk), 0755)
+	err = os.MkdirAll(filepath.Dir(newDisk), 0755)
 	if err != nil {
 		return err
 	}
@@ -131,6 +148,24 @@ func fetchMachine(r shared.RemoteDef, m *shared.MachineDef) error {
 	err = DBMachineCreate(*m)
 	if err != nil {
 		return err
+	}
+
+	// If it is a live migration, restore the created '_migration' checkpoint
+	if live {
+		err := client.MachineStop(r, m.ID)
+		if err != nil {
+			return err
+		}
+
+		err = MachineKvmStart(m.ID)
+		if err != nil {
+			return err
+		}
+
+		err = MachineKvmRestoreCheckpoint(m.ID, "_migration")
+		if err != nil {
+			return err
+		}
 	}
 
 	// TODO: Migrate volumes

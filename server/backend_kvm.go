@@ -347,3 +347,16 @@ func MachineKvmDeleteCheckpoint(id, checkpoint string) error {
 
 	return nil
 }
+
+func MachineKvmDelete(id string) error {
+	if MachineKvmIsRunning(id) {
+		return fmt.Errorf("Machine is running")
+	}
+
+	err := os.RemoveAll(MachinePath(id))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

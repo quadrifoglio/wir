@@ -218,15 +218,16 @@ func HandleMachineDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	machine, err := DBMachineGet(id)
+	err := MachineKvmDelete(id)
 	if err != nil {
 		ErrorResponse(w, r, err, 500)
 		return
 	}
 
-	err = os.RemoveAll(MachinePath(id))
+	machine, err := DBMachineGet(id)
 	if err != nil {
-		log.Printf("Could not delete machine '%s' files: %s\n", id, err)
+		ErrorResponse(w, r, err, 500)
+		return
 	}
 
 	for i, _ := range machine.Interfaces {
