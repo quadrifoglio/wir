@@ -98,7 +98,8 @@ type MachineStatusDef struct {
 // KvmOptsDef is the data structure used to represent
 // KVM-specific options in the machine HTTP handler (/machines/<id>/kvm)
 type KvmOptsDef struct {
-	PID int // The QEMU/KVM proccess ID
+	PID   int    // The QEMU/KVM proccess ID
+	CDRom string // Path to a disk image to insert into the machine as a CD-ROM
 
 	VNC struct {
 		Enabled bool   // Wether to use the VNC server

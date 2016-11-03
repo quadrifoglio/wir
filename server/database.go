@@ -62,6 +62,7 @@ const (
 	CREATE TABLE IF NOT EXISTS kvm_opt (
 		machine CHAR(8) NOT NULL UNIQUE REFERENCES machine(id),
 		pid INTEGER,
+		cd VARCHAR(255),
 		vnc_enabled BOOLEAN NOT NULL,
 		vnc_addr VARCHAR(255),
 		vnc_port INTEGER
@@ -631,9 +632,10 @@ func DBMachineSetKvmOpts(id string, def shared.KvmOptsDef) error {
 	}
 
 	_, err := DB.Exec(
-		"INSERT OR REPLACE INTO kvm_opt VALUES (?, ?, ?, ?, ?)",
+		"INSERT OR REPLACE INTO kvm_opt VALUES (?, ?, ?, ?, ?, ?)",
 		id,
 		def.PID,
+		def.CDRom,
 		def.VNC.Enabled,
 		def.VNC.Address,
 		def.VNC.Port,
@@ -659,7 +661,7 @@ func DBMachineGetKvmOpts(id string) (shared.KvmOptsDef, error) {
 	defer rows.Close()
 
 	if rows.Next() {
-		err := rows.Scan(&id, &def.PID, &def.VNC.Enabled, &def.VNC.Address, &def.VNC.Port)
+		err := rows.Scan(&id, &def.PID, &def.CDRom, &def.VNC.Enabled, &def.VNC.Address, &def.VNC.Port)
 		if err != nil {
 			return def, err
 		}

@@ -285,6 +285,11 @@ func HandleMachineSetKvmOpts(w http.ResponseWriter, r *http.Request) {
 
 	req.PID = -1 // The PID should not be modified by the request
 
+	if len(req.CDRom) > 0 && !utils.FileExists(req.CDRom) {
+		ErrorResponse(w, r, fmt.Errorf("'CDRom': File not found"), 400)
+		return
+	}
+
 	if req.VNC.Enabled {
 		if net.ParseIP(req.VNC.Address) == nil {
 			ErrorResponse(w, r, fmt.Errorf("Invalid 'VNC.Address' IP address"), 400)

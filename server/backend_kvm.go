@@ -148,6 +148,10 @@ func MachineKvmStart(id string) error {
 	m := qemu.NewMachine(def.Cores, def.Memory)
 	m.AddDriveImage(disk)
 
+	if len(opts.CDRom) > 0 {
+		m.AddCDRom(opts.CDRom)
+	}
+
 	for _, v := range def.Volumes {
 		m.AddDrive(qemu.Drive{VolumeFile(v), qemu.ImageFormatQCOW2})
 	}
