@@ -141,6 +141,7 @@ var (
 
 	CMachineKvmSet           = CMachineKvm.Command("set", "Set KVM options")
 	CMachineKvmSetID         = CMachineKvmSet.Arg("id", "Machine ID").Required().String()
+	CMachineKvmSetCDRom      = CMachineKvmSet.Flag("cdrom", "CD-ROM to be inserted into the machine at boot").String()
 	CMachineKvmSetVncEnabled = CMachineKvmSet.Flag("vnc", "VNC server active").Bool()
 	CMachineKvmSetVncAddr    = CMachineKvmSet.Flag("vnc-address", "VNC server bind address").String()
 	CMachineKvmSetVncPort    = CMachineKvmSet.Flag("vnc-display", "VNC display port").Int()

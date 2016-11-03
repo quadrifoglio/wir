@@ -110,6 +110,7 @@ func MachineGetKvmOpts() {
 	table := tablewriter.NewWriter(os.Stdout)
 	table.SetHeader([]string{
 		"Hypervisor PID",
+		"CD-ROM",
 		"VNC Enabled",
 		"VNC Address",
 		"VNC Port",
@@ -122,6 +123,7 @@ func MachineGetKvmOpts() {
 
 	table.Append([]string{
 		strconv.Itoa(opts.PID),
+		opts.CDRom,
 		enabled,
 		opts.VNC.Address,
 		strconv.Itoa(opts.VNC.Port),
@@ -140,6 +142,9 @@ func MachineSetKvmOpts() {
 
 	// TODO: Enable/Disable VNC
 
+	if len(*CMachineKvmSetCDRom) > 0 {
+		req.CDRom = *CMachineKvmSetCDRom
+	}
 	if len(*CMachineKvmSetVncAddr) > 0 {
 		req.VNC.Address = *CMachineKvmSetVncAddr
 	}
