@@ -125,9 +125,9 @@ func MachineKvmCreate(def *shared.MachineDef) error {
 	return nil
 }
 
-// MachineKvmSetHostname sets the hostname for
+// MachineKvmSetLinuxHostname sets the hostname for
 // the specified Linux machine
-func MachineKvmSetHostname(id, hostname string) error {
+func MachineKvmSetLinuxHostname(id, hostname string) error {
 	err := system.NBDConnectQcow2(MachineDisk(id))
 	if err != nil {
 		return err
@@ -160,9 +160,9 @@ func MachineKvmSetHostname(id, hostname string) error {
 	return nil
 }
 
-// MachineKvmSetRootPassword sets the root password for
+// MachineKvmSetLinuxRootPassword sets the root password for
 // the specified Linux machine
-func MachineKvmSetRootPassword(id string, passwd string) error {
+func MachineKvmSetLinuxRootPassword(id string, passwd string) error {
 	err := system.NBDConnectQcow2(MachineDisk(id))
 	if err != nil {
 		return err

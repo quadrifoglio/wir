@@ -151,6 +151,12 @@ func MachineSetKvmOpts() {
 	if *CMachineKvmSetVncPort != 0 {
 		req.VNC.Port = *CMachineKvmSetVncPort
 	}
+	if len(*CMachineKvmSetLinuxHostname) > 0 {
+		req.Linux.Hostname = *CMachineKvmSetLinuxHostname
+	}
+	if len(*CMachineKvmSetLinuxRootPasswd) > 0 {
+		req.Linux.RootPassword = *CMachineKvmSetLinuxRootPasswd
+	}
 
 	_, err = client.MachineSetKvmOpts(GetRemote(), *CMachineKvmSetID, req)
 	if err != nil {
