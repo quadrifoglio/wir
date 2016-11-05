@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -9,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/nyarlabo/go-crypt"
 	"github.com/quadrifoglio/go-qemu"
 	"github.com/quadrifoglio/go-qmp"
 
@@ -118,6 +120,102 @@ func MachineKvmCreate(def *shared.MachineDef) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+// MachineKvmSetHostname sets the hostname for
+// the specified Linux machine
+func MachineKvmSetHostname(id, hostname string) error {
+	err := system.NBDConnectQcow2(MachineDisk(id))
+	if err != nil {
+		return err
+	}
+
+	defer system.NBDDisconnectQcow2()
+
+	path := fmt.Sprintf("/tmp/wir/%s", id)
+
+	if !utils.FileExists(path) {
+		err := os.MkdirAll(path, 0755)
+		if err != nil {
+			return err
+		}
+	}
+
+	// TODO: Do not hardcode parition number
+	err = system.Mount("/dev/nbd0p3", path)
+	if err != nil {
+		return err
+	}
+
+	defer system.Unmount(path)
+
+	err = utils.ReplaceFileContents(fmt.Sprintf("%s/etc/hostname", path), []byte(hostname))
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// MachineKvmSetRootPassword sets the root password for
+// the specified Linux machine
+func MachineKvmSetRootPassword(id string, passwd string) error {
+	err := system.NBDConnectQcow2(MachineDisk(id))
+	if err != nil {
+		return err
+	}
+
+	defer system.NBDDisconnectQcow2()
+
+	path := fmt.Sprintf("/tmp/wir/%s", id)
+	shadowPath := fmt.Sprintf("%s/etc/shadow", path)
+
+	if !utils.FileExists(path) {
+		err := os.MkdirAll(path, 0755)
+		if err != nil {
+			return err
+		}
+	}
+
+	// TODO: Do not hardcode parition number
+	err = system.Mount("/dev/nbd0p3", path)
+	if err != nil {
+		return err
+	}
+
+	defer system.Unmount(path)
+
+	data, err := ioutil.ReadFile(shadowPath)
+	if err != nil {
+		return fmt.Errorf("change root passwd: %s", err)
+	}
+
+	n := strings.Index(string(data), ":")
+	if n == -1 {
+		return fmt.Errorf("change root passwd: no ':' char in /etc/shadow")
+	}
+
+	nn := strings.Index(string(data[n+1:]), ":")
+	if n == -1 {
+		return fmt.Errorf("change root passwd: no second ':' char in /etc/shadow")
+	}
+
+	n = n + nn + 1
+	salt := utils.RandID()
+
+	str := crypt.Crypt(passwd, fmt.Sprintf("$6$%s$", string(salt[:8])))
+	str = "root:" + str
+
+	newData := make([]byte, len(str))
+	copy(newData, str)
+	newData = append(newData, data[n:]...)
+
+	err = utils.ReplaceFileContents(shadowPath, newData)
+	if err != nil {
+		return fmt.Errorf("change root passwd: %s", err)
 	}
 
 	return nil

@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -36,4 +37,22 @@ func FileSize(path string) (uint64, error) {
 	}
 
 	return uint64(stat.Size()), nil
+}
+
+// ReplaceFileContents replaces the content of the specified file
+// byte the data provided in 'data'
+func ReplaceFileContents(path string, data []byte) error {
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_TRUNC, 0777)
+	if err != nil {
+		return fmt.Errorf("rewrite %s: %s", path, err)
+	}
+
+	defer f.Close()
+
+	_, err = f.Write(data)
+	if err != nil {
+		return fmt.Errorf("rewrite %s: %s", path, err)
+	}
+
+	return nil
 }

@@ -96,12 +96,8 @@ func NBDConnectQcow2(file string) error {
 
 	nbdMutex.Lock()
 
-	/*cmd = exec.Command("partx", "-a", dev)
-
-	out, err = cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("connect nbd: %s", utils.OneLine(out))
-	}*/
+	cmd = exec.Command("partx", "-a", dev)
+	cmd.Run()
 
 	return nil
 }
@@ -210,6 +206,32 @@ func ResizeLastPartition(dev string) error {
 	out, err = cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("resize %s part %d: %s", dev, num, utils.OneLine(out))
+	}
+
+	return nil
+}
+
+// Mount mounts the specified device
+// at the specified path
+func Mount(dev, path string) error {
+	cmd := exec.Command("mount", dev, path)
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("mount: %s", utils.OneLine(out))
+	}
+
+	return nil
+}
+
+// Unmount unmounts the device mounted
+// at the specified path
+func Unmount(path string) error {
+	cmd := exec.Command("umount", path)
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("umount: %s", utils.OneLine(out))
 	}
 
 	return nil

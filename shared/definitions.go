@@ -108,6 +108,11 @@ type KvmOptsDef struct {
 
 		// TODO: Add parapeters (ssl, authentication...)
 	}
+
+	Linux struct {
+		Hostname     string // Linux hostname
+		RootPassword string // Linux root password in clear text
+	}
 }
 
 // CheckpointDef is the data structure used in transactions with
