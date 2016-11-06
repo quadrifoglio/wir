@@ -9,6 +9,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/quadrifoglio/go-qemu"
+
 	"github.com/quadrifoglio/wir/client"
 	"github.com/quadrifoglio/wir/shared"
 	"github.com/quadrifoglio/wir/system"
@@ -150,7 +152,10 @@ func fetchMachine(r shared.RemoteDef, m *shared.MachineDef) error {
 		return err
 	}
 
-	// If it is a live migration, restore the created '_migration' checkpoint
+	// TODO: Migrate volumes
+	// TODO: Migrate network interfaces
+
+	// If it is a live migration, restore the created '_migration' checkpoint and delete it
 	if live {
 		err := client.MachineStop(r, m.ID)
 		if err != nil {
@@ -166,10 +171,17 @@ func fetchMachine(r shared.RemoteDef, m *shared.MachineDef) error {
 		if err != nil {
 			return err
 		}
-	}
 
-	// TODO: Migrate volumes
-	// TODO: Migrate network interfaces
+		img, err := qemu.OpenImage(newDisk)
+		if err != nil {
+			return err
+		}
+
+		err = img.DeleteSnapshot("_migration")
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
