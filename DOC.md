@@ -11,7 +11,7 @@
 }
 ```
 
-### Image
+### Index
 
 ```json
 {
@@ -19,6 +19,17 @@
 	"CpuUsage": float32 (Current CPU Usage in percent)
 	"MemoryUsage": uint64  (Currently used memory in KiB)
 	"MemoryTotal": uint64  (Total memory available to the system in KiB)
+}
+```
+
+### Image
+
+```json
+{
+	"ID": string (64 bit random unique identifier)
+	"Name": string (Name of the image)
+	"Type": string (Type of the image (kvm, lxc))
+	"Source": string (Location of the image file (scheme://[user@]host/path))
 }
 ```
 
@@ -114,6 +125,12 @@
 ```
 
 ## Endpoints
+
+### /
+
+Resource: Index
+
+* GET / : Get server informations
 
 ### /images
 
