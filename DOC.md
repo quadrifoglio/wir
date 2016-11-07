@@ -36,7 +36,8 @@
 ### Network
 
 ```json
-	"ID" string (64 bit random unique identifier)
+{
+	"ID": string (64 bit random unique identifier)
 	"Name": string (Name of the image)
 	"CIDR": string (CIDR notation of network address (a.b.c.d(sk)))
 	"GatewayIface": string (Name of a physical interface that should be part of the network (optional))
@@ -134,14 +135,14 @@ Resource: Index
 
 ### /images
 
-Resource: Image
+resource: image
 
-* POST / : Create a new image
-* GET  / : List images
+* post / : create a new image
+* get  / : list images
 
-* GET    /<id> : Get image information
-* POST   /<id> : Update image information
-* DELETE /<id> : Delete image
+* get    /<id> : get image information
+* post   /<id> : update image information
+* delete /<id> : delete image
 
 * GET /<id>/data : Get image binary data
 
@@ -202,3 +203,17 @@ Resource: KVM options
 
 * GET /disk/data : Main hard drive binary data
 	* Resource: None
+
+### /machines/<id>/checkpoints
+
+Resource: Checkpoint
+
+* POST / : Create a new checkpoint
+* GET  / : Get checkpoints information
+
+#### Actions
+
+Resource: none
+
+* GET    /<name>/restore : Restore checkpoint
+* DELETE /<name>         : Delete checkpoint
