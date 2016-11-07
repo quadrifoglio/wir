@@ -112,3 +112,76 @@
 	}
 }
 ```
+
+## Endpoints
+
+### /images
+
+Resource: Image
+
+* POST / : Create a new image
+* GET  / : List images
+
+* GET    /<id> : Get image information
+* POST   /<id> : Update image information
+* DELETE /<id> : Delete image
+
+* GET /<id>/data : Get image binary data
+
+### /networks
+
+Resource: Network
+
+* POST / : Create a new network
+* GET  / : List networks
+
+* GET    /<id> : Get network information
+* POST   /<id> : Update network information
+* DELETE /<id> : Delete network
+
+### /volumes
+
+Resource: Volume
+
+* POST / : Create a new volume
+* GET  / : List volumes
+
+* GET    /<id> : Get volume information
+* POST   /<id> : Update volume information
+* DELETE /<id> : Delete volume
+
+### /machines
+
+Resource: Machine
+
+* POST / : Create a new machine
+* GET  / : List machines
+
+* POST /fetch : Fetch a virtual machine from a distant node
+	* Resource: MachineFetch
+
+* GET    /<id> : Get machine information
+* POST   /<id> : Update machine information
+* DELETE /<id> : Delete machine
+
+#### Actions
+
+Resource: none
+
+* GET /<id>/start  : Start machine
+* GET /<id>/stop   : Stop machine
+
+#### VKM specific options
+
+Resource: KVM options
+
+* GET  /<id>/kvm : Get machine KVM options
+* POST /<id>/kvm : Update machine KVM options
+
+#### Other
+
+* GET /<id>/status : Machine status and resource usage
+	* Resource: MachineStatus
+
+* GET /disk/data : Main hard drive binary data
+	* Resource: None
