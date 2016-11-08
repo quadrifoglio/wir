@@ -52,7 +52,6 @@ var (
 
 	// Network update
 	CNetworkUpdate             = CNetworkCommand.Command("update", "Update a network")
-	CNetworkUpdateID           = CNetworkUpdate.Arg("id", "Network ID").Required().String()
 	CNetworkUpdateName         = CNetworkUpdate.Flag("name", "Network name").String()
 	CNetworkUpdateCIDR         = CNetworkUpdate.Flag("cidr", "Network address in CIDR notation").String()
 	CNetworkUpdateGatewayIface = CNetworkUpdate.Flag("gateway-iface", "Physical interface to connect to the network").String()
@@ -62,8 +61,8 @@ var (
 	CNetworkUpdateDhcpRouter  = CNetworkUpdate.Flag("dhcp-router", "IP address of the router supplied via DHCP").String()
 
 	// Network delete
-	CNetworkDelete   = CNetworkCommand.Command("delete", "Delete a network")
-	CNetworkDeleteID = CNetworkDelete.Arg("id", "Network ID").Required().String()
+	CNetworkDelete     = CNetworkCommand.Command("delete", "Delete a network")
+	CNetworkDeleteName = CNetworkDelete.Arg("id", "Network name").Required().String()
 
 	// Volume command
 	CVolumeCommand = kingpin.Command("volume", "Volume manipulation actions")

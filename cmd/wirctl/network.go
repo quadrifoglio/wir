@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"strconv"
 
@@ -22,7 +21,6 @@ func NetworkList() {
 	if len(netws) > 0 {
 		table := tablewriter.NewWriter(os.Stdout)
 		table.SetHeader([]string{
-			"ID",
 			"Name",
 			"CIDR",
 			"Gateway Interface",
@@ -39,7 +37,6 @@ func NetworkList() {
 			}
 
 			table.Append([]string{
-				netw.ID,
 				netw.Name,
 				netw.CIDR,
 				netw.GatewayIface,
@@ -66,25 +63,20 @@ func NetworkCreate() {
 	req.DHCP.NumIP = *CNetworkCreateDhcpNumIP
 	req.DHCP.Router = *CNetworkCreateDhcpRouter
 
-	netw, err := client.NetworkCreate(GetRemote(), req)
+	_, err := client.NetworkCreate(GetRemote(), req)
 	if err != nil {
 		Fatal(err)
 	}
-
-	fmt.Println(netw.ID)
 }
 
 // NetworkUpdate updates the specified
 // network on the remote
 func NetworkUpdate() {
-	req, err := client.NetworkGet(GetRemote(), *CNetworkUpdateID)
+	req, err := client.NetworkGet(GetRemote(), *CNetworkUpdateName)
 	if err != nil {
 		Fatal(err)
 	}
 
-	if len(*CNetworkUpdateName) > 0 {
-		req.Name = *CNetworkUpdateName
-	}
 	if len(*CNetworkUpdateCIDR) > 0 {
 		req.CIDR = *CNetworkUpdateCIDR
 	}
@@ -101,7 +93,7 @@ func NetworkUpdate() {
 		req.DHCP.Router = *CNetworkUpdateDhcpRouter
 	}
 
-	_, err = client.NetworkUpdate(GetRemote(), *CNetworkUpdateID, req)
+	_, err = client.NetworkUpdate(GetRemote(), *CNetworkUpdateName, req)
 	if err != nil {
 		Fatal(err)
 	}
@@ -110,7 +102,7 @@ func NetworkUpdate() {
 // NetworkDelete deletes the specified
 // network from the remote
 func NetworkDelete() {
-	err := client.NetworkDelete(GetRemote(), *CNetworkDeleteID)
+	err := client.NetworkDelete(GetRemote(), *CNetworkDeleteName)
 	if err != nil {
 		Fatal(err)
 	}
