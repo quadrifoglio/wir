@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strings"
 
 	"github.com/rs/xid"
 
@@ -47,15 +48,15 @@ func CreateNetwork(def shared.NetworkDef) error {
 		return fmt.Errorf("Network name must be less than 12 characters long")
 	}
 
-	if !system.InterfaceExists(NetworkNicName(def.ID)) {
-		err := system.CreateBridge(NetworkNicName(def.ID))
+	if !system.InterfaceExists(NetworkNicName(def.Name)) {
+		err := system.CreateBridge(NetworkNicName(def.Name))
 		if err != nil {
 			return err
 		}
 	}
 
 	if len(def.GatewayIface) > 0 {
-		err := system.SetInterfaceMaster(def.GatewayIface, NetworkNicName(def.ID))
+		err := system.SetInterfaceMaster(def.GatewayIface, NetworkNicName(def.Name))
 		if err != nil {
 			return err
 		}
@@ -116,7 +117,7 @@ func StartNetworkDHCP() error {
 
 			_, netAddr, err := net.ParseCIDR(netw.CIDR)
 			if err != nil {
-				log.Printf("DHCP: invalid network address '%s' for network '%s'\n", netw.CIDR, netw.ID)
+				log.Printf("DHCP: invalid network address '%s' for network '%s'\n", netw.CIDR, netw.Name)
 				return
 			}
 
@@ -156,7 +157,7 @@ func StartNetworkDHCP() error {
 func NetworkFreeLease(netw shared.NetworkDef) (net.IP, error) {
 	var ip net.IP
 
-	ms, err := DBMachineListOnNetwork(netw.ID)
+	ms, err := DBMachineListOnNetwork(netw.Name)
 	if err != nil {
 		return ip, err
 
@@ -166,7 +167,7 @@ func NetworkFreeLease(netw shared.NetworkDef) (net.IP, error) {
 	ips := make([]string, 0)
 	for _, m := range ms {
 		for _, i := range m.Interfaces {
-			if i.Network == netw.ID {
+			if i.Network == netw.Name {
 				ips = append(ips, i.IP)
 			}
 		}
@@ -195,23 +196,8 @@ func NetworkFreeLease(netw shared.NetworkDef) (net.IP, error) {
 
 // NetworkNicName returns the bridge interface name
 // coresponding to the specified network name
-func NetworkNicName(id string) string {
-	uid, err := xid.FromString(id)
-	if err != nil {
-		return ""
-	}
-
-	c := make([]byte, 4)
-	t := make([]byte, 8)
-
-	binary.LittleEndian.PutUint32(c, uint32(uid.Counter()))
-	binary.LittleEndian.PutUint64(t, uint64(uid.Time().Unix()))
-
-	// The resulting ID is 'net'
-	// + 3 bytes of the original counter (32bits)
-	// + 3 bytes of the original timestamp (64bits)
-
-	return fmt.Sprintf("net%s%s", hex.EncodeToString(c[:3]), hex.EncodeToString(t[:3]))
+func NetworkNicName(name string) string {
+	return fmt.Sprintf("net%s%s", strings.ToUpper(name[:1]), name[1:])
 }
 
 // MachineNicName returns the interface name coresponding
@@ -228,7 +214,7 @@ func MachineNicName(id string, n int) string {
 	binary.LittleEndian.PutUint32(c, uint32(uid.Counter()))
 	binary.LittleEndian.PutUint64(t, uint64(uid.Time().Unix()))
 
-	// The resulting ID is 'net'
+	// The resulting ID is 'nic'
 	// + 2  bytes of the original counter (32bits)
 	// + 2  bytes of the original timestamp (64bits)
 	// + .n the interface index

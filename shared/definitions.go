@@ -33,8 +33,7 @@ type ImageDef struct {
 // NetworkDef is the data structure used in communications
 // with all the Network* HTTP handlers (/networks)
 type NetworkDef struct {
-	ID           string // 64 bit random unique identifier
-	Name         string // Name of the image
+	Name         string // ID/Name of the network
 	CIDR         string // CIDR notation of network address (a.b.c.d/mask)
 	GatewayIface string // Name of a physical interface that should be part of the network (optional)
 
@@ -58,7 +57,7 @@ type VolumeDef struct {
 // InterfaceDef represents a network interface
 // associated with a machine
 type InterfaceDef struct {
-	Network string // ID of the network to which the interface is attached
+	Network string // Name of the network to which the interface is attached
 	MAC     string // MAC address of the interface
 	IP      string // IP address of the interface in CIDR notation
 }

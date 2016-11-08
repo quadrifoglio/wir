@@ -37,8 +37,7 @@
 
 ```json
 {
-	"ID": string (64 bit random unique identifier)
-	"Name": string (Name of the image)
+	"Name": string (Name of the network)
 	"CIDR": string (CIDR notation of network address (a.b.c.d(sk)))
 	"GatewayIface": string (Name of a physical interface that should be part of the network (optional))
 
@@ -76,7 +75,7 @@
 	"Volumes": []string (IDs of the attached volumes)
 	"Interfaces": [
 		{
-			"Network": string (ID of the network)
+			"Network": string (Name of the network)
 			"MAC": string (MAC address)
 			"IP": string (IP address)
 		},
