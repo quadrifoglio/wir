@@ -1,8 +1,10 @@
 package utils
 
 import (
+	"encoding/binary"
 	"fmt"
 	"math/rand"
+	"time"
 
 	"github.com/rs/xid"
 )
@@ -16,12 +18,12 @@ func RandID() string {
 // RandMAC generates a random MAC address with
 // the third byte as prefix
 func RandMAC(prefix byte) (string, error) {
-	buf := make([]byte, 3)
+	rand.Seed(time.Now().Unix())
 
-	_, err := rand.Read(buf)
-	if err != nil {
-		return "", err
-	}
+	f := rand.Uint32()
+	buf := make([]byte, 4)
+
+	binary.LittleEndian.PutUint32(buf, f)
 
 	str := fmt.Sprintf("52:54:%02x:%02x:%02x:%02x", prefix, buf[0], buf[1], buf[2])
 	return str, nil
