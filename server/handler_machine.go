@@ -86,7 +86,7 @@ func validateMachine(req *shared.MachineDef) (error, int) {
 			if netw.DHCP.Enabled { // If internal DHCP is used, we should associate an IP to the VM
 				ip, err := NetworkFreeLease(netw)
 				if err != nil {
-					return fmt.Errorf("Can't get free lease in network '%s': %s\n", netw.ID, err), 500
+					return fmt.Errorf("Can't get free lease in network '%s': %s\n", netw.Name, err), 500
 				}
 
 				req.Interfaces[i].IP = ip.String()

@@ -9,17 +9,16 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/quadrifoglio/wir/shared"
-	"github.com/quadrifoglio/wir/utils"
 )
 
-// validateNetwork checks if the requested definiton
-// is valid, and returns the coresponding http status code
-func validateNetwork(req shared.NetworkDef) (error, int) {
+// valnameateNetwork checks if the requested definiton
+// is valname, and returns the coresponding http status code
+func valnameateNetwork(req shared.NetworkDef) (error, int) {
 	if len(req.Name) == 0 {
 		return fmt.Errorf("Missing 'Name'"), 400
 	}
-	if !DBNetworkNameFree(req.Name) {
-		return fmt.Errorf("'Name' already used"), 400
+	if len(req.Name) > 12 {
+		return fmt.Errorf("'Name' must be less than or equal to 12 characters"), 400
 	}
 	if len(req.CIDR) == 0 {
 		return fmt.Errorf("Missing 'CIDR'"), 400
@@ -27,7 +26,7 @@ func validateNetwork(req shared.NetworkDef) (error, int) {
 	if req.DHCP.Enabled {
 		if len(req.DHCP.StartIP) > 0 {
 			if ip := net.ParseIP(req.DHCP.StartIP); ip == nil {
-				return fmt.Errorf("Invalid 'DHCP.StartIP'"), 400
+				return fmt.Errorf("Invalname 'DHCP.StartIP'"), 400
 			}
 		} else {
 			return fmt.Errorf("Missing 'DHCP.StartIP'"), 400
@@ -39,7 +38,7 @@ func validateNetwork(req shared.NetworkDef) (error, int) {
 
 		if len(req.DHCP.Router) > 0 {
 			if ip := net.ParseIP(req.DHCP.Router); ip == nil {
-				return fmt.Errorf("Invalid 'DHCP.Router'"), 400
+				return fmt.Errorf("Invalname 'DHCP.Router'"), 400
 			}
 		}
 	}
@@ -57,17 +56,15 @@ func HandleNetworkCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err, status := validateNetwork(req)
+	err, status := valnameateNetwork(req)
 	if err != nil {
 		ErrorResponse(w, r, err, status)
 		return
 	}
 
-	for {
-		req.ID = utils.RandID()
-		if !DBNetworkExists(req.ID) {
-			break
-		}
+	if DBNetworkExists(req.Name) {
+		ErrorResponse(w, r, fmt.Errorf("Network already exists"), 400)
+		return
 	}
 
 	err = CreateNetwork(req)
@@ -96,17 +93,17 @@ func HandleNetworkList(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(w, r, networks)
 }
 
-// GET /networks/<id>
+// GET /networks/<name>
 func HandleNetworkGet(w http.ResponseWriter, r *http.Request) {
 	v := mux.Vars(r)
-	id := v["id"]
+	name := v["name"]
 
-	if !DBNetworkExists(id) {
+	if !DBNetworkExists(name) {
 		ErrorResponse(w, r, fmt.Errorf("Network not found"), 404)
 		return
 	}
 
-	network, err := DBNetworkGet(id)
+	network, err := DBNetworkGet(name)
 	if err != nil {
 		ErrorResponse(w, r, err, 500)
 		return
@@ -115,14 +112,14 @@ func HandleNetworkGet(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(w, r, network)
 }
 
-// POST /networks/<id>
+// POST /networks/<name>
 func HandleNetworkUpdate(w http.ResponseWriter, r *http.Request) {
 	var req shared.NetworkDef
 
 	v := mux.Vars(r)
-	id := v["id"]
+	name := v["name"]
 
-	if !DBNetworkExists(id) {
+	if !DBNetworkExists(name) {
 		ErrorResponse(w, r, fmt.Errorf("Network not found"), 404)
 		return
 	}
@@ -133,9 +130,7 @@ func HandleNetworkUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req.ID = id
-
-	err, status := validateNetwork(req)
+	err, status := valnameateNetwork(req)
 	if err != nil {
 		ErrorResponse(w, r, err, status)
 		return
@@ -150,23 +145,23 @@ func HandleNetworkUpdate(w http.ResponseWriter, r *http.Request) {
 	SuccessResponse(w, r, req)
 }
 
-// DELETE /networks/<id>
+// DELETE /networks/<name>
 func HandleNetworkDelete(w http.ResponseWriter, r *http.Request) {
 	v := mux.Vars(r)
-	id := v["id"]
+	name := v["name"]
 
-	if !DBNetworkExists(id) {
+	if !DBNetworkExists(name) {
 		ErrorResponse(w, r, fmt.Errorf("Network not found"), 404)
 		return
 	}
 
-	err := DeleteNetwork(id)
+	err := DeleteNetwork(name)
 	if err != nil {
 		ErrorResponse(w, r, err, 500)
 		return
 	}
 
-	err = DBNetworkDelete(id)
+	err = DBNetworkDelete(name)
 	if err != nil {
 		ErrorResponse(w, r, err, 500)
 		return

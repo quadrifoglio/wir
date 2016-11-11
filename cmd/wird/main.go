@@ -59,9 +59,9 @@ func main() {
 
 	r.HandleFunc("/networks", server.HandleNetworkCreate).Methods("POST")
 	r.HandleFunc("/networks", server.HandleNetworkList).Methods("GET")
-	r.HandleFunc("/networks/{id}", server.HandleNetworkGet).Methods("GET")
-	r.HandleFunc("/networks/{id}", server.HandleNetworkUpdate).Methods("POST")
-	r.HandleFunc("/networks/{id}", server.HandleNetworkDelete).Methods("DELETE")
+	r.HandleFunc("/networks/{name}", server.HandleNetworkGet).Methods("GET")
+	r.HandleFunc("/networks/{name}", server.HandleNetworkUpdate).Methods("POST")
+	r.HandleFunc("/networks/{name}", server.HandleNetworkDelete).Methods("DELETE")
 
 	r.HandleFunc("/volumes", server.HandleVolumeCreate).Methods("POST")
 	r.HandleFunc("/volumes", server.HandleVolumeList).Methods("GET")

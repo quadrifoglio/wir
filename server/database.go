@@ -20,8 +20,7 @@ const (
 	);
 
 	CREATE TABLE IF NOT EXISTS network (
-		id CHAR(8) NOT NULL UNIQUE PRIMARY KEY,
-		name VARCHAR(255) NOT NULL,
+		name VARCHAR(12) NOT NULL UNIQUE PRIMARY KEY,
 		cidr VARCHAR(255) NOT NULL,
 		gw VARCHAR(255) NOT NULL,
 
@@ -221,28 +220,10 @@ func DBImageDelete(id string) error {
 
 // NETWORKS
 
-// DBNetworkExists checks if the specified network ID
+// DBNetworkExists checks if the specified network name
 // exists in the database
-func DBNetworkExists(id string) bool {
-	rows, err := DB.Query("SELECT id FROM network WHERE id = ? LIMIT 1", id)
-	if err != nil {
-		log.Println("Network exists check:", err)
-		return false
-	}
-
-	defer rows.Close()
-
-	if rows.Next() {
-		return true
-	}
-
-	return false
-}
-
-// DBNetworkNameFree checks if the specified network name
-// exists in the database
-func DBNetworkNameFree(name string) bool {
-	rows, err := DB.Query("SELECT id FROM network WHERE name = ? LIMIT 1", name)
+func DBNetworkExists(name string) bool {
+	rows, err := DB.Query("SELECT name FROM network WHERE name = ? LIMIT 1", name)
 	if err != nil {
 		log.Println("Network exists check:", err)
 		return false
@@ -261,8 +242,7 @@ func DBNetworkNameFree(name string) bool {
 // using the specified definition
 func DBNetworkCreate(def shared.NetworkDef) error {
 	_, err := DB.Exec(
-		"INSERT INTO network VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-		def.ID,
+		"INSERT INTO network VALUES (?, ?, ?, ?, ?, ?, ?)",
 		def.Name,
 		def.CIDR,
 		def.GatewayIface,
@@ -285,7 +265,6 @@ func DBNetworkFetch(rows *sql.Rows) (shared.NetworkDef, error) {
 	var def shared.NetworkDef
 
 	err := rows.Scan(
-		&def.ID,
 		&def.Name,
 		&def.CIDR,
 		&def.GatewayIface,
@@ -327,10 +306,10 @@ func DBNetworkList() ([]shared.NetworkDef, error) {
 
 // DBNetworkGet returns the requested network
 // from the database
-func DBNetworkGet(id string) (shared.NetworkDef, error) {
+func DBNetworkGet(name string) (shared.NetworkDef, error) {
 	var def shared.NetworkDef
 
-	rows, err := DB.Query("SELECT * FROM network WHERE id = ?", id)
+	rows, err := DB.Query("SELECT * FROM network WHERE name = ?", name)
 	if err != nil {
 		return def, err
 	}
@@ -358,21 +337,20 @@ func DBNetworkGet(id string) (shared.NetworkDef, error) {
 func DBNetworkUpdate(def shared.NetworkDef) error {
 	sqls := `
 		UPDATE network SET
-			name = ?, cidr = ?, gw = ?,
+			cnamer = ?, gw = ?,
 			dhcp_enabled = ?, dhcp_start = ?,
 			dhcp_num = ?, dhcp_router = ?
-		WHERE id = ?
+		WHERE name = ?
 	`
 
 	_, err := DB.Exec(sqls,
-		def.Name,
 		def.CIDR,
 		def.GatewayIface,
 		def.DHCP.Enabled,
 		def.DHCP.StartIP,
 		def.DHCP.NumIP,
 		def.DHCP.Router,
-		def.ID,
+		def.Name,
 	)
 
 	if err != nil {
@@ -384,8 +362,8 @@ func DBNetworkUpdate(def shared.NetworkDef) error {
 
 // DBNetworkDelete deletes the specified network
 // from the database
-func DBNetworkDelete(id string) error {
-	_, err := DB.Exec("DELETE FROM network WHERE id = ?", id)
+func DBNetworkDelete(name string) error {
+	_, err := DB.Exec("DELETE FROM network WHERE name = ?", name)
 	if err != nil {
 		return err
 	}
