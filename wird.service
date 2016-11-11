@@ -7,6 +7,7 @@ TimeoutStartSec=0
 ExecStart=/usr/local/bin/wird --config /etc/wird.conf
 Restart=always
 RestartSec=3
+KillMode=process
 
 [Install]
 WantedBy=multi-user.target
