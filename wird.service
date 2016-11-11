@@ -1,0 +1,12 @@
+[Unit]
+Description=Virtualization API Server
+After=network.target auditd.service
+
+[Service]
+TimeoutStartSec=0
+ExecStart=/usr/local/bin/wird --config /etc/wird.conf
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
