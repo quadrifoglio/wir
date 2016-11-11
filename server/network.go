@@ -93,7 +93,8 @@ func StartNetworkDHCP() error {
 	handler := func(s *dhcp.Server, msg dhcp.Message) {
 		machine, err := DBMachineGetByMAC(msg.ClientMAC.String())
 		if err != nil {
-			log.Printf("DHCP: can't get machine with mac address '%s': %s\n", msg.ClientMAC, err)
+			// Not loging: too much messages
+			//log.Printf("DHCP: can't get machine with mac address '%s': %s\n", msg.ClientMAC, err)
 			return
 		}
 
