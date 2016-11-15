@@ -9,8 +9,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/quadrifoglio/go-qemu"
-
 	"github.com/quadrifoglio/wir/client"
 	"github.com/quadrifoglio/wir/shared"
 	"github.com/quadrifoglio/wir/system"
@@ -172,12 +170,7 @@ func fetchMachine(r shared.RemoteDef, m *shared.MachineDef) error {
 			return err
 		}
 
-		img, err := qemu.OpenImage(newDisk)
-		if err != nil {
-			return err
-		}
-
-		err = img.DeleteSnapshot("_migration")
+		err = MachineKvmDeleteCheckpoint(m.ID, "_migration")
 		if err != nil {
 			return err
 		}
