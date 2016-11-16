@@ -83,7 +83,7 @@ func validateMachine(req *shared.MachineDef) (error, int) {
 				return fmt.Errorf("Failed to get '%s' network: %s", iface.Network, err), 500
 			}
 
-			if netw.DHCP.Enabled { // If internal DHCP is used, we should associate an IP to the VM
+			if netw.DHCP.Enabled && len(netw.DHCP.StartIP) > 0 { // If internal DHCP is used, we should associate an IP to the VM
 				ip, err := NetworkFreeLease(netw)
 				if err != nil {
 					return fmt.Errorf("Can't get free lease in network '%s': %s\n", netw.Name, err), 500

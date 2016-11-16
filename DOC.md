@@ -43,9 +43,9 @@
 
 	"DHCP": {
 		"Enabled": bool (Wether internal DHCP is in use on this network)
-		"StartIP": string (First IP to be leased)
+		"StartIP": string (First IP to be leased (optional))
 		"NumIP": int (Number of IP addresses to lease, starting from StartIP)
-		"Router": string (IP address of the network router)
+		"Router": string (IP address of the network router (optional))
 	}
 }
 ```

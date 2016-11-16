@@ -28,12 +28,10 @@ func valnameateNetwork(req shared.NetworkDef) (error, int) {
 			if ip := net.ParseIP(req.DHCP.StartIP); ip == nil {
 				return fmt.Errorf("Invalname 'DHCP.StartIP'"), 400
 			}
-		} else {
-			return fmt.Errorf("Missing 'DHCP.StartIP'"), 400
-		}
 
-		if req.DHCP.NumIP == 0 {
-			return fmt.Errorf("'DHCP.NumIP' can't be 0"), 400
+			if req.DHCP.NumIP == 0 {
+				return fmt.Errorf("'DHCP.NumIP' can't be 0 if 'StartIP' is specified"), 400
+			}
 		}
 
 		if len(req.DHCP.Router) > 0 {
