@@ -221,6 +221,23 @@ func MachineKvmSetLinuxRootPassword(id string, passwd string) error {
 	return nil
 }
 
+func MachineKvmSetOpts(id string, opts shared.KvmOptsDef) error {
+	if len(opts.Linux.Hostname) > 0 {
+		err := MachineKvmSetLinuxHostname(id, opts.Linux.Hostname)
+		if err != nil {
+			return err
+		}
+	}
+	if len(opts.Linux.RootPassword) > 0 {
+		err := MachineKvmSetLinuxRootPassword(id, opts.Linux.RootPassword)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // MachineKvmStart starts the mahine based on the machine ID
 // and returns the PID of the hypervisor's process
 func MachineKvmStart(id string) error {

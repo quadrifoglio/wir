@@ -140,6 +140,34 @@ func fetchMachine(r shared.RemoteDef, m *shared.MachineDef) error {
 		return err
 	}
 
+	// TODO: Migrate volumes
+
+	// Delete invalid network interfaces
+	for i, iface := range m.Interfaces {
+		if !DBNetworkExists(iface.Network) {
+			m.Interfaces = append(m.Interfaces[:i], m.Interfaces[i+1:]...)
+		}
+	}
+
+	// Migrate KVM options
+	opts, err := client.MachineGetKvmOpts(r, m.ID)
+	if err != nil {
+		return err
+	}
+
+	opts.PID = -1
+
+	err = MachineKvmSetOpts(m.ID, opts)
+	if err != nil {
+		return err
+	}
+
+	err = DBMachineSetKvmOpts(m.ID, opts)
+	if err != nil {
+		return err
+	}
+
+	// Create local machine
 	err = MachineKvmCreate(m)
 	if err != nil {
 		return err
@@ -149,9 +177,6 @@ func fetchMachine(r shared.RemoteDef, m *shared.MachineDef) error {
 	if err != nil {
 		return err
 	}
-
-	// TODO: Migrate volumes
-	// TODO: Migrate network interfaces
 
 	// If it is a live migration, restore the created '_migration' checkpoint and delete it
 	if live {

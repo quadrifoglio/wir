@@ -301,19 +301,10 @@ func HandleMachineSetKvmOpts(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if len(req.Linux.Hostname) > 0 {
-		err := MachineKvmSetLinuxHostname(id, req.Linux.Hostname)
-		if err != nil {
-			ErrorResponse(w, r, err, 500)
-			return
-		}
-	}
-	if len(req.Linux.RootPassword) > 0 {
-		err := MachineKvmSetLinuxRootPassword(id, req.Linux.RootPassword)
-		if err != nil {
-			ErrorResponse(w, r, err, 500)
-			return
-		}
+	err = MachineKvmSetOpts(id, req)
+	if err != nil {
+		ErrorResponse(w, r, err, 500)
+		return
 	}
 
 	err = DBMachineSetKvmOpts(id, req)
