@@ -117,6 +117,13 @@ func fetchMachine(r shared.RemoteDef, m *shared.MachineDef) error {
 		return err
 	}
 
+	opts, err := client.MachineGetKvmOpts(r, m.ID)
+	if err != nil {
+		return err
+	}
+
+	opts.PID = -1
+
 	if status.Running {
 		live = true
 
@@ -149,24 +156,6 @@ func fetchMachine(r shared.RemoteDef, m *shared.MachineDef) error {
 		}
 	}
 
-	// Migrate KVM options
-	opts, err := client.MachineGetKvmOpts(r, m.ID)
-	if err != nil {
-		return err
-	}
-
-	opts.PID = -1
-
-	err = MachineKvmSetOpts(m.ID, opts)
-	if err != nil {
-		return err
-	}
-
-	err = DBMachineSetKvmOpts(m.ID, opts)
-	if err != nil {
-		return err
-	}
-
 	// Create local machine
 	err = MachineKvmCreate(m)
 	if err != nil {
@@ -174,6 +163,17 @@ func fetchMachine(r shared.RemoteDef, m *shared.MachineDef) error {
 	}
 
 	err = DBMachineCreate(*m)
+	if err != nil {
+		return err
+	}
+
+	// Migrate KVM options
+	err = MachineKvmSetOpts(m.ID, opts)
+	if err != nil {
+		return err
+	}
+
+	err = DBMachineSetKvmOpts(m.ID, opts)
 	if err != nil {
 		return err
 	}
