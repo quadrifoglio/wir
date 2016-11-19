@@ -337,7 +337,7 @@ func DBNetworkGet(name string) (shared.NetworkDef, error) {
 func DBNetworkUpdate(def shared.NetworkDef) error {
 	sqls := `
 		UPDATE network SET
-			cnamer = ?, gw = ?,
+			cidr = ?, gw = ?,
 			dhcp_enabled = ?, dhcp_start = ?,
 			dhcp_num = ?, dhcp_router = ?
 		WHERE name = ?
