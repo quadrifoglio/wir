@@ -69,9 +69,21 @@ func DeleteInterface(name string) error {
 	return nil
 }
 
+// EbtablesClear removes the rules created by this program
+// so they don't accumulate at each startup
+func EbtablesClear() {
+	cmd := exec.Command("ebtables", "-D", "FORWARD", "-p", "arp", "-j", "ACCEPT")
+	cmd.Run()
+
+	cmd = exec.Command("ebtables", "-D", "FORWARD", "-p", "ip", "--ip-src", "0.0.0.0", "-j", "ACCEPT")
+	cmd.Run()
+}
+
 // EbtablesSetup runs the basic commads in order for
 // ebtables traffic control to work
 func EbtablesSetup() error {
+	EbtablesClear()
+
 	// Set default policy
 	cmd := exec.Command("ebtables", "-P", "FORWARD", "DROP")
 
