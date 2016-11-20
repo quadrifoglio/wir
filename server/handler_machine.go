@@ -235,6 +235,11 @@ func HandleMachineDelete(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Printf("Could not delete machine '%s' interfaces: %s\n", id, err)
 		}
+
+		err = system.EbtablesFlush(MachineNicName(id, i))
+		if err != nil {
+			log.Printf("Could not delete ebtables rules for '%s' interfaces: %s\n", id, err)
+		}
 	}
 
 	err = DBMachineDelete(id)
