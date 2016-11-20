@@ -111,7 +111,7 @@ func EbtablesAllowTraffic(iface, mac, ip string) error {
 
 	cmd = exec.Command("ebtables", "-A", "FORWARD", "-p", "ip", "-o", iface, "--ip-dst", ip, "-d", mac, "-j", "ACCEPT")
 
-	out, err := cmd.CombinedOutput()
+	out, err = cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("ebtables -A FORWARD -p ip -o %s --ip-dst %s -d %s -j ACCEPT: %s", iface, ip, mac, utils.OneLine(out))
 	}
