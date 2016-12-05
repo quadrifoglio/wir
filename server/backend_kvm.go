@@ -9,6 +9,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"regexp"
 
 	"github.com/nyarlabo/go-crypt"
 	"github.com/quadrifoglio/go-qemu"
@@ -208,32 +209,19 @@ func MachineKvmSetLinuxRootPassword(id string, passwd string) error {
 
 	data, err := ioutil.ReadFile(shadowPath)
 	if err != nil {
-		return fmt.Errorf("change root passwd: %s", err)
+		return err
 	}
 
-	n := strings.Index(string(data), ":")
-	if n == -1 {
-		return fmt.Errorf("change root passwd: no ':' char in /etc/shadow")
-	}
-
-	nn := strings.Index(string(data[n+1:]), ":")
-	if n == -1 {
-		return fmt.Errorf("change root passwd: no second ':' char in /etc/shadow")
-	}
-
-	n = n + nn + 1
 	salt := utils.RandID()
-
 	str := crypt.Crypt(passwd, fmt.Sprintf("$6$%s$", string(salt[:8])))
-	str = "root:" + str
+	str = fmt.Sprintf("root:%s:", str)
 
-	newData := make([]byte, len(str))
-	copy(newData, str)
-	newData = append(newData, data[n:]...)
+	regex := regexp.MustCompile("^root:[^:]\\+:")
+	data = regex.ReplaceAll(data, []byte(str))
 
-	err = utils.ReplaceFileContents(shadowPath, newData)
+	err = utils.ReplaceFileContents(shadowPath, data)
 	if err != nil {
-		return fmt.Errorf("change root passwd: %s", err)
+		return err
 	}
 
 	return nil
