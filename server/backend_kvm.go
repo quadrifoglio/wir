@@ -199,7 +199,6 @@ func MachineKvmSetLinuxRootPassword(id string, passwd string) error {
 		return fmt.Errorf("Not enough partitions (<= 1)")
 	}
 
-	// TODO: Do not hardcode parition number
 	err = system.Mount(fmt.Sprintf("/dev/nbd0p%d", len(partitions) - 2), path)
 	if err != nil {
 		return err
@@ -216,7 +215,7 @@ func MachineKvmSetLinuxRootPassword(id string, passwd string) error {
 	str := crypt.Crypt(passwd, fmt.Sprintf("$6$%s$", string(salt[:8])))
 	str = fmt.Sprintf("root:%s:", str)
 
-	regex := regexp.MustCompile("^root:[^:]\\+:")
+	regex := regexp.MustCompile("^root:[^:]+:")
 	data = regex.ReplaceAll(data, []byte(str))
 
 	err = utils.ReplaceFileContents(shadowPath, data)
