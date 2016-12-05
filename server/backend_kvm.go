@@ -144,8 +144,17 @@ func MachineKvmSetLinuxHostname(id, hostname string) error {
 		}
 	}
 
+	partitions, err := system.ListPartitions("/dev/nbd0")
+	if err != nil {
+		return err
+	}
+
+	if len(partitions) <= 1 {
+		return fmt.Errorf("Not enough partitions (<= 1)")
+	}
+
 	// TODO: Do not hardcode parition number
-	err = system.Mount("/dev/nbd0p3", path)
+	err = system.Mount(fmt.Sprintf("/dev/nbd0p%d", len(partitions) - 2), path)
 	if err != nil {
 		return err
 	}
@@ -190,7 +199,7 @@ func MachineKvmSetLinuxRootPassword(id string, passwd string) error {
 	}
 
 	// TODO: Do not hardcode parition number
-	err = system.Mount(fmt.Sprintf("/dev/nbd0p%d", len(partitions) - 1), path)
+	err = system.Mount(fmt.Sprintf("/dev/nbd0p%d", len(partitions) - 2), path)
 	if err != nil {
 		return err
 	}
