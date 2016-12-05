@@ -11,7 +11,7 @@ import (
 	"time"
 	"regexp"
 
-	"github.com/nyarlabo/go-crypt"
+	"github.com/amoghe/go-crypt"
 	"github.com/quadrifoglio/go-qemu"
 	"github.com/quadrifoglio/go-qmp"
 
@@ -195,7 +195,7 @@ func MachineKvmSetLinuxRootPassword(id string, passwd string) error {
 		return err
 	}
 
-	if len(partitions) <= 1 {
+	if len(partitions) <= 2 {
 		return fmt.Errorf("Not enough partitions (<= 1)")
 	}
 
@@ -212,13 +212,15 @@ func MachineKvmSetLinuxRootPassword(id string, passwd string) error {
 	}
 
 	salt := utils.RandID()
-	str := crypt.Crypt(passwd, fmt.Sprintf("$6$%s$", string(salt[:8])))
-	str = fmt.Sprintf("root:%s:", str)
+	str, err := crypt.Crypt(passwd, fmt.Sprintf("$6$%s$", salt[:8]))
+	if err != nil {
+		return err
+	}
 
 	regex := regexp.MustCompile("^root:[^:]+:")
-	data = regex.ReplaceAll(data, []byte(str))
+	dataStr := regex.ReplaceAllLiteralString(string(data), fmt.Sprintf("root:%s:", str))
 
-	err = utils.ReplaceFileContents(shadowPath, data)
+	err = utils.ReplaceFileContents(shadowPath, []byte(dataStr))
 	if err != nil {
 		return err
 	}
