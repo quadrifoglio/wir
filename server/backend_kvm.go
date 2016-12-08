@@ -6,10 +6,10 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"syscall"
 	"time"
-	"regexp"
 
 	"github.com/amoghe/go-crypt"
 	"github.com/quadrifoglio/go-qemu"
@@ -154,8 +154,12 @@ func MachineKvmSetLinuxHostname(id, hostname string) error {
 		return fmt.Errorf("Not enough partitions (<= 1)")
 	}
 
-	// TODO: Do not hardcode parition number
-	err = system.Mount(fmt.Sprintf("/dev/nbd0p%d", len(partitions) - 2), path)
+	mainPart := len(partitions) - 1
+	if partitions[mainPart].Filesystem == "free" {
+		mainPart--
+	}
+
+	err = system.Mount(fmt.Sprintf("/dev/nbd0p%d", mainPart), path)
 	if err != nil {
 		return err
 	}
@@ -195,11 +199,16 @@ func MachineKvmSetLinuxRootPassword(id string, passwd string) error {
 		return err
 	}
 
-	if len(partitions) <= 2 {
+	if len(partitions) <= 1 {
 		return fmt.Errorf("Not enough partitions (<= 1)")
 	}
 
-	err = system.Mount(fmt.Sprintf("/dev/nbd0p%d", len(partitions) - 2), path)
+	mainPart := len(partitions) - 1
+	if partitions[mainPart].Filesystem == "free" {
+		mainPart--
+	}
+
+	err = system.Mount(fmt.Sprintf("/dev/nbd0p%d", mainPart), path)
 	if err != nil {
 		return err
 	}
