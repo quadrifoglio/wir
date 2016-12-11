@@ -238,6 +238,10 @@ func MachineKvmSetLinuxRootPassword(id string, passwd string) error {
 }
 
 func MachineKvmSetOpts(id string, opts shared.KvmOptsDef) error {
+	if MachineKvmIsRunning(id) {
+		return fmt.Errorf("Cannot set KVM options while the machine is running")
+	}
+
 	if len(opts.Linux.Hostname) > 0 {
 		err := MachineKvmSetLinuxHostname(id, opts.Linux.Hostname)
 		if err != nil {
