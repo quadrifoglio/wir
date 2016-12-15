@@ -103,7 +103,10 @@ func MachineKvmCreate(def *shared.MachineDef) error {
 		if len(def.Image) > 0 && def.Disk != 0 && def.Disk > disk.Size {
 			err := system.ResizeQcow2(MachineDisk(def.ID), def.Disk)
 			if err != nil {
-				return err
+				// TODO: Find a better way
+				//return err
+
+				log.Println("Create machine: disk was not resized:", err)
 			}
 		}
 	} else if len(def.Image) > 0 { // If this is a migration, rebase the disk to the image

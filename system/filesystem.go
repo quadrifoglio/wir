@@ -192,6 +192,10 @@ func ResizeLastPartition(dev string) error {
 		return fmt.Errorf("resize %s part %d: no free space available", dev, num)
 	}
 
+	if !strings.HasPrefix(mainPart.Filesystem, "ext") {
+		return fmt.Errorf("resize %s part %d: unsupported filesystem type", dev, num)
+	}
+
 	cmd := exec.Command("parted", dev, "unit", "B", "resizepart", strconv.Itoa(mainPart.Number), strconv.FormatUint(freeSpace.End, 10))
 	out, err := cmd.CombinedOutput()
 	if err != nil {
