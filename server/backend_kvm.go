@@ -314,7 +314,7 @@ func MachineKvmStart(id string) error {
 
 	// x86_64 arch (using qemu-system-x86_64), with kvm
 	proc, err := m.Start("x86_64", true, func(s string) {
-		log.Println("qemu stderr: %s", utils.OneLine([]byte(s)))
+		log.Printf("machine %s stderr: %s\n", def.ID, utils.OneLine([]byte(s)))
 	})
 
 	if err != nil {
