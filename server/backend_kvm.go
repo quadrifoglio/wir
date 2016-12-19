@@ -312,7 +312,11 @@ func MachineKvmStart(id string) error {
 
 	m.AddMonitorUnix(MachineMonitorPath(def.ID))
 
-	proc, err := m.Start("x86_64", true) // x86_64 arch (using qemu-system-x86_64), with kvm
+	// x86_64 arch (using qemu-system-x86_64), with kvm
+	proc, err := m.Start("x86_64", true, func(s string) {
+		log.Println("qemu stderr: %s", utils.OneLine([]byte(s)))
+	})
+
 	if err != nil {
 		return err
 	}
