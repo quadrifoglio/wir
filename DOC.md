@@ -115,6 +115,7 @@
 		"Enabled": bool (Wether to use the VNC server)
 		"Address": string (Bind address of the VNC server (ip:port))
 		"Port": int (Port number)
+		"WebsocketPort": int (Websocket port number, optional)
 	}
 
 	"Linux": {

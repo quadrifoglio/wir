@@ -307,10 +307,12 @@ func MachineKvmStart(id string) error {
 	}
 
 	if opts.VNC.Enabled {
-		m.AddVNC(opts.VNC.Address, opts.VNC.Port)
+		m.AddVNC(opts.VNC.Address, opts.VNC.Port, opts.VNC.WebsocketPort)
 	}
 
 	m.AddMonitorUnix(MachineMonitorPath(def.ID))
+	m.AddOption("-k", "fr")
+	m.AddOption("-usbdevice", "tablet")
 
 	// x86_64 arch (using qemu-system-x86_64), with kvm
 	proc, err := m.Start("x86_64", true, func(s string) {

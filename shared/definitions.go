@@ -101,9 +101,10 @@ type KvmOptsDef struct {
 	CDRom string // Path to a disk image to insert into the machine as a CD-ROM
 
 	VNC struct {
-		Enabled bool   // Wether to use the VNC server
-		Address string // Bind address of the VNC server (ip:port)
-		Port    int    // Port number
+		Enabled       bool   // Wether to use the VNC server
+		Address       string // Bind address of the VNC server (ip:port)
+		Port          int    // Port number
+		WebsocketPort int    // Websocket port number, if any
 
 		// TODO: Add parapeters (ssl, authentication...)
 	}
