@@ -311,7 +311,6 @@ func MachineKvmStart(id string) error {
 	}
 
 	m.AddMonitorUnix(MachineMonitorPath(def.ID))
-	m.AddOption("-k", "fr")
 	m.AddOption("-usbdevice", "tablet")
 
 	// x86_64 arch (using qemu-system-x86_64), with kvm
