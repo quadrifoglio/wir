@@ -400,8 +400,10 @@ func MachineKvmStatus(id string) (shared.MachineStatusDef, error) {
 				if err != nil {
 					return def, err
 				}
-			} else if rr, ok := res.(map[string]uint64); ok {
-				ram = rr["actual"]
+			} else if rr, ok := res.(map[string]interface{}); ok {
+				if theRam, ok := rr["actual"].(uint64); ok {
+					ram = theRam
+				}
 			}
 		}
 
