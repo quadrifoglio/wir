@@ -388,9 +388,21 @@ func MachineKvmStatus(id string) (shared.MachineStatusDef, error) {
 			return def, err
 		}
 
-		ram, err := system.ProcessRamUsage(opts.PID)
-		if err != nil {
-			return def, err
+		var ram uint64
+
+		c, err := qmp.Open("unix", MachineMonitorPath(id))
+		if err == nil {
+			defer c.Close()
+
+			res, err := c.Command("query-balloon", nil)
+			if err != nil {
+				ram, err = system.ProcessRamUsage(opts.PID)
+				if err != nil {
+					return def, err
+				}
+			} else if rr, ok := res.(map[string]uint64); ok {
+				ram = rr["actual"]
+			}
 		}
 
 		cpu, err := system.ProcessCpuUsage(opts.PID)
