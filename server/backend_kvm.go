@@ -352,7 +352,7 @@ func MachineKvmStart(id string) error {
 		})
 
 		if err != nil {
-			log.Printf("Not fatal - Machine %s - Set balloon stats polling interval: %s", def.ID, err)
+			log.Printf("Not fatal - Machine %s - Set balloon stats polling interval: %s\n", def.ID, err)
 		}
 	}
 
@@ -437,7 +437,7 @@ func MachineKvmStatus(id string) (shared.MachineStatusDef, error) {
 
 		ram, err := MachineKvmGetBallonFreeMem(id)
 		if err != nil {
-			log.Println("Not fatal - Machine %s - Failed to get free memory from balloon: %s", id, err)
+			log.Printf("Not fatal - Machine %s - Failed to get free memory from balloon: %s\n", id, err)
 
 			ram, err = system.ProcessRamUsage(opts.PID)
 			if err != nil {
