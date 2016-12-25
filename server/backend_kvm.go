@@ -341,6 +341,21 @@ func MachineKvmStart(id string) error {
 		return err
 	}
 
+	c, err := qmp.Open("unix", MachineMonitorPath(def.ID))
+	if err == nil {
+		defer c.Close()
+
+		_, err := c.Command("qom-set", map[string]string{
+			"path":     "/machine/peripheral-anon/device[1]",
+			"property": "guest-stats-polling-interval",
+			"value":    "2",
+		})
+
+		if err != nil {
+			log.Printf("Not fatal - Machine %s - Set balloon stats polling interval: %s", def.ID, err)
+		}
+	}
+
 	return nil
 }
 
@@ -376,6 +391,38 @@ func MachineKvmStop(id string) error {
 	return nil
 }
 
+// MachineKvmGetBallonFreeMem retreives the guest's free memory
+// from the virtio-balloon driver via QMP
+func MachineKvmGetBallonFreeMem(id string) (uint64, error) {
+	c, err := qmp.Open("unix", MachineMonitorPath(id))
+	if err != nil {
+		return 0, err
+	}
+
+	defer c.Close()
+
+	res, err := c.Command("qom-get", map[string]string{
+		"path":     "/machine/peripheral-anon/device[1]",
+		"property": "guest-stats",
+	})
+
+	if err != nil {
+		return 0, err
+	}
+
+	if rr, ok := res.(map[string]interface{}); ok {
+		if freeRam, ok := rr["stat-free-memory"].(uint64); ok {
+			if freeRam < 0 {
+				return 0, fmt.Errorf("stat-free-memory negative")
+			}
+
+			return freeRam, nil
+		}
+	}
+
+	return 0, fmt.Errorf("Invalid output from qom-get")
+}
+
 // MachineKvmStatus returns a MachineStatusDef
 // representing the current status of the machine
 func MachineKvmStatus(id string) (shared.MachineStatusDef, error) {
@@ -388,22 +435,13 @@ func MachineKvmStatus(id string) (shared.MachineStatusDef, error) {
 			return def, err
 		}
 
-		var ram uint64
+		ram, err := MachineKvmGetBallonFreeMem(id)
+		if err != nil {
+			log.Println("Not fatal - Machine %s - Failed to get free memory from balloon: %s", id, err)
 
-		c, err := qmp.Open("unix", MachineMonitorPath(id))
-		if err == nil {
-			defer c.Close()
-
-			res, err := c.Command("query-balloon", nil)
+			ram, err = system.ProcessRamUsage(opts.PID)
 			if err != nil {
-				ram, err = system.ProcessRamUsage(opts.PID)
-				if err != nil {
-					return def, err
-				}
-			} else if rr, ok := res.(map[string]interface{}); ok {
-				if theRam, ok := rr["actual"].(float64); ok {
-					ram = uint64(theRam)
-				}
+				return def, err
 			}
 		}
 
@@ -412,8 +450,13 @@ func MachineKvmStatus(id string) (shared.MachineStatusDef, error) {
 			return def, err
 		}
 
+		machine, err := DBMachineGet(id)
+		if err != nil {
+			return def, err
+		}
+
 		def.CpuUsage = cpu
-		def.RamUsage = ram
+		def.RamUsage = machine.Memory - ram
 	}
 
 	disk, err := utils.FileSize(MachineDisk(id))
