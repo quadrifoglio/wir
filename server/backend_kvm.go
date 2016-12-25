@@ -392,7 +392,7 @@ func MachineKvmStop(id string) error {
 }
 
 // MachineKvmGetBallonFreeMem retreives the guest's free memory
-// from the virtio-balloon driver via QMP
+// in MiB from the virtio-balloon driver via QMP
 func MachineKvmGetBallonFreeMem(id string) (uint64, error) {
 	c, err := qmp.Open("unix", MachineMonitorPath(id))
 	if err != nil {
@@ -412,12 +412,12 @@ func MachineKvmGetBallonFreeMem(id string) (uint64, error) {
 
 	if rr, ok := res.(map[string]interface{}); ok {
 		if stats, ok := rr["stats"].(map[string]interface{}); ok {
-			if freeRam, ok := stats["stat-free-memory"].(uint64); ok {
+			if freeRam, ok := stats["stat-free-memory"].(float64); ok {
 				if freeRam < 0 {
 					return 0, fmt.Errorf("stat-free-memory negative")
 				}
 
-				return freeRam, nil
+				return uint64(freeRam / float64(1048576.0)), nil
 			}
 		}
 	}
