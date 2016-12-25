@@ -174,7 +174,7 @@ func ProcessRamUsage(pid int) (uint64, error) {
 		return 0, err
 	}
 
-	return ram * 4096, nil
+	return uint64(float32(ram*4096) / float32(1048576.0)), nil
 
 }
 
