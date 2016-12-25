@@ -345,10 +345,10 @@ func MachineKvmStart(id string) error {
 	if err == nil {
 		defer c.Close()
 
-		_, err := c.Command("qom-set", map[string]string{
+		_, err := c.Command("qom-set", map[string]interface{}{
 			"path":     "/machine/peripheral-anon/device[1]",
 			"property": "guest-stats-polling-interval",
-			"value":    "2",
+			"value":    3,
 		})
 
 		if err != nil {
@@ -401,7 +401,7 @@ func MachineKvmGetBallonFreeMem(id string) (uint64, error) {
 
 	defer c.Close()
 
-	res, err := c.Command("qom-get", map[string]string{
+	res, err := c.Command("qom-get", map[string]interface{}{
 		"path":     "/machine/peripheral-anon/device[1]",
 		"property": "guest-stats",
 	})
