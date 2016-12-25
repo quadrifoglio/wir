@@ -411,12 +411,14 @@ func MachineKvmGetBallonFreeMem(id string) (uint64, error) {
 	}
 
 	if rr, ok := res.(map[string]interface{}); ok {
-		if freeRam, ok := rr["stat-free-memory"].(uint64); ok {
-			if freeRam < 0 {
-				return 0, fmt.Errorf("stat-free-memory negative")
-			}
+		if stats, ok := rr["stats"].(map[string]interface{}); ok {
+			if freeRam, ok := stats["stat-free-memory"].(uint64); ok {
+				if freeRam < 0 {
+					return 0, fmt.Errorf("stat-free-memory negative")
+				}
 
-			return freeRam, nil
+				return freeRam, nil
+			}
 		}
 	}
 
