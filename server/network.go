@@ -137,10 +137,7 @@ func StartNetworkDHCP() error {
 			response.SetOption(dhcp.OptionSubnetMask, netAddr.Mask)
 			response.SetOption(dhcp.OptionRouter, net.ParseIP(netw.DHCP.Router).To4())
 			response.SetOption(dhcp.OptionServerIdentifier, srv)
-
-			if t == dhcp.DHCPTypeOffer {
-				response.SetOption(dhcp.OptionIPAddressLeaseTime, leaseTime)
-			}
+			response.SetOption(dhcp.OptionIPAddressLeaseTime, leaseTime)
 
 			s.BroadcastPacket(response.GetFrame())
 			break
