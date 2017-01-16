@@ -85,24 +85,26 @@ func AttachInterfaceToNetwork(machineId string, n int, def shared.InterfaceDef) 
 	}
 
 	go func() {
-		pps, err := system.GetInterfacePPS(MachineNicName(machineId, n), "rx")
-		if err != nil {
-			log.Printf("Monitor failed for machine %s: %s\n", machineId, err)
-			return
-		}
-
-		if pps > 80000 {
-			log.Printf("Monitor DDOS alert for machine %s: shutting down interface\n", machineId)
-
-			err := system.DownInterface(MachineNicName(machineId, n))
+		for {
+			pps, err := system.GetInterfacePPS(MachineNicName(machineId, n), "rx")
 			if err != nil {
-				log.Println("Monitor failed to shut down interface after DDOS alter. Machine", machineId)
+				log.Printf("Monitor failed for machine %s: %s\n", machineId, err)
+				return
 			}
 
-			return
-		}
+			if pps > 80000 {
+				log.Printf("Monitor DDOS alert for machine %s: shutting down interface\n", machineId)
 
-		time.Sleep(10 * time.Second)
+				err := system.DownInterface(MachineNicName(machineId, n))
+				if err != nil {
+					log.Println("Monitor failed to shut down interface after DDOS alter. Machine", machineId)
+				}
+
+				return
+			}
+
+			time.Sleep(10 * time.Second)
+		}
 	}()
 
 	return nil
