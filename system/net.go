@@ -2,9 +2,12 @@ package system
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net"
 	"os/exec"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/quadrifoglio/wir/utils"
 )
@@ -51,6 +54,19 @@ func SetInterfaceMaster(name, master string) error {
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("ip link set master: %s", utils.OneLine(out))
+	}
+
+	return nil
+}
+
+// DownInterface shuts down the
+// specified network interface
+func DownInterface(name string) error {
+	cmd := exec.Command("ip", "link", "set", "down", "dev", name)
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("ip link set down: %s", utils.OneLine(out))
 	}
 
 	return nil
@@ -166,4 +182,43 @@ func EbtablesFlush(iface string) error {
 	}
 
 	return nil
+}
+
+// GetInterfacePPS returns the number of packets transmitted
+// by second in the specified direction for a given interface
+func GetInterfacePPS(iface, direction string) (uint64, error) {
+	var err error
+	var tx1, tx2 uint64
+
+	if !InterfaceExists(iface) {
+		return 0, fmt.Errorf("Interface does not exist")
+	}
+
+	if tx1, err = GetInterfaceStat(iface, fmt.Sprintf("%s_packets", direction)); err != nil {
+		return 0, err
+	}
+
+	time.Sleep(1 * time.Second)
+
+	if tx2, err = GetInterfaceStat(iface, fmt.Sprintf("%s_packets", direction)); err != nil {
+		return 0, err
+	}
+
+	return tx2 - tx1, nil
+}
+
+// GetInterfaceStat returns the required stats for
+// the specified interface from /sys
+func GetInterfaceStat(iface, stat string) (uint64, error) {
+	d, err := ioutil.ReadFile(fmt.Sprintf("/sys/class/net/%s/statistics/%s", iface, stat))
+	if err != nil {
+		return 0, fmt.Errorf("iface monitor %s (%s): %s\n", iface, stat, err)
+	}
+
+	i, err := strconv.Atoi(string(d[:len(d)-1]))
+	if err != nil {
+		return 0, fmt.Errorf("iface monitor %s (%s): %s\n", iface, stat, err)
+	}
+
+	return uint64(i), nil
 }

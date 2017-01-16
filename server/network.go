@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"strings"
+	"time"
 
 	"github.com/rs/xid"
 
@@ -78,7 +79,33 @@ func AttachInterfaceToNetwork(machineId string, n int, def shared.InterfaceDef) 
 		return err
 	}
 
-	return system.SetInterfaceMaster(MachineNicName(machineId, n), NetworkNicName(def.Network))
+	err = system.SetInterfaceMaster(MachineNicName(machineId, n), NetworkNicName(def.Network))
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		pps, err := system.GetInterfacePPS(MachineNicName(machineId, n), "tx")
+		if err != nil {
+			log.Printf("Monitor failed for machine %s: %s\n", machineId, err)
+			return
+		}
+
+		if pps > 90000 {
+			log.Printf("Monitor DDOS alert for machine %s: shutting down interface\n", machineId)
+
+			err := system.DownInterface(MachineNicName(machineId, n))
+			if err != nil {
+				log.Println("Monitor failed to shut down interface after DDOS alter. Machine", machineId)
+			}
+
+			return
+		}
+
+		time.Sleep(10 * time.Second)
+	}()
+
+	return nil
 }
 
 // DeleteNetwork deletes the specified network
