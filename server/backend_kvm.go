@@ -307,7 +307,7 @@ func MachineKvmStart(id string) error {
 	}
 
 	if opts.VNC.Enabled {
-		m.AddVNC(opts.VNC.Address, opts.VNC.Port, opts.VNC.WebsocketPort)
+		m.AddVNC(opts.VNC.Address, opts.VNC.Port, opts.VNC.WebsocketPort, true)
 	}
 
 	m.AddMonitorUnix(MachineMonitorPath(def.ID))
