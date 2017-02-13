@@ -65,7 +65,8 @@ const (
 		vnc_enabled BOOLEAN NOT NULL,
 		vnc_addr VARCHAR(255),
 		vnc_port INTEGER,
-		vnc_ws_port INTEGER
+		vnc_ws_port INTEGER,
+		vnc_passwd VARCHAR(255)
 	);
 	`
 )
@@ -611,7 +612,7 @@ func DBMachineSetKvmOpts(id string, def shared.KvmOptsDef) error {
 	}
 
 	_, err := DB.Exec(
-		"INSERT OR REPLACE INTO kvm_opt VALUES (?, ?, ?, ?, ?, ?, ?)",
+		"INSERT OR REPLACE INTO kvm_opt VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
 		id,
 		def.PID,
 		def.CDRom,
@@ -619,6 +620,7 @@ func DBMachineSetKvmOpts(id string, def shared.KvmOptsDef) error {
 		def.VNC.Address,
 		def.VNC.Port,
 		def.VNC.WebsocketPort,
+		def.VNC.Password,
 	)
 
 	if err != nil {
@@ -641,7 +643,7 @@ func DBMachineGetKvmOpts(id string) (shared.KvmOptsDef, error) {
 	defer rows.Close()
 
 	if rows.Next() {
-		err := rows.Scan(&id, &def.PID, &def.CDRom, &def.VNC.Enabled, &def.VNC.Address, &def.VNC.Port, &def.VNC.WebsocketPort)
+		err := rows.Scan(&id, &def.PID, &def.CDRom, &def.VNC.Enabled, &def.VNC.Address, &def.VNC.Port, &def.VNC.WebsocketPort, &def.VNC.Password)
 		if err != nil {
 			return def, err
 		}

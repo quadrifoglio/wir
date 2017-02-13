@@ -240,9 +240,9 @@ func MachineKvmSetLinuxRootPassword(id string, passwd string) error {
 	return nil
 }
 
-// MachineKvmSetVncPassword sets the VNC password for this machine
+// MachineKvmApplyVncPassword sets the VNC password for this machine
 // using the QMP monitor interface
-func MachineKvmSetVncPassword(id, passwd string) error {
+func MachineKvmApplyVncPassword(id, passwd string) error {
 	c, err := qmp.Open("unix", MachineMonitorPath(id))
 	if err != nil {
 		return err
@@ -272,12 +272,6 @@ func MachineKvmSetOpts(id string, opts shared.KvmOptsDef) error {
 	}
 	if len(opts.Linux.RootPassword) > 0 {
 		err := MachineKvmSetLinuxRootPassword(id, opts.Linux.RootPassword)
-		if err != nil {
-			return err
-		}
-	}
-	if len(opts.VNC.Password) > 0 {
-		err := MachineKvmSetVncPassword(id, opts.VNC.Password)
 		if err != nil {
 			return err
 		}
@@ -378,6 +372,13 @@ func MachineKvmStart(id string) error {
 
 		if err != nil {
 			log.Printf("Not fatal - Machine %s - Set balloon stats polling interval: %s\n", def.ID, err)
+		}
+	}
+
+	if len(opts.VNC.Password) > 0 {
+		err := MachineKvmApplyVncPassword(id, opts.VNC.Password)
+		if err != nil {
+			return err
 		}
 	}
 
