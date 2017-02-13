@@ -105,6 +105,7 @@ type KvmOptsDef struct {
 		Address       string // Bind address of the VNC server (ip:port)
 		Port          int    // Port number
 		WebsocketPort int    // Websocket port number, if any
+		Password      string // Password (string)
 
 		// TODO: Add parapeters (ssl, authentication...)
 	}

@@ -240,6 +240,25 @@ func MachineKvmSetLinuxRootPassword(id string, passwd string) error {
 	return nil
 }
 
+// MachineKvmSetVncPassword sets the VNC password for this machine
+// using the QMP monitor interface
+func MachineKvmSetVncPassword(id, passwd string) error {
+	c, err := qmp.Open("unix", MachineMonitorPath(id))
+	if err != nil {
+		return err
+	}
+
+	defer c.Close()
+
+	_, err = c.Command("change", map[string]interface{}{
+		"device": "vnc",
+		"target": "password",
+		"arg":    passwd,
+	})
+
+	return err
+}
+
 func MachineKvmSetOpts(id string, opts shared.KvmOptsDef) error {
 	if MachineKvmIsRunning(id) {
 		return fmt.Errorf("Cannot set KVM options while the machine is running")
@@ -253,6 +272,12 @@ func MachineKvmSetOpts(id string, opts shared.KvmOptsDef) error {
 	}
 	if len(opts.Linux.RootPassword) > 0 {
 		err := MachineKvmSetLinuxRootPassword(id, opts.Linux.RootPassword)
+		if err != nil {
+			return err
+		}
+	}
+	if len(opts.VNC.Password) > 0 {
+		err := MachineKvmSetVncPassword(id, opts.VNC.Password)
 		if err != nil {
 			return err
 		}
