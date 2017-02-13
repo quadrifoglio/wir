@@ -358,7 +358,7 @@ func MachineKvmStart(id string) error {
 		_, err = c.Command("change", map[string]interface{}{
 			"device": "vnc",
 			"target": "password",
-			"arg":    passwd,
+			"arg":    opts.VNC.Password,
 		})
 
 		if err != nil {
