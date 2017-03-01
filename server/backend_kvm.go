@@ -313,6 +313,7 @@ func MachineKvmStart(id string) error {
 	m.AddMonitorUnix(MachineMonitorPath(def.ID))
 	m.AddOption("-balloon", "virtio")
 	m.AddOption("-usbdevice", "tablet")
+	m.AddOption("-boot", "order=dc")
 
 	// x86_64 arch (using qemu-system-x86_64), with kvm
 	proc, err := m.Start("x86_64", true, func(s string) {
