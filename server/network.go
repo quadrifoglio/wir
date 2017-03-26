@@ -153,7 +153,7 @@ func StartNetworkDHCP() error {
 
 			srv := []byte{0, 0, 0, 0}
 			leaseTime := make([]byte, 4)
-			binary.BigEndian.PutUint32(leaseTime, 86400) // 1 day lease
+			binary.BigEndian.PutUint32(leaseTime, 1296000) // 1 day lease
 
 			var t byte
 			if msg.Type == dhcp.DHCPTypeDiscover {
