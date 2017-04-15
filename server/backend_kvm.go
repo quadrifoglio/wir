@@ -314,6 +314,7 @@ func MachineKvmStart(id string) error {
 	m.AddOption("-balloon", "virtio")
 	m.AddOption("-usbdevice", "tablet")
 	m.AddOption("-boot", "order=dc")
+	m.AddOption("-rtc", "driftfix=slew,base=localtime")
 
 	// x86_64 arch (using qemu-system-x86_64), with kvm
 	proc, err := m.Start("x86_64", true, func(s string) {
